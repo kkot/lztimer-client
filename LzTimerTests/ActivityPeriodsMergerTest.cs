@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Dynamic;
 using kkot.LzTimer;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Telerik.JustMock;
@@ -9,7 +10,7 @@ namespace LzTimerTests
 {
     public class MergingTests
     {
-        private static readonly DateTime START_DATETIME = new DateTime(2014, 1, 1, 12, 0, 0, 0);
+        private static readonly DateTime START = new DateTime(2014, 1, 1, 12, 0, 0, 0);
 
         [TestClass]
         public class ActivityPeriodMergerTest
@@ -28,7 +29,7 @@ namespace LzTimerTests
             [TestMethod]
             public void singleActivityPeriodShouldBePassed()
             {
-                var start = START_DATETIME;
+                var start = START;
                 var end = start.AddSeconds(1);
                 var period = new ActivePeriod(start, end);
 
@@ -40,7 +41,7 @@ namespace LzTimerTests
             [TestMethod]
             public void twoCloseActivityPeriodShouldBeMerged()
             {
-                var start1 = START_DATETIME;
+                var start1 = START;
                 var end1 = start1.AddSeconds(1);
                 var period1 = new ActivePeriod(start1, end1);
 
@@ -70,7 +71,7 @@ namespace LzTimerTests
             [TestMethod]
             public void singlePeriodShouldBeStoredAndReterned()
             {
-                var start = START_DATETIME;
+                var start = START;
                 var end = start.AddSeconds(1);
                 var period = new ActivePeriod(start, end);
 
@@ -84,7 +85,7 @@ namespace LzTimerTests
             [TestMethod]
             public void twoClosePeriodShouldBeMerged()
             {
-                var start1 = START_DATETIME;
+                var start1 = START;
                 var end1 = start1.AddSeconds(1);
                 var period1 = new ActivePeriod(start1, end1);
 
@@ -105,7 +106,7 @@ namespace LzTimerTests
             [TestMethod]
             public void twoDistantPeriodShouldNotBeMerged()
             {
-                var start1 = START_DATETIME;
+                var start1 = START;
                 var end1 = start1.AddSeconds(1);
                 var period1 = new ActivePeriod(start1, end1);
 
@@ -129,6 +130,16 @@ namespace LzTimerTests
             private TimeTable timeTableSut;
             private const int IDLE_TIMEOUT = 5;
 
+            public static ActivePeriod ActivePeriod(DateTime start, int intervalSeconds)
+            {
+                return new ActivePeriod(start, start.AddSeconds(intervalSeconds));
+            }
+
+            public static IdlePeriod IdlePeriod(DateTime start, int intervalSeconds)
+            {
+                return new IdlePeriod(start, start.AddSeconds(intervalSeconds));
+            }
+
             [TestInitializeAttribute]
             public void setUp()
             {
@@ -138,8 +149,7 @@ namespace LzTimerTests
             [TestMethod]
             public void singlePeriodShouldBeStoredAndReterned()
             {
-                var start = START_DATETIME;
-                var period = ActivePeriod(start, 1);
+                var period = ActivePeriod(START, 1);
 
                 var merged = timeTableSut.Add(period);
 
@@ -151,8 +161,7 @@ namespace LzTimerTests
             [TestMethod]
             public void twoCloseActivePeriodShouldBeMerged()
             {
-                var start1 = START_DATETIME;
-                var period1 = ActivePeriod(start1, 1);
+                var period1 = ActivePeriod(START, 1);
 
                 var start2 = period1.End.AddSeconds(IDLE_TIMEOUT-1);
                 var period2 = ActivePeriod(start2, 1);
@@ -166,11 +175,26 @@ namespace LzTimerTests
                 CollectionAssert.AreEquivalent(new [] { periodMerged }, timeTableSut.List);
             }
 
+            public void twoCloseIdlePeriodShouldBeMerged()
+            {
+                var period1 = IdlePeriod(START, 1);
+
+                var start2 = period1.End.AddSeconds(IDLE_TIMEOUT - 1);
+                var period2 = IdlePeriod(start2, 1);
+
+                timeTableSut.Add(period1);
+                timeTableSut.Add(period2);
+
+                var periodMerged = new IdlePeriod(period1.Start, period2.End);
+
+                Assert.AreEqual(periodMerged, timeTableSut.List[0]);
+                CollectionAssert.AreEquivalent(new[] { periodMerged }, timeTableSut.List);
+            }
+
             [TestMethod]
             public void twoDistantActivePeriodShouldNotBeMerged()
             {
-                var start1 = START_DATETIME;
-                var period1 = ActivePeriod(start1, 1);
+                var period1 = ActivePeriod(START, 1);
 
                 var start2 = period1.End.AddSeconds(IDLE_TIMEOUT+1);
                 var period2 = ActivePeriod(start2, 2);
@@ -186,8 +210,7 @@ namespace LzTimerTests
             [TestMethod]
             public void twoCloseActiveAndIdlePeriodShouldNotBeMerged()
             {
-                var start1 = START_DATETIME;
-                var period1 = ActivePeriod(start1, 1);
+                var period1 = ActivePeriod(START, 1);
 
                 var start2 = period1.End.AddSeconds(IDLE_TIMEOUT - 1);
                 var period2 = IdlePeriod(start2, 2);
@@ -198,14 +221,61 @@ namespace LzTimerTests
                 CollectionAssert.AreEquivalent(timeTableSut.List,  new Period[] { period2, period1 });
             }
 
-            public static ActivePeriod ActivePeriod(DateTime start, int intervalSeconds)
+            [TestMethod]
+            public void twoCloseActivePeriodEnclosingIdlePeriodShouldBeMerged()
             {
-                return new ActivePeriod(start, start.AddSeconds(intervalSeconds));
+                var builder1 = PeriodBuilder.New(START);
+                var builder2 = builder1.afterMs(0);
+                var builder3 = builder2.afterMs(0);
+
+                var peroid1 = builder1.Active();
+                var period2 = builder2.Idle();
+                var period3 = builder3.Active();
+
+                timeTableSut.Add(peroid1);
+                timeTableSut.Add(period2);
+                timeTableSut.Add(period3);
+
+                var mergedPeriod = new ActivePeriod(peroid1.Start, period3.End);
+
+                CollectionAssert.DoesNotContain(timeTableSut.List, period2);
+                CollectionAssert.AreEquivalent(timeTableSut.List, new [] { mergedPeriod });
+            }
+        }
+
+        public class PeriodBuilder
+        {
+            public DateTime Start { get; private set; }
+            public DateTime End { get; private set; }
+
+            public static PeriodBuilder New(DateTime start)
+            {
+                var periodBuilder = new PeriodBuilder();
+                periodBuilder.Start = start;
+                periodBuilder.End = start.AddSeconds(1);
+                return periodBuilder;
             }
 
-            public static IdlePeriod IdlePeriod(DateTime start, int intervalSeconds)
+            public PeriodBuilder Length(int seconds)
             {
-                return new IdlePeriod(start, start.AddSeconds(intervalSeconds));
+                End = Start.AddSeconds(seconds);
+                return this;
+            }
+
+            public PeriodBuilder afterMs(int miliseconds)
+            {
+                var periodBuilder = New(this.End.AddMilliseconds(miliseconds));
+                return periodBuilder;
+            }
+
+            public ActivePeriod Active()
+            {
+                return new ActivePeriod(Start, End);
+            }
+
+            public IdlePeriod Idle()
+            {
+                return new IdlePeriod(Start, End);
             }
         }
     }
