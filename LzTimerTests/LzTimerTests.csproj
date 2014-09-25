@@ -60,7 +60,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\lztimer\LzTimer.csproj">
+    <ProjectReference Include="..\LzTimerSrc\LzTimer.csproj">
       <Project>{eba5cbdf-2049-4278-93a2-affd3c802715}</Project>
       <Name>LzTimer</Name>
     </ProjectReference>

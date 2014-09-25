@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Windows.Forms;
 
 namespace kkot.LzTimer
 {
@@ -26,27 +27,33 @@ namespace kkot.LzTimer
             this.End = end;
         }
 
-        public bool CloseTo(Period aPeriod, int seconds)
+        public bool CanBeMerged(Period aPeriod, int seconds)
         {
-            if ((End - aPeriod.Start).Seconds <= seconds ||
-                (Start - aPeriod.End).Seconds <= seconds)
+            if (GetType() != aPeriod.GetType())
+            {
+                return false;
+            }
+
+            if (Math.Abs((End - aPeriod.Start).TotalSeconds) <= seconds ||
+                Math.Abs((Start - aPeriod.End).TotalSeconds) <= seconds)
+            {
                 return true;
+            }
             return false;
         }
 
-        public Period Merge(Period aPeriod)
+        virtual public Period Merge(Period aPeriod)
         {
             var start = Start < aPeriod.Start ? Start : aPeriod.Start;
-            var end   = End > aPeriod.End ? End : aPeriod.End;
+            var end = End > aPeriod.End ? End : aPeriod.End;
             return new Period(start, end);
         }
 
         public override string ToString()
         {
-            return "["+Start+" "+End+"]";
+            return "["+Start.TimeOfDay+" "+End.TimeOfDay+"]";
         }
 
-        // override object.Equals
         public override bool Equals(object obj)
         {
             if (obj == null || GetType() != obj.GetType())
@@ -57,10 +64,32 @@ namespace kkot.LzTimer
             return Start.Equals(period.Start) && End.Equals(period.End);     
         }
 
-// override object.GetHashCode
         public override int GetHashCode()
         {
             return Start.GetHashCode()+End.GetHashCode();
+        }
+    }
+
+    public class ActivePeriod : Period
+    {
+        public ActivePeriod(DateTime start, DateTime end) : base(start, end) {}
+
+        public override Period Merge(Period period)
+        {
+            Period merged = base.Merge(period);
+            return new ActivePeriod(merged.Start, merged.End);
+        }
+    }
+
+    public class IdlePeriod : Period
+    {
+        public IdlePeriod(DateTime start, DateTime end)
+            : base(start, end) {}
+
+        public override Period Merge(Period period)
+        {
+            Period merged = base.Merge(period);
+            return new IdlePeriod(merged.Start, merged.End);
         }
     }
 
@@ -73,7 +102,7 @@ namespace kkot.LzTimer
         void SuspendPeriod(Period period);
     }
 
-    public class PeriodList
+    public class MergingPeriodList
     {
         private readonly IList<Period> periods = new List<Period>();
 
@@ -86,7 +115,7 @@ namespace kkot.LzTimer
         {
             foreach (var period in periods.ToArray())
             {
-                if (period.CloseTo(aPeriod, 1))
+                if (period.CanBeMerged(aPeriod, 1))
                 {
                     periods.Remove(period);
                     var merged = period.Merge(aPeriod);
@@ -98,16 +127,53 @@ namespace kkot.LzTimer
             return aPeriod;
         }
 
-        IList<Period> getPeriods()
+        public List<Period> List
         {
-            return new List<Period>(periods);
-        } 
+            get { return new List<Period>(periods); } 
+        }
+    }
+
+    public class TimeTable
+    {
+        private readonly IList<Period> periods = new List<Period>();
+        private readonly int idleTimeoutSecs;
+
+        public TimeTable(int idleTimeoutSecs)
+        {
+            this.idleTimeoutSecs = idleTimeoutSecs;
+        }
+
+        public Period Add(Period period)
+        {
+            return merge(period);
+        }
+
+        private Period merge(Period aPeriod)
+        {
+            foreach (var period in periods.ToArray())
+            {
+                if (period.CanBeMerged(aPeriod, idleTimeoutSecs))
+                {
+                    periods.Remove(period);
+                    var merged = period.Merge(aPeriod);
+                    periods.Add(merged);
+                    return merged;
+                }
+            }
+            periods.Add(aPeriod);
+            return aPeriod;
+        }
+
+        public List<Period> List
+        {
+            get { return new List<Period>(periods); }
+        }
     }
 
     public class ActivityPeriodsMerger : ActivityPeriodsListener
     {
         private ActivityPeriodsListener listener;
-        private readonly PeriodList periodList = new PeriodList();
+        private readonly MergingPeriodList mergingPeriodList = new MergingPeriodList();
 
         public ActivityPeriodsMerger()
         {
@@ -120,7 +186,7 @@ namespace kkot.LzTimer
 
         public void ActivityPeriod(Period aPeriod)
         {
-            var period = periodList.Add(aPeriod);
+            var period = mergingPeriodList.Add(aPeriod);
             listener.ActivityPeriod(period);
         }
 
