@@ -16,12 +16,12 @@ namespace kkot.LzTimer
     }
      */
 
-    public class Period
+    public class Period : IComparable
     {
         public DateTime Start { get; private set; }
         public DateTime End { get; private set; }
 
-        public Period(DateTime @start, DateTime end)
+        protected Period(DateTime @start, DateTime end)
         {
             this.Start = start;
             this.End = end;
@@ -67,6 +67,12 @@ namespace kkot.LzTimer
         public override int GetHashCode()
         {
             return Start.GetHashCode()+End.GetHashCode();
+        }
+
+        public int CompareTo(object obj)
+        {
+            Period period = (Period) obj;
+            return Start.CompareTo(period.Start);
         }
     }
 
@@ -133,9 +139,45 @@ namespace kkot.LzTimer
         }
     }
 
+    interface PeriodStorage
+    {
+        void Add(Period period);
+        void Remove(Period period);
+
+        SortedSet<Period> getAll();
+        SortedSet<Period> getFromPeriod(Period period);
+    }
+
+    class MemoryPeriodStorage : PeriodStorage
+    {
+        private readonly SortedSet<Period> periods = new SortedSet<Period>();
+
+        public void Remove(Period period)
+        {
+            periods.Remove(period);
+        }
+
+        public SortedSet<Period> getAll()
+        {
+            return periods;
+        }
+
+        public void Add(Period period)
+        {
+            periods.Add(period);
+        }
+
+        public SortedSet<Period> getFromPeriod(Period period)
+        {
+            return new SortedSet<Period>(periods.Where(p => 
+                p.Start >= period.Start && 
+                p.End <= period.End));
+        }
+    }
+
     public class TimeTable
     {
-        private readonly IList<Period> periods = new List<Period>();
+        private readonly PeriodStorage periodStorage = new MemoryPeriodStorage();
         private readonly int idleTimeoutSecs;
 
         public TimeTable(int idleTimeoutSecs)
@@ -150,23 +192,34 @@ namespace kkot.LzTimer
 
         private Period merge(Period aPeriod)
         {
-            foreach (var period in periods.ToArray())
+            foreach (var period in periodStorage.getAll())
             {
                 if (period.CanBeMerged(aPeriod, idleTimeoutSecs))
                 {
-                    periods.Remove(period);
                     var merged = period.Merge(aPeriod);
-                    periods.Add(merged);
+                    foreach(Period innerPeriod in periodStorage.getFromPeriod(merged))
+                    {
+                        periodStorage.Remove(innerPeriod);
+                    }
+                    periodStorage.Add(merged);
                     return merged;
                 }
             }
-            periods.Add(aPeriod);
+            periodStorage.Add(aPeriod);
             return aPeriod;
         }
 
-        public List<Period> List
+        public SortedSet<Period> List
         {
-            get { return new List<Period>(periods); }
+            get { return periodStorage.getAll(); }
+        }
+
+        public Period CurrentPeriod
+        {
+            get
+            {
+                return periodStorage.getAll().Last();
+            }
         }
     }
 
