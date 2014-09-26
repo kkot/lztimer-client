@@ -30,34 +30,25 @@ namespace LzTimerTests
             return periodBuilder;
         }
 
-        private static PeriodBuilder AfterMs(Period period, int miliseconds)
+        private static PeriodBuilder After(Period period, TimeSpan gap)
         {
-            var periodBuilder = New(period.End.AddMilliseconds(miliseconds));
+            var periodBuilder = New(period.End + gap);
             return periodBuilder;
         }
 
-        public static PeriodBuilder NewAfterMs(Period period, int miliseconds)
+        public static PeriodBuilder NewAfter(Period period)
         {
-            return AfterMs(period, miliseconds);
+            return After(period, TimeSpan.Zero);
         }
 
-        public static PeriodBuilder NewAfterSec(Period period, int seconds)
+        public static PeriodBuilder NewAfter(Period period, TimeSpan gap)
         {
-            return AfterMs(period, toMili(seconds));
+            return After(period, gap);
         }
 
-        public static PeriodBuilder NewAfterMs(Period period1)
+        public PeriodBuilder Length(TimeSpan length)
         {
-            return NewAfterMs(period1, 0);
-        }
-
-        public PeriodBuilder LengthSecs(int seconds)
-        {
-            return LengthMs(toMili(seconds));
-        }
-        public PeriodBuilder LengthMs(int miliseconds)
-        {
-            End = Start.AddMilliseconds(miliseconds);
+            End = Start + length;
             return this;
         }
 
@@ -69,11 +60,6 @@ namespace LzTimerTests
         public ActivePeriod Active()
         {
             return new ActivePeriod(Start, End);
-        }
-
-        private static int toMili(int seconds)
-        {
-            return seconds*1000;
         }
     }
 }
