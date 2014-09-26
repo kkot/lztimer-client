@@ -5,7 +5,7 @@ namespace kkot.LzTimer
 {
     public interface Clock
     {
-        DateTime currentTime();
+        DateTime CurrentTime();
     }
 
     public class UserActivityChecker
@@ -14,7 +14,8 @@ namespace kkot.LzTimer
         private readonly Clock clock;
 
         private ActivityPeriodsListener listener;
-        private int? lastInputTime;
+        private int? lastInputTick;
+        private DateTime lastCheck;
 
         public UserActivityChecker(LastActivityProbe probe, Clock clock)
         {
@@ -29,34 +30,38 @@ namespace kkot.LzTimer
 
         public void check()
         {
-            int probedLastInputTime = probe.getLastInputTime();
+            int probedLastInputTick = probe.getLastInputTick();
 
-            if (lastInputTime == null)
+            if (lastInputTick == null)
             {
-                lastInputTime = probedLastInputTime;
+                lastInputTick = probedLastInputTick;
+                lastCheck = clock.CurrentTime();
                 return;
             }
 
-            if (lastInputTime != probedLastInputTime)
+            DateTime currentDateTime = clock.CurrentTime();
+
+            if (lastInputTick != probedLastInputTick)
             {
-                listener.PeriodPassed(new ActivePeriod(new DateTime(), new DateTime()));
+                listener.PeriodPassed(new ActivePeriod(lastCheck, currentDateTime));
             }
             else
             {
-                listener.PeriodPassed(new IdlePeriod(new DateTime(), new DateTime()));
+                listener.PeriodPassed(new IdlePeriod(lastCheck, currentDateTime));
             }
-            lastInputTime = probedLastInputTime;
+            lastInputTick = probedLastInputTick;
+            lastCheck = currentDateTime;
         }
-    }
+    }   
 
     public interface LastActivityProbe
     {
-        int getLastInputTime();
+        int getLastInputTick();
     }
 
     public class Win32LastActivityProbe : LastActivityProbe
     {
-        public int getLastInputTime()
+        public int getLastInputTick()
         {
             int lastInputTicks = 0;
 
