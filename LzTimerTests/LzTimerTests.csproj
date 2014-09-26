@@ -55,6 +55,8 @@
   <ItemGroup>
     <Compile Include="ActivityPeriodsMergerTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TestUtilities.cs" />
+    <Compile Include="UserActivityCheckerTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

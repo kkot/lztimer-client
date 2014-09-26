@@ -1,21 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Windows.Forms;
 
 namespace kkot.LzTimer
 {
-    /*
-    interface UserActivityEventListner
-    {
-        void ActivityOccured(DateTime time);
-        void SuspesionOccured(DateTime time);
-        void TimePassed(DateTime time);
-    }
-     */
-
     public class Period : IComparable
     {
         public DateTime Start { get; private set; }
@@ -103,42 +95,7 @@ namespace kkot.LzTimer
 
     public interface ActivityPeriodsListener
     {
-        void ActivityPeriod(Period period);
-
-        void IdlePeriod(Period period);
-
-        void SuspendPeriod(Period period);
-    }
-
-    public class MergingPeriodList
-    {
-        private readonly IList<Period> periods = new List<Period>();
-
-        public Period Add(Period period)
-        {
-            return merge(period);
-        }
-
-        private Period merge(Period aPeriod)
-        {
-            foreach (var period in periods.ToArray())
-            {
-                if (period.CanBeMerged(aPeriod, 1))
-                {
-                    periods.Remove(period);
-                    var merged = period.Merge(aPeriod);
-                    periods.Add(merged);
-                    return merged;
-                }
-            }
-            periods.Add(aPeriod);
-            return aPeriod;
-        }
-
-        public List<Period> List
-        {
-            get { return new List<Period>(periods); } 
-        }
+        void PeriodPassed(Period period);
     }
 
     interface PeriodStorage
@@ -189,6 +146,14 @@ namespace kkot.LzTimer
                 Where(period => period.GetType() == typeof (ActivePeriod)).
                 Max();
         }
+    }
+
+    // TODO: parametry
+    public class TimeTablePolicies
+    {
+        public TimeSpan idleTimeout { get; set; }
+
+        public TimeSpan indleTimeoutPenalty { get; set; } 
     }
 
     public class TimeTable
@@ -245,45 +210,5 @@ namespace kkot.LzTimer
                     return last;
             }
         }
-    }
-
-    public class ActivityPeriodsMerger : ActivityPeriodsListener
-    {
-        private ActivityPeriodsListener listener;
-        private readonly MergingPeriodList mergingPeriodList = new MergingPeriodList();
-
-        public ActivityPeriodsMerger()
-        {
-        }
-
-        public void addActivityPeriodListener(ActivityPeriodsListener aListener)
-        {
-            this.listener = aListener;
-        }
-
-        public void ActivityPeriod(Period aPeriod)
-        {
-            var period = mergingPeriodList.Add(aPeriod);
-            listener.ActivityPeriod(period);
-        }
-
-        public void IdlePeriod(Period period)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void SuspendPeriod(Period period)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-    class CurrentActivityMeasurer
-    {
-        private int activeTodaySecs;
-
-        private int lastBreakSecs;
-
-        private int activeSecs;
     }
 }

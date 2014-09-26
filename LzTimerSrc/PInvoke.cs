@@ -6,12 +6,12 @@ using System.Runtime.InteropServices;
 
 namespace kkot.LzTimer
 {
-    class PInvoke
+    public class PInvoke
     {
         [DllImport("user32.dll")]
         public static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);
 
-        internal struct LASTINPUTINFO
+        public struct LASTINPUTINFO
         {
             public uint cbSize;
             public uint dwTime;

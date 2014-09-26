@@ -58,7 +58,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ActivityDetector.cs" />
+    <Compile Include="TimeTable.cs" />
     <Compile Include="DataStoreManager.cs" />
     <Compile Include="FullscreenDetector.cs" />
     <Compile Include="Helpers.cs" />
@@ -79,6 +79,7 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="UserActivityChecker.cs" />
     <EmbeddedResource Include="HistoryForm.resx">
       <DependentUpon>HistoryForm.cs</DependentUpon>
     </EmbeddedResource>
