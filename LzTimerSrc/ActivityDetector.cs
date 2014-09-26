@@ -20,11 +20,13 @@ namespace kkot.LzTimer
     {
         public DateTime Start { get; private set; }
         public DateTime End { get; private set; }
+        public TimeSpan Length { get; private set; }
 
         protected Period(DateTime @start, DateTime end)
         {
             this.Start = start;
             this.End = end;
+            this.Length = end - start;
         }
 
         public bool CanBeMerged(Period aPeriod, int seconds)
@@ -146,6 +148,8 @@ namespace kkot.LzTimer
 
         SortedSet<Period> getAll();
         SortedSet<Period> getFromPeriod(Period period);
+        Period getLast();
+        Period getLastActive();
     }
 
     class MemoryPeriodStorage : PeriodStorage
@@ -173,16 +177,30 @@ namespace kkot.LzTimer
                 p.Start >= period.Start && 
                 p.End <= period.End));
         }
+
+        public Period getLast()
+        {
+            return periods.Last();
+        }
+
+        public Period getLastActive()
+        {
+            return periods.
+                Where(period => period.GetType() == typeof (ActivePeriod)).
+                Max();
+        }
     }
 
     public class TimeTable
     {
         private readonly PeriodStorage periodStorage = new MemoryPeriodStorage();
         private readonly int idleTimeoutSecs;
+        private readonly int shortIdle;
 
-        public TimeTable(int idleTimeoutSecs)
+        public TimeTable(int idleTimeoutSecs, int shortIdle)
         {
             this.idleTimeoutSecs = idleTimeoutSecs;
+            this.shortIdle = shortIdle;
         }
 
         public Period Add(Period period)
@@ -218,7 +236,13 @@ namespace kkot.LzTimer
         {
             get
             {
-                return periodStorage.getAll().Last();
+                var last = periodStorage.getLast();
+                var lastActive = periodStorage.getLastActive();
+
+                if (last is IdlePeriod && last.Length.Seconds < shortIdle)
+                    return lastActive.Merge(last);
+                else
+                    return last;
             }
         }
     }

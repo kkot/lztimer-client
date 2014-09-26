@@ -202,7 +202,7 @@ namespace LzTimerTests
             [TestInitializeAttribute]
             public void setUp()
             {
-                timeTableSUT = new TimeTable(IDLE_TIMEOUT);
+                timeTableSUT = new TimeTable(IDLE_TIMEOUT, SHORT_IDLE);
             }
 
             [TestClass]
@@ -326,7 +326,7 @@ namespace LzTimerTests
                 }
 
                 [TestMethod]
-                public void whenLastIdlePeriodIsShort_shouldBeEqualLengthOfLastActiveAndIdlePeriod()
+                public void whenLastIdlePeriodIsShort_shouldBeEqualLengthOfLastActivePlusIdlePeriod()
                 {
                     var period1 = PeriodBuilder.New(START).Length(10).Active();
                     var period2 = PeriodBuilder.NewAfter(period1).Length(SHORT_IDLE-1).Idle();
@@ -336,6 +336,18 @@ namespace LzTimerTests
 
                     var merged = new ActivePeriod(period1.Start, period2.End);
                     Assert.AreEqual(merged, timeTableSUT.CurrentPeriod);
+                }
+
+                [TestMethod]
+                public void whenLastIdlePeriodIsLong_shouldBeEqualLengthOfLastIdle()
+                {
+                    var period1Active = PeriodBuilder.New(START).Length(10).Active();
+                    var period2Idle = PeriodBuilder.NewAfter(period1Active).Length(SHORT_IDLE + 1).Idle();
+
+                    timeTableSUT.Add(period1Active);
+                    timeTableSUT.Add(period2Idle);
+
+                    Assert.AreEqual(period2Idle, timeTableSUT.CurrentPeriod);
                 }
             }
         }
