@@ -66,4 +66,17 @@ namespace LzTimerTests
             return new ActivePeriod(Start, End);
         }
     }
+
+    public static class TestExensionMethods
+    {
+        public static TimeSpan secs(this int seconds)
+        {
+            return TimeSpan.FromSeconds(seconds);
+        }
+
+        public static TimeSpan milisec(this int miliseconds)
+        {
+            return TimeSpan.FromMilliseconds(miliseconds);
+        }
+    }
 }

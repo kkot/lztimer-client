@@ -13,7 +13,9 @@ namespace LzTimerTests
 {
     public class TimeTableTests
     {
-        private static readonly DateTime START = new DateTime(2014, 1, 1, 12, 0, 0, 0);
+        private static readonly DateTime MIDDAY = new DateTime(2014, 1, 1, 12, 0, 0, 0);
+        private static readonly DateTime MIDNIGHT_BEFORE = new DateTime(2014, 1, 1, 0, 0, 0, 0);
+        private static readonly TimePeriod WHOLE_DAY = new TimePeriod(MIDDAY.AddHours(-12), MIDDAY.AddHours(12));
 
         [TestClass]
         public class TimeTableTest
@@ -34,7 +36,7 @@ namespace LzTimerTests
                 [TestMethod]
                 public void singlePeriodShouldBeStoredAndReterned()
                 {
-                    var period = PeriodBuilder.New(START).Active();
+                    var period = PeriodBuilder.New(MIDDAY).Active();
 
                     var merged = timeTableSUT.Add(period);
 
@@ -46,7 +48,7 @@ namespace LzTimerTests
                 [TestMethod]
                 public void twoCloseActivePeriodShouldBeMerged()
                 {
-                    var period1 = PeriodBuilder.New(START).Active();
+                    var period1 = PeriodBuilder.New(MIDDAY).Active();
                     var period2 = PeriodBuilder.NewAfter(period1, secs(IDLE_TIMEOUT_SECS - 1)).Active();
 
                     timeTableSUT.Add(period1);
@@ -61,7 +63,7 @@ namespace LzTimerTests
                 [TestMethod]
                 public void twoCloseIdlePeriodShouldBeMerged()
                 {
-                    var period1 = PeriodBuilder.New(START).Active();
+                    var period1 = PeriodBuilder.New(MIDDAY).Active();
                     var period2 = PeriodBuilder.NewAfter(period1, mili(10)).Idle();
                     var period3 = PeriodBuilder.NewAfter(period2, mili(10)).Idle();
 
@@ -77,7 +79,7 @@ namespace LzTimerTests
                 [TestMethod]
                 public void twoDistantActivePeriodShouldNotBeMerged()
                 {
-                    var period1 = PeriodBuilder.New(START).Active();
+                    var period1 = PeriodBuilder.New(MIDDAY).Active();
                     var period2 = PeriodBuilder.NewAfter(period1, secs(IDLE_TIMEOUT_SECS + 1)).Active();
 
                     var returned1 = timeTableSUT.Add(period1);
@@ -91,7 +93,7 @@ namespace LzTimerTests
                 [TestMethod]
                 public void twoCloseActiveAndIdlePeriodShouldNotBeMerged()
                 {
-                    var period1 = PeriodBuilder.New(START).Active();
+                    var period1 = PeriodBuilder.New(MIDDAY).Active();
                     var period2 = PeriodBuilder.NewAfter(period1, secs(IDLE_TIMEOUT_SECS - 1)).Idle();
 
                     timeTableSUT.Add(period1);
@@ -103,7 +105,7 @@ namespace LzTimerTests
                 [TestMethod]
                 public void twoCloseActivePeriodEnclosingIdlePeriodShouldBeMerged()
                 {
-                    var period1 = PeriodBuilder.New(START).Active();
+                    var period1 = PeriodBuilder.New(MIDDAY).Active();
                     var period2 = PeriodBuilder.NewAfter(period1).Idle();
                     var period3 = PeriodBuilder.NewAfter(period2).Active();
 
@@ -124,7 +126,7 @@ namespace LzTimerTests
                 [TestMethod]
                 public void whenLastPeriodActive_shouldBeEqualLengthOfLastPeriod()
                 {
-                    var period1 = PeriodBuilder.New(START).Length(secs(10)).Active();
+                    var period1 = PeriodBuilder.New(MIDDAY).Length(secs(10)).Active();
                     var period2 = PeriodBuilder.NewAfter(period1).Length(secs(10)).Active();
 
                     timeTableSUT.Add(period1);
@@ -137,7 +139,7 @@ namespace LzTimerTests
                 [TestMethod]
                 public void whenLastIdlePeriodIsShort_shouldBeEqualLengthOfLastActivePlusIdlePeriod()
                 {
-                    var period1 = PeriodBuilder.New(START).Length(secs(10)).Active();
+                    var period1 = PeriodBuilder.New(MIDDAY).Length(secs(10)).Active();
                     var period2 = PeriodBuilder.NewAfter(period1).Length(secs(SHORT_IDLE_SECS-1)).Idle();
 
                     timeTableSUT.Add(period1);
@@ -150,7 +152,7 @@ namespace LzTimerTests
                 [TestMethod]
                 public void whenLastIdlePeriodIsLong_shouldBeEqualLengthOfLastIdle()
                 {
-                    var period1Active = PeriodBuilder.New(START).Length(secs(10)).Active();
+                    var period1Active = PeriodBuilder.New(MIDDAY).Length(secs(10)).Active();
                     var period2Idle = PeriodBuilder.NewAfter(period1Active).Length(secs(SHORT_IDLE_SECS+1)).Idle();
 
                     timeTableSUT.Add(period1Active);
@@ -164,6 +166,8 @@ namespace LzTimerTests
             public class UserActivityReporterTests : TimeTableTest
             {
                 private ActivityStatsReporter activityStatsReporterSUT;
+                private DateTime PREVIOS_MIDDAY = MIDDAY.AddDays(-1);
+                private DateTime NEXT_MIDDAY = MIDDAY.AddDays(1);
 
                 [TestInitializeAttribute]
                 public override void setUp()
@@ -173,17 +177,60 @@ namespace LzTimerTests
                 }
 
                 [TestMethod]
-                public void whenOnePeriodIsInRage_timeSpanShouldBePeriodLength()
+                public void whenOneActivePeriodIsInRage_timeSpanShouldBePeriodLength()
                 {
-                    var period = PeriodBuilder.New(START).Active();
+                    var period = PeriodBuilder.New(MIDDAY).Active();
 
                     timeTableSUT.Add(period);
 
-                    DateTime start = period.Start.AddHours(-1);
-                    DateTime end = period.End.AddHours(1);
-
-                    Assert.AreEqual(period.Length, activityStatsReporterSUT.GetTotalActiveTimespan(start, end));         
+                    Assert.AreEqual(period.Length, activityStatsReporterSUT.GetTotalActiveTimespan(WHOLE_DAY));         
                 }
+
+                [TestMethod]
+                public void whenOneIdlePeriodIsInRage_timeSpanShouldBeZero()
+                {
+                    var period = PeriodBuilder.New(MIDDAY).Idle();
+
+                    timeTableSUT.Add(period);
+
+                    Assert.AreEqual(TimeSpan.Zero, activityStatsReporterSUT.GetTotalActiveTimespan(WHOLE_DAY));
+                }
+
+                [TestMethod]
+                public void whenPeriodsNotInRage_timeSpanShouldBeZeroLength()
+                {
+                    var period1 = PeriodBuilder.New(NEXT_MIDDAY).Active();
+                    var period2 = PeriodBuilder.New(PREVIOS_MIDDAY).Active();
+
+                    timeTableSUT.Add(period1);
+                    timeTableSUT.Add(period2);
+
+                    Assert.AreEqual(TimeSpan.Zero, activityStatsReporterSUT.GetTotalActiveTimespan(WHOLE_DAY));
+                }
+
+                [TestMethod]
+                public void onlyActivePeriodInRangeShouldBeCounted()
+                {
+                    var periodBeforeActive = PeriodBuilder.New(PREVIOS_MIDDAY).Length(8.secs()).Active();
+                    var periodBeforeIdle = PeriodBuilder.NewAfter(periodBeforeActive).Length(9.secs()).Idle();
+
+                    var periodAfterIdle = PeriodBuilder.New(NEXT_MIDDAY).Length(10.secs()).Idle();
+                    var periodAfterActive = PeriodBuilder.NewAfter(periodBeforeActive).Length(11.secs()).Active();
+
+                    var periodTodayIdle = PeriodBuilder.New(MIDDAY).Length(12.secs()).Idle();
+                    var periodTodayActive = PeriodBuilder.NewAfter(periodTodayIdle).Length(13.secs()).Active();
+
+                    timeTableSUT.Add(periodBeforeActive);
+                    timeTableSUT.Add(periodBeforeIdle);
+                    timeTableSUT.Add(periodAfterIdle);
+                    timeTableSUT.Add(periodAfterActive);
+                    timeTableSUT.Add(periodTodayIdle);
+                    timeTableSUT.Add(periodTodayActive);
+
+                    var expected = 13.secs();
+                    Assert.AreEqual(expected, activityStatsReporterSUT.GetTotalActiveTimespan(WHOLE_DAY));
+                }
+
 
             }
         }

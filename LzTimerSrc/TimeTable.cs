@@ -8,40 +8,18 @@ using System.Windows.Forms;
 
 namespace kkot.LzTimer
 {
-    public class Period : IComparable
+    public class TimePeriod : IComparable
     {
-        public DateTime Start { get; private set; }
-        public DateTime End { get; private set; }
-        public TimeSpan Length { get; private set; }
-
-        protected Period(DateTime @start, DateTime end)
+        public TimePeriod(DateTime @start, DateTime end)
         {
             this.Start = start;
             this.End = end;
             this.Length = end - start;
         }
 
-        public bool CanBeMerged(Period aPeriod, int seconds)
-        {
-            if (GetType() != aPeriod.GetType())
-            {
-                return false;
-            }
-
-            if (Math.Abs((End - aPeriod.Start).TotalSeconds) <= seconds ||
-                Math.Abs((Start - aPeriod.End).TotalSeconds) <= seconds)
-            {
-                return true;
-            }
-            return false;
-        }
-
-        virtual public Period Merge(Period aPeriod)
-        {
-            var start = Start < aPeriod.Start ? Start : aPeriod.Start;
-            var end = End > aPeriod.End ? End : aPeriod.End;
-            return new Period(start, end);
-        }
+        public DateTime Start { get; private set; }
+        public DateTime End { get; private set; }
+        public TimeSpan Length { get; private set; }
 
         public override string ToString()
         {
@@ -67,6 +45,35 @@ namespace kkot.LzTimer
         {
             Period period = (Period) obj;
             return Start.CompareTo(period.Start);
+        }
+    }
+
+    public class Period : TimePeriod
+    {
+        protected Period(DateTime @start, DateTime end) : base(start, end)
+        {
+        }
+
+        public bool CanBeMerged(Period aPeriod, int seconds)
+        {
+            if (GetType() != aPeriod.GetType())
+            {
+                return false;
+            }
+
+            if (Math.Abs((End - aPeriod.Start).TotalSeconds) <= seconds ||
+                Math.Abs((Start - aPeriod.End).TotalSeconds) <= seconds)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        virtual public Period Merge(Period aPeriod)
+        {
+            var start = Start < aPeriod.Start ? Start : aPeriod.Start;
+            var end = End > aPeriod.End ? End : aPeriod.End;
+            return new Period(start, end);
         }
     }
 
@@ -104,7 +111,7 @@ namespace kkot.LzTimer
         void Remove(Period period);
 
         SortedSet<Period> getAll();
-        SortedSet<Period> getFromPeriod(Period period);
+        SortedSet<Period> getFromPeriod(TimePeriod period);
         Period getLast();
         Period getLastActive();
     }
@@ -128,7 +135,7 @@ namespace kkot.LzTimer
             periods.Add(period);
         }
 
-        public SortedSet<Period> getFromPeriod(Period period)
+        public SortedSet<Period> getFromPeriod(TimePeriod period)
         {
             return new SortedSet<Period>(periods.Where(p => 
                 p.Start >= period.Start && 
@@ -208,15 +215,24 @@ namespace kkot.LzTimer
                 return last;
         }
 
-        public TimeSpan GetTotalActiveTimespan(DateTime begin, DateTime end)
+        public TimeSpan GetTotalActiveTimespan(TimePeriod timePeriod)
         {
-            return GetCurrentPeriod().Length;
+            var activePeriods = 
+                periodStorage.getFromPeriod(timePeriod).
+                Where(e => e is ActivePeriod);
+
+            var sum = new TimeSpan();
+            foreach (ActivePeriod period in activePeriods)
+            {
+                sum += period.Length;
+            }
+            return sum;
         }
     }
 
     public interface ActivityStatsReporter
     {
-        TimeSpan GetTotalActiveTimespan(DateTime begin, DateTime end);
+        TimeSpan GetTotalActiveTimespan(TimePeriod timePeriod);
 
         Period GetCurrentPeriod();
     }
