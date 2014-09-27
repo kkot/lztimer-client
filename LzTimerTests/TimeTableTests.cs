@@ -21,13 +21,18 @@ namespace LzTimerTests
         public class TimeTableTest
         {
             protected TimeTable timeTableSUT;
-            protected const int IDLE_TIMEOUT_SECS = 5;
-            protected const int SHORT_IDLE_SECS = 3;
+            protected readonly TimeSpan IDLE_TIMEOUT_SECS = 5.secs();
+            protected readonly TimeSpan SHORT_IDLE_SECS = 3.secs();
 
             [TestInitializeAttribute]
             public virtual void setUp()
             {
-                timeTableSUT = new TimeTable(IDLE_TIMEOUT_SECS, SHORT_IDLE_SECS);
+                TimeTablePolicies policies = new TimeTablePolicies()
+                {
+                    IdleTimeout = IDLE_TIMEOUT_SECS,
+                    IdleTimeoutPenalty = SHORT_IDLE_SECS
+                };
+                timeTableSUT = new TimeTable(policies);
             }
 
             [TestClass]
@@ -49,7 +54,7 @@ namespace LzTimerTests
                 public void twoCloseActivePeriodShouldBeMerged()
                 {
                     var period1 = PeriodBuilder.New(MIDDAY).Active();
-                    var period2 = PeriodBuilder.NewAfter(period1, secs(IDLE_TIMEOUT_SECS - 1)).Active();
+                    var period2 = PeriodBuilder.NewAfter(period1, IDLE_TIMEOUT_SECS - 1.secs()).Active();
 
                     timeTableSUT.Add(period1);
                     timeTableSUT.Add(period2);
@@ -80,7 +85,7 @@ namespace LzTimerTests
                 public void twoDistantActivePeriodShouldNotBeMerged()
                 {
                     var period1 = PeriodBuilder.New(MIDDAY).Active();
-                    var period2 = PeriodBuilder.NewAfter(period1, secs(IDLE_TIMEOUT_SECS + 1)).Active();
+                    var period2 = PeriodBuilder.NewAfter(period1, IDLE_TIMEOUT_SECS + 1.secs()).Active();
 
                     var returned1 = timeTableSUT.Add(period1);
                     var returned2 = timeTableSUT.Add(period2);
@@ -94,7 +99,7 @@ namespace LzTimerTests
                 public void twoCloseActiveAndIdlePeriodShouldNotBeMerged()
                 {
                     var period1 = PeriodBuilder.New(MIDDAY).Active();
-                    var period2 = PeriodBuilder.NewAfter(period1, secs(IDLE_TIMEOUT_SECS - 1)).Idle();
+                    var period2 = PeriodBuilder.NewAfter(period1, IDLE_TIMEOUT_SECS - 1.secs()).Idle();
 
                     timeTableSUT.Add(period1);
                     timeTableSUT.Add(period2);
@@ -140,7 +145,7 @@ namespace LzTimerTests
                 public void whenLastIdlePeriodIsShort_shouldBeEqualLengthOfLastActivePlusIdlePeriod()
                 {
                     var period1 = PeriodBuilder.New(MIDDAY).Length(secs(10)).Active();
-                    var period2 = PeriodBuilder.NewAfter(period1).Length(secs(SHORT_IDLE_SECS-1)).Idle();
+                    var period2 = PeriodBuilder.NewAfter(period1).Length(SHORT_IDLE_SECS - 1.secs()).Idle();
 
                     timeTableSUT.Add(period1);
                     timeTableSUT.Add(period2);
@@ -153,7 +158,7 @@ namespace LzTimerTests
                 public void whenLastIdlePeriodIsLong_shouldBeEqualLengthOfLastIdle()
                 {
                     var period1Active = PeriodBuilder.New(MIDDAY).Length(secs(10)).Active();
-                    var period2Idle = PeriodBuilder.NewAfter(period1Active).Length(secs(SHORT_IDLE_SECS+1)).Idle();
+                    var period2Idle = PeriodBuilder.NewAfter(period1Active).Length(SHORT_IDLE_SECS + 1.secs()).Idle();
 
                     timeTableSUT.Add(period1Active);
                     timeTableSUT.Add(period2Idle);

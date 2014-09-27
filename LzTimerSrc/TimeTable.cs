@@ -54,15 +54,15 @@ namespace kkot.LzTimer
         {
         }
 
-        public bool CanBeMerged(Period aPeriod, int seconds)
+        public bool CanBeMerged(Period aPeriod, TimeSpan aTimeoutPeriod)
         {
             if (GetType() != aPeriod.GetType())
             {
                 return false;
             }
 
-            if (Math.Abs((End - aPeriod.Start).TotalSeconds) <= seconds ||
-                Math.Abs((Start - aPeriod.End).TotalSeconds) <= seconds)
+            if (((End - aPeriod.Start).Duration() <= aTimeoutPeriod) ||
+                ((Start - aPeriod.End).Duration() <= aTimeoutPeriod))
             {
                 return true;
             }
@@ -158,21 +158,19 @@ namespace kkot.LzTimer
     // TODO: parametry
     public class TimeTablePolicies
     {
-        public TimeSpan idleTimeout { get; set; }
+        public TimeSpan IdleTimeout { get; set; }
 
-        public TimeSpan indleTimeoutPenalty { get; set; } 
+        public TimeSpan IdleTimeoutPenalty { get; set; } 
     }
 
     public class TimeTable : ActivityStatsReporter, ActivityPeriodsListener
     {
         private readonly PeriodStorage periodStorage = new MemoryPeriodStorage();
-        private readonly int idleTimeoutSecs;
-        private readonly int shortIdle;
+        private readonly TimeTablePolicies policies;
 
-        public TimeTable(int idleTimeoutSecs, int shortIdle)
+        public TimeTable(TimeTablePolicies policies)
         {
-            this.idleTimeoutSecs = idleTimeoutSecs;
-            this.shortIdle = shortIdle;
+            this.policies = policies;
         }
 
         public Period Add(Period period)
@@ -184,7 +182,7 @@ namespace kkot.LzTimer
         {
             foreach (var period in periodStorage.getAll())
             {
-                if (period.CanBeMerged(aPeriod, idleTimeoutSecs))
+                if (period.CanBeMerged(aPeriod, policies.IdleTimeout))
                 {
                     var merged = period.Merge(aPeriod);
                     foreach(Period innerPeriod in periodStorage.getFromPeriod(merged))
@@ -209,7 +207,7 @@ namespace kkot.LzTimer
             var last = periodStorage.getLast();
             var lastActive = periodStorage.getLastActive();
 
-            if (last is IdlePeriod && last.Length.Seconds < shortIdle)
+            if (last is IdlePeriod && last.Length < policies.IdleTimeoutPenalty)
                 return lastActive.Merge(last);
             else
                 return last;

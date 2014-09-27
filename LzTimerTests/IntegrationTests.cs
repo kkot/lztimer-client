@@ -18,20 +18,24 @@ namespace LzTimerTests
         private TimeTable timeTable;
         private SimpleClock clockStub;
         private LastActivityProbeStub probeStub;
+        private TimeTablePolicies policies;
 
         [TestInitializeAttribute]
         public void setUp()
         {
+            policies  = new TimeTablePolicies() {IdleTimeoutPenalty = 30.secs()};
             probeStub = new LastActivityProbeStub();
             clockStub = new SimpleClock();
-            timeTable = new TimeTable(600, 30);
+            timeTable = new TimeTable(policies);
             userActivityChecker = new UserActivityChecker(probeStub, clockStub);
             userActivityChecker.setActivityListner(timeTable);
         }
 
         [TestMethod]
-        public void afterTwoCheckWithActivity_totalActiveTimespanShouldBe1secs()
+        public void checkIdleMerged()
         {
+            policies.IdleTimeout = 30.secs();
+
             var timePeriod = TestActivity(new[] {1, 2, 3});
             Assert.AreEqual(2, timeTable.GetTotalActiveTimespan(timePeriod).TotalSeconds);
 
@@ -39,8 +43,24 @@ namespace LzTimerTests
             Assert.AreEqual(2, timeTable.GetTotalActiveTimespan(timePeriod).TotalSeconds);
 
             timePeriod = TestActivity(new[] { 1, 2, 3, 3, 3, 4 });
-            Assert.AreEqual(3, timeTable.GetTotalActiveTimespan(timePeriod).TotalSeconds);
+            Assert.AreEqual(5, timeTable.GetTotalActiveTimespan(timePeriod).TotalSeconds);
         }
+
+        [TestMethod]
+        public void checkTimeout()
+        {
+            policies.IdleTimeout = 2.secs();
+
+            var timePeriod = TestActivity(new[] { 1, 2, 3, 3, 3, 3, 4 });
+            Assert.AreEqual(3, timeTable.GetTotalActiveTimespan(timePeriod).TotalSeconds);
+
+            policies.IdleTimeout = 4.secs();
+
+            timePeriod = TestActivity(new[] { 1, 2, 3, 3, 3, 3, 4 });
+            Assert.AreEqual(6, timeTable.GetTotalActiveTimespan(timePeriod).TotalSeconds);
+        }
+
+
 
         private TimePeriod TestActivity(int[] activityChecks)
         {

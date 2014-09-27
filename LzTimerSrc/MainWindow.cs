@@ -54,7 +54,9 @@ namespace kkot.LzTimer
             MoveToBottomRight();
 
             this.userActivityChecker = new UserActivityChecker(new Win32LastActivityProbe(), new SystemClock());
-            TimeTable timeTable = new TimeTable(600, 30);
+
+            var defaultPolicies = new TimeTablePolicies() {IdleTimeout = TimeSpan.FromMinutes(5), IdleTimeoutPenalty = TimeSpan.FromSeconds(30)};
+            TimeTable timeTable = new TimeTable(defaultPolicies);
             this.userActivityChecker.setActivityListner(timeTable);
 
             this.activityStats = timeTable;
