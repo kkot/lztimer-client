@@ -8,6 +8,14 @@ namespace kkot.LzTimer
         DateTime CurrentTime();
     }
 
+    public class SystemClock : Clock
+    {
+        public DateTime CurrentTime()
+        {
+            return DateTime.Now;
+        }
+    }
+
     public class UserActivityChecker
     {
         private readonly LastActivityProbe probe;

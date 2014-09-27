@@ -163,7 +163,7 @@ namespace kkot.LzTimer
         public TimeSpan indleTimeoutPenalty { get; set; } 
     }
 
-    public class TimeTable : ActivityStatsReporter
+    public class TimeTable : ActivityStatsReporter, ActivityPeriodsListener
     {
         private readonly PeriodStorage periodStorage = new MemoryPeriodStorage();
         private readonly int idleTimeoutSecs;
@@ -227,6 +227,11 @@ namespace kkot.LzTimer
                 sum += period.Length;
             }
             return sum;
+        }
+
+        public void PeriodPassed(Period period)
+        {
+            this.Add(period);
         }
     }
 

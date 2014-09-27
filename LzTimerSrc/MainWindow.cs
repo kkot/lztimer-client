@@ -11,12 +11,6 @@ namespace kkot.LzTimer
 {
     public partial class MainWindow : Form
     {
-        private bool workingMode = false;
-        private int secondsAfterLastActivity = 0;
-        private int secondsAfterLastBreak = 0;
-        private int prevLastInputTick = 0;
-        private DateTime lastTickTime;
-
         private int initialWidth;
         private int initialHeight;
 
@@ -30,7 +24,8 @@ namespace kkot.LzTimer
         private Icon alldayIcon;
 
         private SoundPlayer soundPlayer;
-        private FullscreenDetector fullscreenDetector;
+        private ActivityStatsReporter activityStats;
+        private UserActivityChecker userActivityChecker;
 
         public MainWindow()
         {
@@ -41,11 +36,9 @@ namespace kkot.LzTimer
         {
             UpdateFunWorkIcons(0);
             setNotifyIcon(null);
-            addSecondsToActiveTime(0);
 
             initialHeight = Height;
             initialWidth = Width;
-            prevLastInputTick = Helpers.GetLastInputTicks();
 
             // loading configuration
             intervalTextBox.Text = Properties.Settings.Default.MaxIdleMinutes.ToString();
@@ -53,94 +46,29 @@ namespace kkot.LzTimer
             timer1.Enabled = true;
 
             soundPlayer = new SoundPlayer();
-            fullscreenDetector = new FullscreenDetector();
 
-            // rejestruje klawiszs
+            // rejestruje klawisze
             ShortcutsManager.RegisterHotKey(this, Keys.Z, ShortcutsManager.MOD_WIN);
             ShortcutsManager.RegisterHotKey(this, Keys.A, ShortcutsManager.MOD_WIN);
 
             MoveToBottomRight();
-        }
 
-        private bool IsLastPeriodActive()
-        {
-            int lastInputTicks = Helpers.GetLastInputTicks();
-            bool result = (lastInputTicks != prevLastInputTick) ? true : false;
-            prevLastInputTick = lastInputTicks;
+            this.userActivityChecker = new UserActivityChecker(new Win32LastActivityProbe(), new SystemClock());
+            TimeTable timeTable = new TimeTable(600, 30);
+            this.userActivityChecker.setActivityListner(timeTable);
 
-            if (fullscreenDetector.IsForegroundWindowFullScreen()) // tested with VLC and Smplayer
-            {
-                result = true;
-                prevLastInputTick = 0; // value other than last one
-            }
-
-            // debug
-            //if (result == true) soundPlayer.Play();
-
-            return result;
+            this.activityStats = timeTable;
         }
 
         //##################################################################
 
         private void timer1_Tick(object sender, EventArgs e)
         {
-            DateTime now = DateTime.Now;
-            if (lastTickTime.Ticks == 0)
-            {
-                lastTickTime = now;
-                return;
-            }
+            userActivityChecker.check();
 
-            bool lastPeriodActive = IsLastPeriodActive();
-
-            // when the computer is suspended, this function is not called
-            long milisecondsPassed = (now.Ticks - lastTickTime.Ticks) / 10000;
-            lastTickTime = now;
-            int secondsPassed;
-            if (milisecondsPassed > 900 && milisecondsPassed < 1100)
-                secondsPassed = 1;
-            else
-            {
-                secondsPassed = (int)(milisecondsPassed / 1000);
-                lastPeriodActive = false; // suspended
-            }
-
-            secondsAfterLastActivity += secondsPassed;
-            secondsAfterLastBreak += secondsPassed;
-
-            if (secondsAfterLastBreak % 60 == 1)
-            {
-                int minutes = (secondsAfterLastBreak / 60);
-                UpdateFunWorkIcons(minutes);
-            }
-
-            if (secondsAfterLastActivity == (60 * Properties.Settings.Default.MaxIdleMinutes - 30))
-            {
-                soundPlayer.Play();
-            }
-
-            bool breakOccured = (secondsAfterLastActivity > (60 * Properties.Settings.Default.MaxIdleMinutes)) ? true : false;
-            if (breakOccured)
-            {
-                setNotifyIcon(null);
-                secondsAfterLastBreak = 0;
-            }
-
-            if (lastPeriodActive)
-            {
-                setNotifyIcon(workingMode);       
-                if (! breakOccured)
-                {
-                    addSecondsToActiveTime(secondsAfterLastActivity);
-                }
-                else
-                {
-                    String lastBreakLength = Helpers.SecondsToHMS(secondsAfterLastActivity);
-                    notifyIcon1.ShowBalloonTip(10, "leave", "time "+lastBreakLength, ToolTipIcon.Info);
-                    addSecondsToActiveTime(30);
-                }
-                secondsAfterLastActivity = 0;
-            }
+            int activityLength = (int)activityStats.GetTotalActiveTimespan(new TimePeriod(DateTime.Today.AddDays(-1), DateTime.Today.AddDays(1))).TotalSeconds;
+            UpdateFunWorkIcons(activityLength);
+            updateTimeLabels(activityLength, activityLength);
         }
 
         private void UpdateFunWorkIcons(int minutes)
@@ -213,44 +141,14 @@ namespace kkot.LzTimer
             }
         }
 
-        class HoursMinutes
+        private void updateTimeLabels(int numOfFunSeconds, int secondsAfterLastBreak)
         {
-            public int Hours { get; private set; }
-            public int Minutes { get; private set; }
+            int numOfSumSeconds = numOfFunSeconds;
 
-            public HoursMinutes(int seconds)
-            {
-                Hours = (seconds) / (60 * 60);
-                Minutes = (seconds - Hours * 60 * 60) / (60);   
-            }
-        }
-
-        private void addSecondsToActiveTime(int secondsAfterLastActivity)
-        {
-            String shortDateStr = Helpers.NowShortDateString();
-
-            int numOfWorkSeconds;
-            int numOfFunSeconds;
-            DataStoreManager.ReadAndUpdateNumOfSeconds(workingMode, secondsAfterLastActivity, shortDateStr, out numOfWorkSeconds, out numOfFunSeconds);
-
-            updateTimeLabels(numOfWorkSeconds, numOfFunSeconds);
-
-            int totalTime = numOfWorkSeconds + numOfFunSeconds;
-            var hoursMinutes = new HoursMinutes(totalTime);
-            
-            UpdateAlldayIcon(hoursMinutes.Hours, hoursMinutes.Minutes);
-        }
-
-        private void updateTimeLabels(int numOfWorkSeconds, int numOfFunSeconds)
-        {
-            int numOfSumSeconds = numOfWorkSeconds + numOfFunSeconds;
-
-            workTimeLabel.Text = Helpers.SecondsToHMS(numOfWorkSeconds);
             funTimeLabel.Text  = Helpers.SecondsToHMS(numOfFunSeconds);
-            sumTimeLabel.Text  = Helpers.SecondsToHMS(numOfSumSeconds);
             lastBreakLabel.Text = " "+(secondsAfterLastBreak / 60) + " min";
             
-            string notifyText = "t " + sumTimeLabel.Text
+            string notifyText = "t " + funTimeLabel.Text
                 + "\n"
              //   + "\nf " + funTimeLabel.Text
              //   + "\nw " + workTimeLabel.Text // not used now
@@ -299,11 +197,6 @@ namespace kkot.LzTimer
             {
                 MoveToBottomRight();
             }
-            else if (e.Button == MouseButtons.Right)
-            {
-                workingMode = !workingMode;
-                setNotifyIcon(workingMode);
-            }
         }
 
         protected override void WndProc(ref Message m)
@@ -312,12 +205,7 @@ namespace kkot.LzTimer
 
             if (m.Msg == ShortcutsManager.WM_HOTKEY)
             {
-                if ((int)m.WParam == (int)Keys.Z)
-                {
-                    workingMode = !workingMode;
-                    setNotifyIcon(workingMode);
-                }
-                else if ((int)m.WParam == (int)Keys.A)
+                if ((int)m.WParam == (int)Keys.A)
                 {
                     toggleVisible();
                 }
