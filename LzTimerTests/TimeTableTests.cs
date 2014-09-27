@@ -1,13 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Dynamic;
-using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using kkot.LzTimer;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Telerik.JustMock;
 
 namespace LzTimerTests
 {

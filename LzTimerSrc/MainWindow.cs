@@ -1,11 +1,7 @@
 using System;
 using System.Windows.Forms;
-using System.IO;
 using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Runtime.InteropServices;
 using System.Media;
-using kkot.LzTimer;
 
 namespace kkot.LzTimer
 {

@@ -1,5 +1,4 @@
-﻿using System;
-using kkot.LzTimer;
+﻿using kkot.LzTimer;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace LzTimerTests
