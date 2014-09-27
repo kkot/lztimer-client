@@ -11,7 +11,7 @@ using Telerik.JustMock;
 
 namespace LzTimerTests
 {
-    public class MergingTests
+    public class TimeTableTests
     {
         private static readonly DateTime START = new DateTime(2014, 1, 1, 12, 0, 0, 0);
 
@@ -23,7 +23,7 @@ namespace LzTimerTests
             protected const int SHORT_IDLE_SECS = 3;
 
             [TestInitializeAttribute]
-            public void setUp()
+            public virtual void setUp()
             {
                 timeTableSUT = new TimeTable(IDLE_TIMEOUT_SECS, SHORT_IDLE_SECS);
             }
@@ -119,7 +119,7 @@ namespace LzTimerTests
             }
 
             [TestClass]
-            public class LastActiveLengthTests : TimeTableTest
+            public class LastActivePeriodTests : TimeTableTest
             {
                 [TestMethod]
                 public void whenLastPeriodActive_shouldBeEqualLengthOfLastPeriod()
@@ -131,7 +131,7 @@ namespace LzTimerTests
                     timeTableSUT.Add(period2);
 
                     var merged = new ActivePeriod(period1.Start, period2.End);
-                    Assert.AreEqual(merged, timeTableSUT.CurrentPeriod);
+                    Assert.AreEqual(merged, timeTableSUT.GetCurrentPeriod());
                 }
 
                 [TestMethod]
@@ -144,7 +144,7 @@ namespace LzTimerTests
                     timeTableSUT.Add(period2);
 
                     var merged = new ActivePeriod(period1.Start, period2.End);
-                    Assert.AreEqual(merged, timeTableSUT.CurrentPeriod);
+                    Assert.AreEqual(merged, timeTableSUT.GetCurrentPeriod());
                 }
 
                 [TestMethod]
@@ -156,8 +156,35 @@ namespace LzTimerTests
                     timeTableSUT.Add(period1Active);
                     timeTableSUT.Add(period2Idle);
 
-                    Assert.AreEqual(period2Idle, timeTableSUT.CurrentPeriod);
+                    Assert.AreEqual(period2Idle, timeTableSUT.GetCurrentPeriod());
                 }
+            }
+
+            [TestClass]
+            public class UserActivityReporterTests : TimeTableTest
+            {
+                private ActivityStatsReporter activityStatsReporterSUT;
+
+                [TestInitializeAttribute]
+                public override void setUp()
+                {
+                    base.setUp();
+                    activityStatsReporterSUT = timeTableSUT;
+                }
+
+                [TestMethod]
+                public void whenOnePeriodIsInRage_timeSpanShouldBePeriodLength()
+                {
+                    var period = PeriodBuilder.New(START).Active();
+
+                    timeTableSUT.Add(period);
+
+                    DateTime start = period.Start.AddHours(-1);
+                    DateTime end = period.End.AddHours(1);
+
+                    Assert.AreEqual(period.Length, activityStatsReporterSUT.GetTotalActiveTimespan(start, end));         
+                }
+
             }
         }
 

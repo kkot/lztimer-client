@@ -156,7 +156,7 @@ namespace kkot.LzTimer
         public TimeSpan indleTimeoutPenalty { get; set; } 
     }
 
-    public class TimeTable
+    public class TimeTable : ActivityStatsReporter
     {
         private readonly PeriodStorage periodStorage = new MemoryPeriodStorage();
         private readonly int idleTimeoutSecs;
@@ -197,18 +197,32 @@ namespace kkot.LzTimer
             get { return periodStorage.getAll(); }
         }
 
-        public Period CurrentPeriod
+        public Period GetCurrentPeriod()
         {
-            get
-            {
-                var last = periodStorage.getLast();
-                var lastActive = periodStorage.getLastActive();
+            var last = periodStorage.getLast();
+            var lastActive = periodStorage.getLastActive();
 
-                if (last is IdlePeriod && last.Length.Seconds < shortIdle)
-                    return lastActive.Merge(last);
-                else
-                    return last;
-            }
+            if (last is IdlePeriod && last.Length.Seconds < shortIdle)
+                return lastActive.Merge(last);
+            else
+                return last;
         }
+
+        public TimeSpan GetTotalActiveTimespan(DateTime begin, DateTime end)
+        {
+            return GetCurrentPeriod().Length;
+        }
+    }
+
+    public interface ActivityStatsReporter
+    {
+        TimeSpan GetTotalActiveTimespan(DateTime begin, DateTime end);
+
+        Period GetCurrentPeriod();
+    }
+
+    public class TodayStatsPresenter
+    {
+        
     }
 }

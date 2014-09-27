@@ -45,6 +45,10 @@ namespace LzTimerTests
         {
             return After(period, gap);
         }
+        public PeriodBuilder NewAfter(TimeSpan gap)
+        {
+            return After(Active(), gap);
+        }
 
         public PeriodBuilder Length(TimeSpan length)
         {
