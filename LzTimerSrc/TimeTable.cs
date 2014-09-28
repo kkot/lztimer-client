@@ -101,15 +101,22 @@ namespace kkot.LzTimer
         void PeriodPassed(Period period);
     }
 
-    interface PeriodStorage
+    public interface PeriodsReader
+    {
+        SortedSet<Period> getAll();
+        SortedSet<Period> GetFromPeriod(TimePeriod period);
+        SortedSet<Period> GetPeriodAfter(DateTime dateTime);
+    }
+
+    public interface PeriodsModifier
     {
         void Add(Period period);
         void Remove(Period period);
+    }
 
-        SortedSet<Period> getAll();
-        SortedSet<Period> getFromPeriod(TimePeriod period);
-        Period getLast();
-        Period getLastActive();
+    interface PeriodStorage : PeriodsModifier, PeriodsReader
+    {
+
     }
 
     class MemoryPeriodStorage : PeriodStorage
@@ -131,27 +138,20 @@ namespace kkot.LzTimer
             periods.Add(period);
         }
 
-        public SortedSet<Period> getFromPeriod(TimePeriod period)
+        public SortedSet<Period> GetFromPeriod(TimePeriod period)
         {
             return new SortedSet<Period>(periods.Where(p => 
                 p.Start >= period.Start && 
                 p.End <= period.End));
         }
 
-        public Period getLast()
+        public SortedSet<Period> GetPeriodAfter(DateTime dateTime)
         {
-            return periods.Last();
-        }
-
-        public Period getLastActive()
-        {
-            return periods.
-                Where(period => period.GetType() == typeof (ActivePeriod)).
-                Max();
+            return new SortedSet<Period>(periods.Where(p =>
+                p.Start >= dateTime));
         }
     }
 
-    // TODO: parametry
     public class TimeTablePolicies
     {
         public TimeSpan IdleTimeout { get; set; }
@@ -159,7 +159,7 @@ namespace kkot.LzTimer
         public TimeSpan IdleTimeoutPenalty { get; set; } 
     }
 
-    public class TimeTable : ActivityStatsReporter, ActivityPeriodsListener
+    public class TimeTable : ActivityPeriodsListener, PeriodsReader
     {
         private readonly PeriodStorage periodStorage = new MemoryPeriodStorage();
         private readonly TimeTablePolicies policies;
@@ -181,7 +181,7 @@ namespace kkot.LzTimer
                 if (period.CanBeMerged(aPeriod, policies.IdleTimeout))
                 {
                     var merged = period.Merge(aPeriod);
-                    foreach(Period innerPeriod in periodStorage.getFromPeriod(merged))
+                    foreach(Period innerPeriod in periodStorage.GetFromPeriod(merged))
                     {
                         periodStorage.Remove(innerPeriod);
                     }
@@ -193,26 +193,105 @@ namespace kkot.LzTimer
             return aPeriod;
         }
 
-        public SortedSet<Period> List
+        public void PeriodPassed(Period period)
         {
-            get { return periodStorage.getAll(); }
+            this.Add(period);
+        }
+
+        public SortedSet<Period> getAll()
+        {
+            return periodStorage.getAll();
+        }
+
+        public SortedSet<Period> GetFromPeriod(TimePeriod period)
+        {
+            return periodStorage.GetFromPeriod(period);
+        }
+
+        public SortedSet<Period> GetPeriodAfter(DateTime dateTime)
+        {
+            return periodStorage.GetPeriodAfter(dateTime);
+        }
+    }
+
+    public class Stats
+    {
+        public TimeSpan LastBreak;
+        public Period CurrentPeriod;
+        public TimeSpan TotalToday;
+    }
+
+    public interface StatsReporter
+    {
+        Stats GetStats(DateTime date);
+    }
+
+    public class StatsReporterImpl : StatsReporter
+    {
+        private readonly PeriodsReader periodReader;
+        private readonly TimeSpan idleTimeout;
+        private List<Period> periodsToday;
+
+        public StatsReporterImpl(PeriodsReader periodsReader, TimeSpan idleTimeout)
+        {
+            this.periodReader = periodsReader;
+            this.idleTimeout = idleTimeout;
+        }
+
+        public Stats GetStats(DateTime date)
+        {
+            periodsToday = GetTodayPeriods(date);
+            return new Stats()
+            {
+                CurrentPeriod = GetCurrentPeriod(), 
+                LastBreak = GetLastBreakTimeSpan(), 
+                TotalToday = GetTotalToday()
+            };
+        }
+
+        private List<Period> GetTodayPeriods(DateTime date)
+        {
+            return periodReader.GetPeriodAfter(date).ToList();
         }
 
         public Period GetCurrentPeriod()
         {
-            var last = periodStorage.getLast();
-            var lastActive = periodStorage.getLastActive();
+            if (periodsToday.Count == 0)
+                return new IdlePeriod(DateTime.Now, DateTime.Now);
 
-            if (last is IdlePeriod && last.Length < policies.IdleTimeoutPenalty)
-                return lastActive.Merge(last);
+            if (periodsToday.Count == 1)
+                return Last();
+
+            var last = Last();
+            var beforeLast = BeforeLast();
+
+            if (last is IdlePeriod && last.Length < idleTimeout)
+                return beforeLast.Merge(last);
             else
                 return last;
         }
 
-        public TimeSpan GetTotalActiveTimespan(TimePeriod timePeriod)
+        public TimeSpan GetLastBreakTimeSpan()
         {
-            var activePeriods = 
-                periodStorage.getFromPeriod(timePeriod).
+            if (periodsToday.Count == 0 || periodsToday.Count == 1)
+                return TimeSpan.Zero;
+
+            var last = Last();
+            var beforeLast = BeforeLast();
+
+            if (last is IdlePeriod)
+                return last.Length;
+            else
+                return beforeLast.Length;
+        }
+
+        private TimeSpan GetTotalToday()
+        {
+            if (periodsToday.Count == 0)
+                return TimeSpan.Zero;
+
+            var activePeriods =
+                periodsToday.
                 Where(e => e is ActivePeriod);
 
             var sum = new TimeSpan();
@@ -223,21 +302,15 @@ namespace kkot.LzTimer
             return sum;
         }
 
-        public void PeriodPassed(Period period)
+        private Period BeforeLast()
         {
-            this.Add(period);
+            return periodsToday[periodsToday.Count - 2];
+        }
+
+        private Period Last()
+        {
+            return periodsToday[periodsToday.Count-1];
         }
     }
 
-    public interface ActivityStatsReporter
-    {
-        TimeSpan GetTotalActiveTimespan(TimePeriod timePeriod);
-
-        Period GetCurrentPeriod();
-    }
-
-    public class TodayStatsPresenter
-    {
-        
-    }
 }

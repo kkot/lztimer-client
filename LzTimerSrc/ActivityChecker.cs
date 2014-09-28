@@ -16,7 +16,7 @@ namespace kkot.LzTimer
         }
     }
 
-    public class UserActivityChecker
+    public class ActivityChecker
     {
         private readonly LastActivityProbe probe;
         private readonly Clock clock;
@@ -25,7 +25,7 @@ namespace kkot.LzTimer
         private int? lastInputTick;
         private DateTime lastCheck;
 
-        public UserActivityChecker(LastActivityProbe probe, Clock clock)
+        public ActivityChecker(LastActivityProbe probe, Clock clock)
         {
             this.clock = clock;
             this.probe = probe;

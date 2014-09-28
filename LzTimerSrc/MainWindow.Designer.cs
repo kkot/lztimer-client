@@ -26,7 +26,7 @@ namespace kkot.LzTimer
         private void InitializeComponent() {
             this.components = new System.ComponentModel.Container();
             this.label2 = new System.Windows.Forms.Label();
-            this.funTimeLabel = new System.Windows.Forms.Label();
+            this.todayTimeLabel = new System.Windows.Forms.Label();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.notifyIcon1 = new System.Windows.Forms.NotifyIcon(this.components);
             this.intervalTextBox = new System.Windows.Forms.TextBox();
@@ -44,20 +44,20 @@ namespace kkot.LzTimer
             this.label2.ForeColor = System.Drawing.Color.LimeGreen;
             this.label2.Location = new System.Drawing.Point(12, 9);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(22, 24);
+            this.label2.Size = new System.Drawing.Size(63, 24);
             this.label2.TabIndex = 1;
-            this.label2.Text = "F";
+            this.label2.Text = "Today";
             // 
-            // funTimeLabel
+            // todayTimeLabel
             // 
-            this.funTimeLabel.AutoSize = true;
-            this.funTimeLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
-            this.funTimeLabel.ForeColor = System.Drawing.Color.LimeGreen;
-            this.funTimeLabel.Location = new System.Drawing.Point(76, 9);
-            this.funTimeLabel.Name = "funTimeLabel";
-            this.funTimeLabel.Size = new System.Drawing.Size(31, 24);
-            this.funTimeLabel.TabIndex = 3;
-            this.funTimeLabel.Text = "2h";
+            this.todayTimeLabel.AutoSize = true;
+            this.todayTimeLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
+            this.todayTimeLabel.ForeColor = System.Drawing.Color.LimeGreen;
+            this.todayTimeLabel.Location = new System.Drawing.Point(127, 9);
+            this.todayTimeLabel.Name = "todayTimeLabel";
+            this.todayTimeLabel.Size = new System.Drawing.Size(31, 24);
+            this.todayTimeLabel.TabIndex = 3;
+            this.todayTimeLabel.Text = "2h";
             // 
             // timer1
             // 
@@ -73,7 +73,7 @@ namespace kkot.LzTimer
             // 
             // intervalTextBox
             // 
-            this.intervalTextBox.Location = new System.Drawing.Point(76, 60);
+            this.intervalTextBox.Location = new System.Drawing.Point(76, 64);
             this.intervalTextBox.Name = "intervalTextBox";
             this.intervalTextBox.Size = new System.Drawing.Size(69, 20);
             this.intervalTextBox.TabIndex = 9;
@@ -82,7 +82,7 @@ namespace kkot.LzTimer
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(151, 63);
+            this.label3.Location = new System.Drawing.Point(151, 67);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(23, 13);
             this.label3.TabIndex = 10;
@@ -90,7 +90,7 @@ namespace kkot.LzTimer
             // 
             // historyButton
             // 
-            this.historyButton.Location = new System.Drawing.Point(12, 60);
+            this.historyButton.Location = new System.Drawing.Point(12, 63);
             this.historyButton.Name = "historyButton";
             this.historyButton.Size = new System.Drawing.Size(58, 20);
             this.historyButton.TabIndex = 12;
@@ -103,7 +103,7 @@ namespace kkot.LzTimer
             this.lastBreakLabel.AutoSize = true;
             this.lastBreakLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
             this.lastBreakLabel.ForeColor = System.Drawing.Color.Gray;
-            this.lastBreakLabel.Location = new System.Drawing.Point(76, 33);
+            this.lastBreakLabel.Location = new System.Drawing.Point(127, 33);
             this.lastBreakLabel.Name = "lastBreakLabel";
             this.lastBreakLabel.Size = new System.Drawing.Size(31, 24);
             this.lastBreakLabel.TabIndex = 14;
@@ -116,9 +116,9 @@ namespace kkot.LzTimer
             this.label5.ForeColor = System.Drawing.Color.Gray;
             this.label5.Location = new System.Drawing.Point(12, 33);
             this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(22, 24);
+            this.label5.Size = new System.Drawing.Size(95, 24);
             this.label5.TabIndex = 13;
-            this.label5.Text = "B";
+            this.label5.Text = "Last break";
             // 
             // notifyIconAllday
             // 
@@ -136,7 +136,7 @@ namespace kkot.LzTimer
             this.Controls.Add(this.historyButton);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.intervalTextBox);
-            this.Controls.Add(this.funTimeLabel);
+            this.Controls.Add(this.todayTimeLabel);
             this.Controls.Add(this.label2);
             this.Name = "MainWindow";
             this.Text = "LzTimer";
@@ -152,7 +152,7 @@ namespace kkot.LzTimer
         #endregion
 
         private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.Label funTimeLabel;
+        private System.Windows.Forms.Label todayTimeLabel;
         private System.Windows.Forms.Timer timer1;
         private System.Windows.Forms.NotifyIcon notifyIcon1;
         private System.Windows.Forms.TextBox intervalTextBox;

@@ -15,13 +15,12 @@ namespace kkot.LzTimer
         private readonly Font fontSmall = new Font(FontFamily.GenericMonospace, 9, GraphicsUnit.Pixel);
 
         private Icon idleIcon;
-        private Icon funIcon;
-        private Icon workIcon;
+        private Icon currentPeriodIcon;
         private Icon alldayIcon;
 
         private SoundPlayer soundPlayer;
-        private ActivityStatsReporter activityStats;
-        private UserActivityChecker userActivityChecker;
+        private StatsReporter statsReporter;
+        private ActivityChecker activityChecker;
 
         public MainWindow()
         {
@@ -30,8 +29,8 @@ namespace kkot.LzTimer
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            UpdateFunWorkIcons(0);
-            setNotifyIcon(null);
+            RecreateCurrentPeriodIcon(0);
+            UpdateNotifyIcon(false, 0);
 
             initialHeight = Height;
             initialWidth = Width;
@@ -49,27 +48,34 @@ namespace kkot.LzTimer
 
             MoveToBottomRight();
 
-            this.userActivityChecker = new UserActivityChecker(new Win32LastActivityProbe(), new SystemClock());
+            this.activityChecker = new ActivityChecker(new Win32LastActivityProbe(), new SystemClock());
 
             var defaultPolicies = new TimeTablePolicies() {IdleTimeout = TimeSpan.FromMinutes(5), IdleTimeoutPenalty = TimeSpan.FromSeconds(30)};
             TimeTable timeTable = new TimeTable(defaultPolicies);
-            this.userActivityChecker.setActivityListner(timeTable);
-
-            this.activityStats = timeTable;
+            this.activityChecker.setActivityListner(timeTable);
+            this.statsReporter = new StatsReporterImpl(timeTable, defaultPolicies.IdleTimeout);
         }
 
         //##################################################################
 
         private void timer1_Tick(object sender, EventArgs e)
         {
-            userActivityChecker.check();
-
-            int activityLength = (int)activityStats.GetTotalActiveTimespan(new TimePeriod(DateTime.Today.AddDays(-1), DateTime.Today.AddDays(1))).TotalSeconds;
-            UpdateFunWorkIcons(activityLength);
-            updateTimeLabels(activityLength, activityLength);
+            activityChecker.check();
+            UpdateStats(statsReporter.GetStats(DateTime.Now.Date));
         }
 
-        private void UpdateFunWorkIcons(int minutes)
+        private void UpdateStats(Stats stats)
+        {
+            UpdateLabels(
+                (int) stats.TotalToday.TotalSeconds, 
+                (int) stats.LastBreak.TotalSeconds
+                );
+
+            Period currentPeriod = stats.CurrentPeriod;
+            UpdateNotifyIcon(currentPeriod is ActivePeriod, (int)currentPeriod.Length.TotalMinutes);
+        }
+
+        private void RecreateCurrentPeriodIcon(int minutes)
         {
             if (minutes > 99)
                 minutes = 99;
@@ -85,25 +91,15 @@ namespace kkot.LzTimer
             }
 
             Bitmap funBmp = new Bitmap(16, 16);
-            Bitmap workBmp = new Bitmap(16, 16);
-            if (funIcon != null)
-                PInvoke.DestroyIcon(funIcon.Handle);
-            if (workIcon != null)
-                PInvoke.DestroyIcon(workIcon.Handle);
+            if (currentPeriodIcon != null)
+                PInvoke.DestroyIcon(currentPeriodIcon.Handle);
 
             using (Graphics g = Graphics.FromImage(funBmp))
             {
                 g.FillEllipse(Brushes.Green, 0, 0, 16, 16);
                 g.DrawString(minutes.ToString(), font, Brushes.White, 0, 1);
             }
-            funIcon = Icon.FromHandle(funBmp.GetHicon());
-
-            using (Graphics g = Graphics.FromImage(workBmp))
-            {
-                g.FillEllipse(Brushes.Red, 0, 0, 16, 16);
-                g.DrawString(minutes.ToString(), font, Brushes.White, 0, 1);
-            }
-            workIcon = Icon.FromHandle(workBmp.GetHicon());
+            currentPeriodIcon = Icon.FromHandle(funBmp.GetHicon());
         }
 
         private void UpdateAlldayIcon(int hours, int minutes)
@@ -123,33 +119,19 @@ namespace kkot.LzTimer
             notifyIconAllday.Icon = alldayIcon;
         }
 
-        private void setNotifyIcon(bool? workingMode)
+        private void UpdateNotifyIcon(bool active, int totalMinutes)
         {
-            if (workingMode == null)
-            {
-                notifyIcon1.Icon = idleIcon;
-            }
-            else if (workingMode == true)
-            {
-                notifyIcon1.Icon = workIcon;
-            }
-            else if (workingMode == false)
-            {
-                notifyIcon1.Icon = funIcon;
-            }
+            RecreateCurrentPeriodIcon(totalMinutes);
+            notifyIcon1.Icon = !active ? idleIcon : currentPeriodIcon;
         }
 
-        private void updateTimeLabels(int numOfFunSeconds, int secondsAfterLastBreak)
+        private void UpdateLabels(int secondsToday, int secondsAfterLastBreak)
         {
-            int numOfSumSeconds = numOfFunSeconds;
-
-            funTimeLabel.Text  = Helpers.SecondsToHMS(numOfFunSeconds);
+            todayTimeLabel.Text  = Helpers.SecondsToHMS(secondsToday);
             lastBreakLabel.Text = " "+(secondsAfterLastBreak / 60) + " min";
             
-            string notifyText = "t " + funTimeLabel.Text
+            string notifyText = "today " + todayTimeLabel.Text
                 + "\n"
-             //   + "\nf " + funTimeLabel.Text
-             //   + "\nw " + workTimeLabel.Text // not used now
                 + "\nb " + lastBreakLabel.Text;
 
             notifyIcon1.Text = notifyText;

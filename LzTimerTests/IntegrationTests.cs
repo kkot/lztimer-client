@@ -8,11 +8,13 @@ namespace LzTimerTests
     [TestClass]
     public class IntegrationTests
     {
-        private UserActivityChecker userActivityChecker;
+        private ActivityChecker activityChecker;
         private TimeTable timeTable;
         private SimpleClock clockStub;
         private LastActivityProbeStub probeStub;
         private TimeTablePolicies policies;
+        private StatsReporter statsReporter;
+        private DateTime firstCheck;
 
         [TestInitializeAttribute]
         public void setUp()
@@ -21,8 +23,9 @@ namespace LzTimerTests
             probeStub = new LastActivityProbeStub();
             clockStub = new SimpleClock();
             timeTable = new TimeTable(policies);
-            userActivityChecker = new UserActivityChecker(probeStub, clockStub);
-            userActivityChecker.setActivityListner(timeTable);
+            activityChecker = new ActivityChecker(probeStub, clockStub);
+            activityChecker.setActivityListner(timeTable);
+            statsReporter = new StatsReporterImpl(timeTable, policies.IdleTimeout);
         }
 
         [TestMethod]
@@ -30,14 +33,19 @@ namespace LzTimerTests
         {
             policies.IdleTimeout = 30.secs();
 
-            var timePeriod = TestActivity(new[] {1, 2, 3});
-            Assert.AreEqual(2, timeTable.GetTotalActiveTimespan(timePeriod).TotalSeconds);
+            TestActivity(new[] {1, 2, 3});
+            AssertSecondsToday(2);
 
-            timePeriod = TestActivity(new[] { 1, 2, 3, 3, 3 });
-            Assert.AreEqual(2, timeTable.GetTotalActiveTimespan(timePeriod).TotalSeconds);
+            TestActivity(new[] { 1, 2, 3, 3, 3 });
+            AssertSecondsToday(2);
 
-            timePeriod = TestActivity(new[] { 1, 2, 3, 3, 3, 4 });
-            Assert.AreEqual(5, timeTable.GetTotalActiveTimespan(timePeriod).TotalSeconds);
+            TestActivity(new[] { 1, 2, 3, 3, 3, 4 });
+            AssertSecondsToday(5);
+        }
+
+        private void AssertSecondsToday(int seconds)
+        {
+            Assert.AreEqual(seconds, statsReporter.GetStats(firstCheck).TotalToday.TotalSeconds);
         }
 
         [TestMethod]
@@ -45,27 +53,27 @@ namespace LzTimerTests
         {
             policies.IdleTimeout = 2.secs();
 
-            var timePeriod = TestActivity(new[] { 1, 2, 3, 3, 3, 3, 4 });
-            Assert.AreEqual(3, timeTable.GetTotalActiveTimespan(timePeriod).TotalSeconds);
+            TestActivity(new[] { 1, 2, 3, 3, 3, 3, 4 });
+            AssertSecondsToday(3);
 
             policies.IdleTimeout = 4.secs();
 
-            timePeriod = TestActivity(new[] { 1, 2, 3, 3, 3, 3, 4 });
-            Assert.AreEqual(6, timeTable.GetTotalActiveTimespan(timePeriod).TotalSeconds);
+            TestActivity(new[] { 1, 2, 3, 3, 3, 3, 4 });
+            AssertSecondsToday(6);
         }
 
 
 
         private TimePeriod TestActivity(int[] activityChecks)
         {
-            var firstCheck = new DateTime(2014, 1, 1, 12, 0, 0);
+            firstCheck = new DateTime(2014, 1, 1, 12, 0, 0);
             clockStub.StartTime(firstCheck);
 
             probeStub.Arrange(activityChecks);
 
             for (int i = 0; i < activityChecks.Length; i++)
             {
-                userActivityChecker.check();
+                activityChecker.check();
             }
 
             var timePeriod = new TimePeriod(firstCheck, clockStub.PeekCurrentTime());

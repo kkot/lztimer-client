@@ -6,10 +6,10 @@ using Telerik.JustMock;
 namespace LzTimerTests
 {
     [TestClass]
-    public class UserActivityCheckerTests
+    public class ActivityCheckerTests
     {
         private LastActivityProbe probeMock;
-        private UserActivityChecker userActivityCheckerSUT;
+        private ActivityChecker activityCheckerSut;
         private ActivityPeriodsListener activityListenerMock;
         private Clock clockMock;
 
@@ -19,8 +19,8 @@ namespace LzTimerTests
             probeMock = Mock.Create<LastActivityProbe>();
             activityListenerMock = Mock.Create<ActivityPeriodsListener>();
             clockMock = Mock.Create<Clock>();
-            userActivityCheckerSUT = new UserActivityChecker(probeMock, clockMock);  
-            userActivityCheckerSUT.setActivityListner(activityListenerMock);
+            activityCheckerSut = new ActivityChecker(probeMock, clockMock);  
+            activityCheckerSut.setActivityListner(activityListenerMock);
         }
 
         private void AssertActivePeriodPassed()
@@ -46,7 +46,7 @@ namespace LzTimerTests
         [TestMethod]
         public void whenCheckingShouldAskProbe()
         {
-            userActivityCheckerSUT.check();
+            activityCheckerSut.check();
 
             Mock.Assert(() => probeMock.getLastInputTick());
         }
@@ -55,7 +55,7 @@ namespace LzTimerTests
         public void whenAfterFirstCheck_ShouldNotNotify()
         {
             SetLastInputTick(123);
-            userActivityCheckerSUT.check();
+            activityCheckerSut.check();
 
             Mock.Assert(() => activityListenerMock.PeriodPassed(Arg.IsAny<Period>()), Occurs.Never());
         }
@@ -64,8 +64,8 @@ namespace LzTimerTests
         public void whenLastInputTimeDontChangeShouldNotifyIdlePeriod()
         {
             SetLastInputTick(1);
-            userActivityCheckerSUT.check();
-            userActivityCheckerSUT.check();
+            activityCheckerSut.check();
+            activityCheckerSut.check();
 
             AssertIdlePeriodPassed();
         }
@@ -74,10 +74,10 @@ namespace LzTimerTests
         public void whenLastInputTimeDoChangeShouldNotifyActivePeriod()
         {
             SetLastInputTick(1);
-            userActivityCheckerSUT.check();
+            activityCheckerSut.check();
 
             SetLastInputTick(2);
-            userActivityCheckerSUT.check();
+            activityCheckerSut.check();
 
             AssertActivePeriodPassed();
         }
@@ -86,18 +86,18 @@ namespace LzTimerTests
         public void whenLastInputTimeChangeEverySecondTimeNotifyActiveAndIdlePeriod()
         {
             SetLastInputTick(1);
-            userActivityCheckerSUT.check();
+            activityCheckerSut.check();
 
             SetLastInputTick(1);
-            userActivityCheckerSUT.check();
+            activityCheckerSut.check();
             AssertIdlePeriodPassed();
 
             SetLastInputTick(2);
-            userActivityCheckerSUT.check();
+            activityCheckerSut.check();
             AssertActivePeriodPassed();
 
             SetLastInputTick(2);
-            userActivityCheckerSUT.check();
+            activityCheckerSut.check();
             AssertIdlePeriodPassed();
         }
 
@@ -112,15 +112,15 @@ namespace LzTimerTests
             DateTime time3 = time2 + interval2;
 
             SetActivityTime(time1);
-            userActivityCheckerSUT.check();
+            activityCheckerSut.check();
 
             SetActivityTime(time2);
-            userActivityCheckerSUT.check();
+            activityCheckerSut.check();
 
             Mock.Assert(() => activityListenerMock.PeriodPassed(Arg.Matches<Period>( p => p.Length == interval1)), Occurs.Once());   
          
             SetActivityTime(time3);
-            userActivityCheckerSUT.check();
+            activityCheckerSut.check();
 
             Mock.Assert(() => activityListenerMock.PeriodPassed(Arg.Matches<Period>(p => p.Length == interval2)), Occurs.Once());   
         }

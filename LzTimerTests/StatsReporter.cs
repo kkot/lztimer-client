@@ -4,14 +4,14 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace LzTimerTests
 {
     //[TestClass]
-    class UserStatsReporterTests
+    class StatsReporterTests
     {
-        private ActivityStatsReporter activityStatsReporterSUT;
+        private StatsReporter statsReporterSut;
 
         [TestInitializeAttribute]
         public void setUp()
         {
-            //activityStatsReporterSUT = new TimeTable();
+            //statsReporterSut = new TimeTable();
         }
     }
 }
