@@ -25,22 +25,39 @@ namespace LzTimerTests
             timeTable = new TimeTable(policies);
             activityChecker = new ActivityChecker(probeStub, clockStub);
             activityChecker.setActivityListner(timeTable);
-            statsReporter = new StatsReporterImpl(timeTable, policies.IdleTimeout);
+            statsReporter = new StatsReporterImpl(timeTable, policies);
         }
 
         [TestMethod]
-        public void checkIdleMerged()
+        public void checkTwoActive()
         {
-            policies.IdleTimeout = 30.secs();
-
+            policies.IdleTimeout = 5.secs();
             TestActivity(new[] {1, 2, 3});
             AssertSecondsToday(2);
+        }
 
-            TestActivity(new[] { 1, 2, 3, 3, 3 });
-            AssertSecondsToday(2);
+        [TestMethod]
+        public void checkTwoActiveIdleActive()
+        {
+            policies.IdleTimeout = 5.secs();
+            TestActivity(new[] { 1, 2, 3, 3, 4 });
+            AssertSecondsToday(4);
+        }
 
-            TestActivity(new[] { 1, 2, 3, 3, 3, 4 });
-            AssertSecondsToday(5);
+        [TestMethod]
+        public void checkTwoActiveIdleActiveIdleWithoutTimeOut()
+        {
+            policies.IdleTimeout = 5.secs();
+            TestActivity(new[] { 1, 2, 3, 3, 4, 4, 4 });
+            AssertSecondsToday(6);
+        }
+
+        [TestMethod]
+        public void checkTwoActiveIdleActiveIdleWithTimeOut()
+        {
+            policies.IdleTimeout = 5.secs();
+            TestActivity(new[] { 1, 2, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4 });
+            AssertSecondsToday(4);
         }
 
         private void AssertSecondsToday(int seconds)

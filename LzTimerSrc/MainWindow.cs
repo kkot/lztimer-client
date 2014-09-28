@@ -21,6 +21,7 @@ namespace kkot.LzTimer
         private SoundPlayer soundPlayer;
         private StatsReporter statsReporter;
         private ActivityChecker activityChecker;
+        private TimeTablePolicies policies;
 
         public MainWindow()
         {
@@ -36,7 +37,8 @@ namespace kkot.LzTimer
             initialWidth = Width;
 
             // loading configuration
-            intervalTextBox.Text = Properties.Settings.Default.MaxIdleMinutes.ToString();
+            string maxIdleMinutes = Properties.Settings.Default.MaxIdleMinutes.ToString();
+            intervalTextBox.Text = maxIdleMinutes;
             timer1.Interval = 1000;
             timer1.Enabled = true;
 
@@ -49,11 +51,10 @@ namespace kkot.LzTimer
             MoveToBottomRight();
 
             this.activityChecker = new ActivityChecker(new Win32LastActivityProbe(), new SystemClock());
-
-            var defaultPolicies = new TimeTablePolicies() {IdleTimeout = TimeSpan.FromMinutes(5), IdleTimeoutPenalty = TimeSpan.FromSeconds(30)};
-            TimeTable timeTable = new TimeTable(defaultPolicies);
+            this.policies = new TimeTablePolicies() {IdleTimeout = TimeSpan.FromMinutes(int.Parse(maxIdleMinutes)), IdleTimeoutPenalty = TimeSpan.FromSeconds(30)};
+            TimeTable timeTable = new TimeTable(policies);
             this.activityChecker.setActivityListner(timeTable);
-            this.statsReporter = new StatsReporterImpl(timeTable, defaultPolicies.IdleTimeout);
+            this.statsReporter = new StatsReporterImpl(timeTable, policies);
         }
 
         //##################################################################
