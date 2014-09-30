@@ -62,13 +62,13 @@ namespace kkot.LzTimer
         private void timer1_Tick(object sender, EventArgs e)
         {
             activityChecker.check();
-            UpdateStats(statsReporter.GetStats(DateTime.Now.Date));
+            UpdateStats(statsReporter.GetStatsAfter(DateTime.Now.Date));
         }
 
         private void UpdateStats(Stats stats)
         {
             UpdateLabels(
-                (int) stats.TotalToday.TotalSeconds, 
+                (int) stats.TotalActive.TotalSeconds, 
                 (int) stats.LastBreak.TotalSeconds
                 );
 

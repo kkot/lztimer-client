@@ -218,18 +218,18 @@ namespace kkot.LzTimer
     {
         public TimeSpan LastBreak;
         public Period CurrentPeriod;
-        public TimeSpan TotalToday;
+        public TimeSpan TotalActive;
     }
 
     public interface StatsReporter
     {
-        Stats GetStats(DateTime date);
+        Stats GetStatsAfter(DateTime date);
     }
 
     public class StatsReporterImpl : StatsReporter
     {
         private readonly PeriodsReader periodReader;
-        private List<Period> todayPeriods;
+        private List<Period> periodsAfter;
         private TimeTablePolicies policies;
 
         public StatsReporterImpl(PeriodsReader periodsReader, TimeTablePolicies policies)
@@ -238,28 +238,28 @@ namespace kkot.LzTimer
             this.policies = policies;
         }
 
-        public Stats GetStats(DateTime date)
+        public Stats GetStatsAfter(DateTime date)
         {
-            todayPeriods = GetTodayPeriods(date);
+            periodsAfter = GetPeriodsAfter(date);
             return new Stats()
             {
                 CurrentPeriod = GetCurrentPeriod(), 
-                LastBreak = GetLastBreakTimeSpan(), 
-                TotalToday = GetTotalToday()
+                LastBreak = GetLastBreak(), 
+                TotalActive = GetTotalActive()
             };
         }
 
-        private List<Period> GetTodayPeriods(DateTime date)
+        private List<Period> GetPeriodsAfter(DateTime date)
         {
             return periodReader.GetPeriodAfter(date).ToList();
         }
 
         public Period GetCurrentPeriod()
         {
-            if (todayPeriods.Count == 0)
+            if (periodsAfter.Count == 0)
                 return new IdlePeriod(DateTime.Now, DateTime.Now);
 
-            if (todayPeriods.Count == 1)
+            if (periodsAfter.Count == 1)
                 return Last();
 
             var last = Last();
@@ -271,9 +271,9 @@ namespace kkot.LzTimer
                 return last;
         }
 
-        public TimeSpan GetLastBreakTimeSpan()
+        public TimeSpan GetLastBreak()
         {
-            if (todayPeriods.Count == 0 || todayPeriods.Count == 1)
+            if (periodsAfter.Count == 0 || periodsAfter.Count == 1)
                 return TimeSpan.Zero;
 
             var last = Last();
@@ -285,13 +285,13 @@ namespace kkot.LzTimer
                 return beforeLast.Length;
         }
 
-        private TimeSpan GetTotalToday()
+        private TimeSpan GetTotalActive()
         {
-            if (todayPeriods.Count == 0)
+            if (periodsAfter.Count == 0)
                 return TimeSpan.Zero;
 
             var activePeriods =
-                todayPeriods.
+                periodsAfter.
                 Where(e => e is ActivePeriod);
 
             var sum = new TimeSpan();
@@ -310,13 +310,12 @@ namespace kkot.LzTimer
 
         private Period BeforeLast()
         {
-            return todayPeriods[todayPeriods.Count - 2];
+            return periodsAfter[periodsAfter.Count - 2];
         }
 
         private Period Last()
         {
-            return todayPeriods[todayPeriods.Count-1];
+            return periodsAfter[periodsAfter.Count-1];
         }
     }
-
 }

@@ -54,11 +54,11 @@
   </Choose>
   <ItemGroup>
     <Compile Include="IntegrationTests.cs" />
-    <Compile Include="TimeTableTests.cs" />
+    <Compile Include="PeriodStoreageTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="StatsReporter.cs" />
     <Compile Include="TestUtilities.cs" />
     <Compile Include="ActivityCheckerTests.cs" />
+    <Compile Include="TimeTableTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

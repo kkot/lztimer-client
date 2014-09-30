@@ -28,58 +28,22 @@ namespace LzTimerTests
             statsReporter = new StatsReporterImpl(timeTable, policies);
         }
 
-        [TestMethod]
-        public void checkTwoActive()
+        private void AssertSecondsAfter(TimeSpan timeSpan)
         {
-            policies.IdleTimeout = 5.secs();
-            TestActivity(new[] {1, 2, 3});
-            AssertSecondsToday(2);
+            Assert.AreEqual(timeSpan, statsReporter.GetStatsAfter(firstCheck).TotalActive);
         }
 
-        [TestMethod]
-        public void checkTwoActiveIdleActive()
+        private void AssertLastBreak(TimeSpan timeSpan)
         {
-            policies.IdleTimeout = 5.secs();
-            TestActivity(new[] { 1, 2, 3, 3, 4 });
-            AssertSecondsToday(4);
+            Assert.AreEqual(timeSpan, statsReporter.GetStatsAfter(firstCheck).LastBreak);
         }
 
-        [TestMethod]
-        public void checkTwoActiveIdleActiveIdleWithoutTimeOut()
+        private void AssertCurrentPeriodLength(bool active, TimeSpan length)
         {
-            policies.IdleTimeout = 5.secs();
-            TestActivity(new[] { 1, 2, 3, 3, 4, 4, 4 });
-            AssertSecondsToday(6);
+            Period period = statsReporter.GetStatsAfter(firstCheck).CurrentPeriod;
+            Assert.AreEqual(active, period is ActivePeriod);
+            Assert.AreEqual(length, period.Length);
         }
-
-        [TestMethod]
-        public void checkTwoActiveIdleActiveIdleWithTimeOut()
-        {
-            policies.IdleTimeout = 5.secs();
-            TestActivity(new[] { 1, 2, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4 });
-            AssertSecondsToday(4);
-        }
-
-        private void AssertSecondsToday(int seconds)
-        {
-            Assert.AreEqual(seconds, statsReporter.GetStats(firstCheck).TotalToday.TotalSeconds);
-        }
-
-        [TestMethod]
-        public void checkTimeout()
-        {
-            policies.IdleTimeout = 2.secs();
-
-            TestActivity(new[] { 1, 2, 3, 3, 3, 3, 4 });
-            AssertSecondsToday(3);
-
-            policies.IdleTimeout = 4.secs();
-
-            TestActivity(new[] { 1, 2, 3, 3, 3, 3, 4 });
-            AssertSecondsToday(6);
-        }
-
-
 
         private TimePeriod TestActivity(int[] activityChecks)
         {
@@ -95,6 +59,62 @@ namespace LzTimerTests
 
             var timePeriod = new TimePeriod(firstCheck, clockStub.PeekCurrentTime());
             return timePeriod;
+        }
+
+        [TestMethod]
+        public void checkTwoActive()
+        {
+            policies.IdleTimeout = 5.secs();
+            TestActivity(new[] {1, 2, 3});
+            AssertSecondsAfter(2.secs());
+            AssertCurrentPeriodLength(active: true, length: 2.secs());
+            AssertLastBreak(0.secs());
+        }
+
+        [TestMethod]
+        public void checkTwoActiveWithIdleInside()
+        {
+            policies.IdleTimeout = 5.secs();
+            TestActivity(new[] { 1, 2, 3, 3, 4 });
+            AssertSecondsAfter(4.secs());
+            AssertCurrentPeriodLength(true, 4.secs());
+            AssertLastBreak(0.secs());
+        }
+
+        [TestMethod]
+        public void checkTwoActiveIdleActiveIdleWithoutTimeOut()
+        {
+            policies.IdleTimeout = 5.secs();
+            TestActivity(new[] { 1, 2, 3, 3, 4, 4, 4 });
+            AssertSecondsAfter(6.secs());
+            AssertCurrentPeriodLength(active: true, length: 6.secs());
+        }
+
+        [TestMethod]
+        public void checkTwoActiveIdleActiveIdleWithTimeOut()
+        {
+            policies.IdleTimeout = 5.secs();
+            TestActivity(new[] { 1, 2, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4 });
+            AssertSecondsAfter(4.secs());
+            AssertLastBreak(8.secs());
+            AssertCurrentPeriodLength(active: false, length: 8.secs());
+        }
+
+        [TestMethod]
+        public void checkWithTimeout()
+        {
+            policies.IdleTimeout = 2.secs();
+
+            TestActivity(new[] {1, 2, 3, 3, 3, 3, 4});
+            AssertSecondsAfter(3.secs());
+        }
+
+        public void checkWithoutTimeout()
+        {
+            policies.IdleTimeout = 4.secs();
+
+            TestActivity(new[] { 1, 2, 3, 3, 3, 3, 4 });
+            AssertSecondsAfter(6.secs());
         }
     }
 
