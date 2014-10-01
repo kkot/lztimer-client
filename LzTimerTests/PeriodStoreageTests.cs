@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using kkot.LzTimer;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -23,8 +21,8 @@ namespace LzTimerTests
         public void addedPeriod_shouldBeReaderByAnotherInstance()
         {
             File.Delete(DB_FILE);
-            ActivePeriod activePeriod = PeriodBuilder.New().Active();
-            IdlePeriod idlePeriod = PeriodBuilder.New().Idle();
+            var activePeriod = PeriodBuilder.New(new DateTime(2014, 1, 1, 12, 0, 0)).Active();
+            var idlePeriod = PeriodBuilder.NewAfter(activePeriod, 1.secs()).Idle();
 
             SqlitePeriodStorage instance1 = GetStorage();
             instance1.Add(activePeriod);
@@ -33,10 +31,11 @@ namespace LzTimerTests
             var expected = new Period[] {activePeriod, idlePeriod};
             CollectionAssert.AreEquivalent(expected, instance1.GetAll());
             instance1.Close();
-            WaitForConnectionToDbClosed();
 
+            //WaitForConnectionToDbClosed();
             SqlitePeriodStorage instance2 = GetStorage();
             CollectionAssert.AreEquivalent(expected, instance2.GetAll());
+            instance2.Close();
         }
 
         private static void WaitForConnectionToDbClosed()
