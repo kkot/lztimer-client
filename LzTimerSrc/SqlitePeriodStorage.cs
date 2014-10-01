@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
+using System.IO;
 
 namespace kkot.LzTimer
 {
@@ -38,8 +39,14 @@ namespace kkot.LzTimer
 
         public SqlitePeriodStorage(String name)
         {
-            conn = new SQLiteConnection("Data Source="+name);
+            if (!File.Exists(name))
+            {
+                SQLiteConnection.CreateFile(name);
+            }
+
+            conn = new SQLiteConnection("Data Source="+name+";Pooling=False");
             conn.Open();
+            CreateTable();
         }
 
         public void Add(Period period)
@@ -50,6 +57,18 @@ namespace kkot.LzTimer
             command.Parameters.AddWithValue("end", period.End);
             command.Parameters.AddWithValue("type", "A");
             command.ExecuteNonQuery();
+        }
+
+        private void CreateTable()
+        {
+            SQLiteCommand command = conn.CreateCommand();
+            command.CommandText = "CREATE TABLE IF NOT EXISTS Periods (start, end, type)";
+            command.ExecuteNonQuery();
+        }
+
+        public void Close()
+        {
+            conn.Close();
         }
 
         public void Remove(Period period)
@@ -63,9 +82,14 @@ namespace kkot.LzTimer
             SQLiteDataReader reader = command.ExecuteReader();
 
             SortedSet<Period> result = new SortedSet<Period>();
-            while (reader.Read())
+            if (reader.HasRows)
             {
-                result.Add(new ActivePeriod(DateTime.Parse(reader["Start"].ToString()), DateTime.Parse(reader["End"].ToString())));
+                while (reader.Read())
+                {
+                    var Start = reader["Start"].ToString();
+                    var End = reader["End"].ToString();
+                    result.Add(new ActivePeriod(DateTime.Parse(Start), DateTime.Parse(End)));
+                }
             }
             return result;
         }

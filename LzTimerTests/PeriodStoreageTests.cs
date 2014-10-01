@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using kkot.LzTimer;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -18,17 +19,21 @@ namespace LzTimerTests
         [TestMethod]
         public void addedPeriod_shouldBeReaderByAnotherInstance()
         {
+            File.Delete("test.db");
             ActivePeriod activePeriod = PeriodBuilder.New().Active();
 
-            PeriodStorage instance1 = GetStorage();
+            SqlitePeriodStorage instance1 = GetStorage();
             instance1.Add(activePeriod);
             Assert.AreEqual(activePeriod, instance1.getAll().First());
+            instance1.Close();
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
 
-            PeriodStorage instance2 = GetStorage();
+            SqlitePeriodStorage instance2 = GetStorage();
             Assert.AreEqual(activePeriod, instance2.getAll().First());
         }
 
-        private static PeriodStorage GetStorage()
+        private static SqlitePeriodStorage GetStorage()
         {
             return new SqlitePeriodStorage("test.db");
         }
