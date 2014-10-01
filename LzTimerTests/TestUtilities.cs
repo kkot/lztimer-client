@@ -8,7 +8,7 @@ namespace LzTimerTests
         public DateTime Start { get; private set; }
         public DateTime End { get; private set; }
 
-        private const int DEFAULT_LENGTH_MS = 1000;
+        public static TimeSpan DEFAULT_LENGTH_MS = 1000.milisec();
 
         private PeriodBuilder(Period period)
         {
@@ -26,8 +26,13 @@ namespace LzTimerTests
         {
             var periodBuilder = new PeriodBuilder(
                 start, 
-                start.AddMilliseconds(DEFAULT_LENGTH_MS));
+                start + DEFAULT_LENGTH_MS);
             return periodBuilder;
+        }
+
+        public static PeriodBuilder New()
+        {
+            return new PeriodBuilder(DateTime.Now, DateTime.Now + DEFAULT_LENGTH_MS);
         }
 
         private static PeriodBuilder After(Period period, TimeSpan gap)
