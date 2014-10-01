@@ -9,12 +9,12 @@ namespace kkot.LzTimer
     {
         public DateTime Start { get; set; }
         public DateTime End { get; set; }
-        
+
         public string Type { get; set; }
 
         public DbPeriod()
         {
-            
+
         }
 
         public DbPeriod(Period period)
@@ -44,7 +44,7 @@ namespace kkot.LzTimer
                 SQLiteConnection.CreateFile(name);
             }
 
-            conn = new SQLiteConnection("Data Source="+name+";Pooling=False");
+            conn = new SQLiteConnection("Data Source=" + name + ";Synchronous=Full");
             conn.Open();
             CreateTable();
         }
@@ -55,7 +55,7 @@ namespace kkot.LzTimer
             command.CommandText = "INSERT INTO Periods (start, end, type) VALUES (:start, :end, :type)";
             command.Parameters.AddWithValue("start", period.Start);
             command.Parameters.AddWithValue("end", period.End);
-            command.Parameters.AddWithValue("type", "A");
+            command.Parameters.AddWithValue("type", period is ActivePeriod ? "A" : "I");
             command.ExecuteNonQuery();
         }
 
@@ -76,9 +76,9 @@ namespace kkot.LzTimer
             throw new NotImplementedException();
         }
 
-        public SortedSet<Period> getAll()
+        public SortedSet<Period> GetAll()
         {
-            SQLiteCommand command = new SQLiteCommand("SELECT Start, End, Type FROM Periods", conn);
+            SQLiteCommand command = new SQLiteCommand("SELECT start, end, type FROM Periods", conn);
             SQLiteDataReader reader = command.ExecuteReader();
 
             SortedSet<Period> result = new SortedSet<Period>();
@@ -86,9 +86,17 @@ namespace kkot.LzTimer
             {
                 while (reader.Read())
                 {
-                    var Start = reader["Start"].ToString();
-                    var End = reader["End"].ToString();
-                    result.Add(new ActivePeriod(DateTime.Parse(Start), DateTime.Parse(End)));
+                    var start = reader["start"].ToString();
+                    var end = reader["end"].ToString();
+                    var type = reader["type"].ToString();
+                    if (type == "A")
+                    {
+                        result.Add(new ActivePeriod(DateTime.Parse(start), DateTime.Parse(end)));
+                    }
+                    else
+                    {
+                        result.Add(new IdlePeriod(DateTime.Parse(start), DateTime.Parse(end)));
+                    }
                 }
             }
             return result;

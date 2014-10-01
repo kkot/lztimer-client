@@ -110,7 +110,7 @@ namespace kkot.LzTimer
     {
         void Add(Period period);
         void Remove(Period period);
-        SortedSet<Period> getAll();
+        SortedSet<Period> GetAll();
         SortedSet<Period> GetPeriodsFromPeriod(TimePeriod period);
         SortedSet<Period> GetPeriodsAfter(DateTime dateTime);
     }
@@ -124,7 +124,7 @@ namespace kkot.LzTimer
             periods.Remove(period);
         }
 
-        public SortedSet<Period> getAll()
+        public SortedSet<Period> GetAll()
         {
             return periods;
         }
@@ -172,7 +172,7 @@ namespace kkot.LzTimer
 
         private Period merge(Period aPeriod)
         {
-            foreach (var period in periodStorage.getAll())
+            foreach (var period in periodStorage.GetAll())
             {
                 if (period.CanBeMerged(aPeriod, policies.IdleTimeout))
                 {
@@ -196,7 +196,7 @@ namespace kkot.LzTimer
 
         public SortedSet<Period> getAll()
         {
-            return periodStorage.getAll();
+            return periodStorage.GetAll();
         }
 
         public SortedSet<Period> GetPeriodsFromPeriod(TimePeriod period)
