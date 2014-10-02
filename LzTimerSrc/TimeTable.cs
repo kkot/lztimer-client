@@ -113,11 +113,12 @@ namespace kkot.LzTimer
         SortedSet<Period> GetAll();
         SortedSet<Period> GetPeriodsFromPeriod(TimePeriod period);
         SortedSet<Period> GetPeriodsAfter(DateTime dateTime);
+        void Close();
     }
 
     public class MemoryPeriodStorage : PeriodStorage
     {
-        private readonly SortedSet<Period> periods = new SortedSet<Period>();
+        private SortedSet<Period> periods = new SortedSet<Period>();
 
         public void Remove(Period period)
         {
@@ -145,6 +146,11 @@ namespace kkot.LzTimer
         {
             return new SortedSet<Period>(periods.Where(p =>
                 p.Start >= dateTime));
+        }
+
+        public void Close()
+        {
+            periods = null;
         }
     }
 
