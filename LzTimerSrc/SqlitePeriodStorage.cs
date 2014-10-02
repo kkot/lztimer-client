@@ -46,7 +46,12 @@ namespace kkot.LzTimer
 
         public void Remove(Period period)
         {
-            throw new NotImplementedException();
+            SQLiteCommand command = conn.CreateCommand();
+            command.CommandText = "DELETE FROM Periods WHERE start = :start AND end = :end AND type = :type";
+            command.Parameters.AddWithValue("start", period.Start);
+            command.Parameters.AddWithValue("end", period.End);
+            command.Parameters.AddWithValue("type", period is ActivePeriod ? "A" : "I");
+            command.ExecuteNonQuery();
         }
 
         public SortedSet<Period> GetAll()
@@ -55,36 +60,51 @@ namespace kkot.LzTimer
             SQLiteDataReader reader = command.ExecuteReader();
 
             SortedSet<Period> result = new SortedSet<Period>();
-            if (!reader.HasRows)
-            {
-                return result;                
-            }
-
             while (reader.Read())
             {
-                var start = reader["start"].ToString();
-                var end = reader["end"].ToString();
-                var type = reader["type"].ToString();
-                if (type == "A")
-                {
-                    result.Add(new ActivePeriod(DateTime.Parse(start), DateTime.Parse(end)));
-                }
-                else
-                {
-                    result.Add(new IdlePeriod(DateTime.Parse(start), DateTime.Parse(end)));
-                }
+                result.Add(CreatePeriodFromReader(reader));
             }
             return result;
         }
 
-        public SortedSet<Period> GetPeriodsFromPeriod(TimePeriod period)
+        public SortedSet<Period> GetPeriodsFromTimePeriod(TimePeriod period)
         {
-            throw new NotImplementedException();
+            var sql = "SELECT start, end, type " +
+                      "FROM Periods " +
+                      "WHERE start >= :start AND end <= :end ";
+            SQLiteCommand command = new SQLiteCommand(sql, conn);
+            command.Parameters.AddWithValue("start", period.Start);
+            command.Parameters.AddWithValue("end", period.End);
+            SQLiteDataReader reader = command.ExecuteReader();
+
+            SortedSet<Period> result = new SortedSet<Period>();
+            while (reader.Read())
+            {
+                result.Add(CreatePeriodFromReader(reader));
+            }
+            return result;
         }
 
         public SortedSet<Period> GetPeriodsAfter(DateTime dateTime)
         {
             throw new NotImplementedException();
+        }
+
+        private static Period CreatePeriodFromReader(SQLiteDataReader reader)
+        {
+            Period period;
+            var start = reader["start"].ToString();
+            var end = reader["end"].ToString();
+            var type = reader["type"].ToString();
+            if (type == "A")
+            {
+                period = new ActivePeriod(DateTime.Parse(start), DateTime.Parse(end));
+            }
+            else
+            {
+                period = new IdlePeriod(DateTime.Parse(start), DateTime.Parse(end));
+            }
+            return period;
         }
     }
 }

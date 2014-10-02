@@ -111,7 +111,7 @@ namespace kkot.LzTimer
         void Add(Period period);
         void Remove(Period period);
         SortedSet<Period> GetAll();
-        SortedSet<Period> GetPeriodsFromPeriod(TimePeriod period);
+        SortedSet<Period> GetPeriodsFromTimePeriod(TimePeriod period);
         SortedSet<Period> GetPeriodsAfter(DateTime dateTime);
         void Close();
     }
@@ -135,7 +135,7 @@ namespace kkot.LzTimer
             periods.Add(period);
         }
 
-        public SortedSet<Period> GetPeriodsFromPeriod(TimePeriod period)
+        public SortedSet<Period> GetPeriodsFromTimePeriod(TimePeriod period)
         {
             return new SortedSet<Period>(periods.Where(p => 
                 p.Start >= period.Start && 
@@ -183,7 +183,7 @@ namespace kkot.LzTimer
                 if (period.CanBeMerged(aPeriod, policies.IdleTimeout))
                 {
                     var merged = period.Merge(aPeriod);
-                    foreach(Period innerPeriod in periodStorage.GetPeriodsFromPeriod(merged))
+                    foreach(Period innerPeriod in periodStorage.GetPeriodsFromTimePeriod(merged))
                     {
                         periodStorage.Remove(innerPeriod);
                     }
@@ -207,7 +207,7 @@ namespace kkot.LzTimer
 
         public SortedSet<Period> GetPeriodsFromPeriod(TimePeriod period)
         {
-            return periodStorage.GetPeriodsFromPeriod(period);
+            return periodStorage.GetPeriodsFromTimePeriod(period);
         }
 
         public SortedSet<Period> GetPeriodsAfter(DateTime dateTime)

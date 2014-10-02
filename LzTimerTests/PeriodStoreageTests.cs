@@ -7,27 +7,29 @@ namespace LzTimerTests
 {
     public abstract class PeriodStoreageTests
     {
+        private DateTime START = new DateTime(2014, 1, 1, 12, 0, 0);
+
         public void howTreatIdenticalPeriods()
         {
-            var activePeriod = PeriodBuilder.New(new DateTime(2014, 1, 1, 12, 0, 0)).Active();
-            var idlePeriod = PeriodBuilder.New(new DateTime(2014, 1, 1, 12, 0, 0)).Idle();
+            var activePeriod = PeriodBuilder.New(START).Active();
+            var idlePeriod = PeriodBuilder.New(START).Idle();
             // todo:
         }
 
         [TestMethod]
         public void addedPeriod_shouldBeReaderByAnotherInstance()
         {
-
-            var activePeriod = PeriodBuilder.New(new DateTime(2014, 1, 1, 12, 0, 0)).Active();
+            var activePeriod = PeriodBuilder.New(START).Active();
             var idlePeriod = PeriodBuilder.NewAfter(activePeriod, 1.secs()).Idle();
-
-            PeriodStorage instance1 = GetStorage();
-            instance1.Add(activePeriod);
-            instance1.Add(idlePeriod);
-
             var expected = new Period[] { activePeriod, idlePeriod };
-            CollectionAssert.AreEquivalent(expected, instance1.GetAll());
-            instance1.Close();
+            {
+                PeriodStorage instance1 = GetStorage();
+                instance1.Add(activePeriod);
+                instance1.Add(idlePeriod);
+
+                CollectionAssert.AreEquivalent(expected, instance1.GetAll());
+                instance1.Close();
+            }
 
             if (IsPersisent())
             {
@@ -37,10 +39,46 @@ namespace LzTimerTests
             }
         }
 
-        private static void WaitForConnectionToDbClosed()
+        [TestMethod]
+        public void removePeriod_shouldWork()
         {
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
+            var firstPeriod = PeriodBuilder.New(START).Length(5.secs()).Active();
+            var secondPeriod = PeriodBuilder.NewAfter(firstPeriod, 10.secs()).Idle();
+
+            PeriodStorage periodStorageSUT = GetStorage();
+            periodStorageSUT.Add(firstPeriod);
+            periodStorageSUT.Add(secondPeriod);
+            var expected = new Period[] { secondPeriod };            
+            
+            periodStorageSUT.Remove(firstPeriod);
+            CollectionAssert.AreEquivalent(expected, periodStorageSUT.GetAll());
+            periodStorageSUT.Close();
+
+            if (IsPersisent())
+            {
+                PeriodStorage newInstance = GetStorage();
+                CollectionAssert.AreEquivalent(expected, newInstance.GetAll());
+                newInstance.Close();
+            }
+        }
+
+        [TestMethod]
+        public void getPeriodsFromTimePeriod_shouldWork()
+        {
+            var firstPeriod = PeriodBuilder.New(START).Length(5.secs()).Active();
+            var secondPeriod = PeriodBuilder.NewAfter(firstPeriod, 10.secs()).Idle();
+
+            PeriodStorage periodStorageSUT = GetStorage();
+            periodStorageSUT.Add(firstPeriod);
+            periodStorageSUT.Add(secondPeriod);
+            var expected = new Period[] { firstPeriod };
+
+            var found = periodStorageSUT.GetPeriodsFromTimePeriod(
+                new TimePeriod(
+                    firstPeriod.Start - 1.secs(),
+                    firstPeriod.End + 1.secs()));
+            CollectionAssert.AreEquivalent(expected, found);
+            periodStorageSUT.Close();
         }
 
         protected abstract PeriodStorage GetStorage();
@@ -56,7 +94,14 @@ namespace LzTimerTests
         [TestInitializeAttribute]
         public void setUp()
         {
+            WaitForConnectionToDbClosed();
             File.Delete(DB_FILE);
+        }
+
+        private static void WaitForConnectionToDbClosed()
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
         }
 
         protected override PeriodStorage GetStorage()
