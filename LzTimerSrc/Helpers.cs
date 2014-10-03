@@ -3,6 +3,19 @@ using System.Runtime.InteropServices;
 
 namespace kkot.LzTimer
 {
+    public static class IntegerTimespanExensionMethods
+    {
+        public static TimeSpan secs(this int seconds)
+        {
+            return TimeSpan.FromSeconds(seconds);
+        }
+
+        public static TimeSpan milisec(this int miliseconds)
+        {
+            return TimeSpan.FromMilliseconds(miliseconds);
+        }
+    }
+
     class Helpers
     {
         public static string NowShortDateString()

@@ -33,6 +33,7 @@ namespace LzTimerTests
 
             if (IsPersisent())
             {
+                WaitForConnectionToDbClosed();
                 PeriodStorage instance2 = GetStorage();
                 CollectionAssert.AreEquivalent(expected, instance2.GetAll());
                 instance2.Close();
@@ -56,6 +57,7 @@ namespace LzTimerTests
 
             if (IsPersisent())
             {
+                WaitForConnectionToDbClosed();
                 PeriodStorage newInstance = GetStorage();
                 CollectionAssert.AreEquivalent(expected, newInstance.GetAll());
                 newInstance.Close();
@@ -81,9 +83,31 @@ namespace LzTimerTests
             periodStorageSUT.Close();
         }
 
+        [TestMethod]
+        public void getPeriodsAfter_shouldWork()
+        {
+            var firstPeriod = PeriodBuilder.New(START).Length(5.secs()).Active();
+            var secondPeriod = PeriodBuilder.NewAfter(firstPeriod, 10.secs()).Idle();
+
+            PeriodStorage periodStorageSUT = GetStorage();
+            periodStorageSUT.Add(firstPeriod);
+            periodStorageSUT.Add(secondPeriod);
+            var expected = new Period[] { secondPeriod };
+
+            var found = periodStorageSUT.GetPeriodsAfter(firstPeriod.End + 1.secs());
+            CollectionAssert.AreEquivalent(expected, found);
+            periodStorageSUT.Close();
+        }
+
         protected abstract PeriodStorage GetStorage();
 
         protected abstract bool IsPersisent();
+
+        protected static void WaitForConnectionToDbClosed()
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+        }
     }
 
     [TestClass]
@@ -96,12 +120,6 @@ namespace LzTimerTests
         {
             WaitForConnectionToDbClosed();
             File.Delete(DB_FILE);
-        }
-
-        private static void WaitForConnectionToDbClosed()
-        {
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
         }
 
         protected override PeriodStorage GetStorage()

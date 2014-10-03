@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Windows.Forms.VisualStyles;
 
 namespace kkot.LzTimer
 {
@@ -23,7 +24,8 @@ namespace kkot.LzTimer
 
         private ActivityPeriodsListener listener;
         private int? lastInputTick;
-        private DateTime lastCheck;
+        private DateTime lastRealCheckTime;
+        private DateTime lastSentCheckTime;
 
         public ActivityChecker(LastActivityProbe probe, Clock clock)
         {
@@ -38,27 +40,36 @@ namespace kkot.LzTimer
 
         public void check()
         {
-            int probedLastInputTick = probe.getLastInputTick();
+            int currentInputTick = probe.getLastInputTick();
 
             if (lastInputTick == null)
             {
-                lastInputTick = probedLastInputTick;
-                lastCheck = clock.CurrentTime();
+                lastInputTick = currentInputTick;
+                lastSentCheckTime = clock.CurrentTime();
                 return;
             }
 
-            DateTime currentDateTime = clock.CurrentTime();
+            TimeSpan length = 1.secs();
+            TimeSpan difference = (lastSentCheckTime + length) - clock.CurrentTime();
+            Console.WriteLine(difference);
+            if (difference.Duration() > 1.secs())
+            {
+                if (difference > 0.secs())
+                {
+                    length = 0.secs();
+                }
+                if (difference < 0.secs())
+                {
+                    length = 2.secs();
+                }
+            }
 
-            if (lastInputTick != probedLastInputTick)
-            {
-                listener.PeriodPassed(new ActivePeriod(lastCheck, currentDateTime));
-            }
-            else
-            {
-                listener.PeriodPassed(new IdlePeriod(lastCheck, currentDateTime));
-            }
-            lastInputTick = probedLastInputTick;
-            lastCheck = currentDateTime;
+            bool active = (lastInputTick != currentInputTick);
+
+            listener.PeriodPassed(Period.Create(active, lastSentCheckTime, lastSentCheckTime + length));
+            lastSentCheckTime = lastSentCheckTime + length;
+            
+            lastInputTick = currentInputTick;
         }
     }   
 

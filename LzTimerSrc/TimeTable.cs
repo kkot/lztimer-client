@@ -50,6 +50,14 @@ namespace kkot.LzTimer
         {
         }
 
+        public static Period Create(bool active, DateTime @start, DateTime end)
+        {
+            if (active)
+                return new ActivePeriod(start, end);
+            else
+                return new IdlePeriod(start, end);
+        }
+
         public bool CanBeMerged(Period aPeriod, TimeSpan aTimeoutPeriod)
         {
             if (GetType() != aPeriod.GetType())
@@ -57,8 +65,11 @@ namespace kkot.LzTimer
                 return false;
             }
 
-            if (((End - aPeriod.Start).Duration() <= aTimeoutPeriod) ||
-                ((Start - aPeriod.End).Duration() <= aTimeoutPeriod))
+            // 500 ms is little hacky
+            var mergeGap = (aPeriod is ActivePeriod) ? aTimeoutPeriod : TimeSpan.FromMilliseconds(500);
+
+            if (((End - aPeriod.Start).Duration() <= mergeGap) ||
+                ((Start - aPeriod.End).Duration() <= mergeGap))
             {
                 return true;
             }
@@ -163,12 +174,18 @@ namespace kkot.LzTimer
 
     public class TimeTable : ActivityPeriodsListener, PeriodsReader
     {
-        private readonly PeriodStorage periodStorage = new MemoryPeriodStorage();
+        private readonly PeriodStorage periodStorage;
         private readonly TimeTablePolicies policies;
 
-        public TimeTable(TimeTablePolicies policies)
+        public TimeTable(TimeTablePolicies policies) : this(policies, new MemoryPeriodStorage())
+        {
+            
+        }
+
+        public TimeTable(TimeTablePolicies policies, PeriodStorage storage)
         {
             this.policies = policies;
+            this.periodStorage = storage;
         }
 
         public Period Add(Period period)
@@ -282,7 +299,10 @@ namespace kkot.LzTimer
             var beforeLast = BeforeLast();
 
             if (last is IdlePeriod)
-                return last.Length;
+                if (last.Length >= policies.IdleTimeout)
+                    return last.Length;
+                else
+                    return (Last(2) == null || Last(2) is ActivePeriod) ? TimeSpan.Zero : Last(2).Length;
             else
                 return beforeLast.Length;
         }
@@ -312,12 +332,15 @@ namespace kkot.LzTimer
 
         private Period BeforeLast()
         {
-            return periodsAfter[periodsAfter.Count - 2];
+            return Last(2);
         }
 
-        private Period Last()
+        private Period Last(int i = 1)
         {
-            return periodsAfter[periodsAfter.Count-1];
+            if (periodsAfter.Count >= 0)
+              return periodsAfter[periodsAfter.Count-i];
+
+            return null;
         }
     }
 }

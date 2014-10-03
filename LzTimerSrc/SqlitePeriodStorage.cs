@@ -17,9 +17,10 @@ namespace kkot.LzTimer
             }
 
             //conn = new SQLiteConnection("Data Source=" + name + ";Synchronous=Full");
-            conn = new SQLiteConnection("Data Source=" + name);            
+            conn = new SQLiteConnection(String.Format("Data Source={0}",name));
             conn.Open();
             CreateTable();
+            PragmaExlusiveAccess();
         }
 
         public void Add(Period period)
@@ -32,10 +33,20 @@ namespace kkot.LzTimer
             command.ExecuteNonQuery();
         }
 
+        private void PragmaExlusiveAccess()
+        {
+            ExecuteNonQuery("PRAGMA locking_mode=EXCLUSIVE");
+        }
+
         private void CreateTable()
         {
+            ExecuteNonQuery("CREATE TABLE IF NOT EXISTS Periods (start, end, type)");
+        }
+
+        private void ExecuteNonQuery(String sql)
+        {
             SQLiteCommand command = conn.CreateCommand();
-            command.CommandText = "CREATE TABLE IF NOT EXISTS Periods (start, end, type)";
+            command.CommandText = sql;
             command.ExecuteNonQuery();
         }
 
@@ -87,7 +98,19 @@ namespace kkot.LzTimer
 
         public SortedSet<Period> GetPeriodsAfter(DateTime dateTime)
         {
-            throw new NotImplementedException();
+            var sql = "SELECT start, end, type " +
+                "FROM Periods " +
+                "WHERE start >= :start ";
+            SQLiteCommand command = new SQLiteCommand(sql, conn);
+            command.Parameters.AddWithValue("start", dateTime);
+            SQLiteDataReader reader = command.ExecuteReader();
+
+            SortedSet<Period> result = new SortedSet<Period>();
+            while (reader.Read())
+            {
+                result.Add(CreatePeriodFromReader(reader));
+            }
+            return result;
         }
 
         private static Period CreatePeriodFromReader(SQLiteDataReader reader)

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using kkot.LzTimer;
 
 namespace LzTimerTests
@@ -72,16 +73,54 @@ namespace LzTimerTests
         }
     }
 
-    public static class TestExensionMethods
+    public class ClockStub : Clock
     {
-        public static TimeSpan secs(this int seconds)
+        private Queue<DateTime> queue;
+
+        public void Arrange(params DateTime[] dateTimes)
         {
-            return TimeSpan.FromSeconds(seconds);
+            queue = new Queue<DateTime>(dateTimes);
         }
 
-        public static TimeSpan milisec(this int miliseconds)
+        public DateTime CurrentTime()
         {
-            return TimeSpan.FromMilliseconds(miliseconds);
+            return queue.Dequeue();
+        }
+    }
+
+    public class SimpleClock : Clock
+    {
+        private DateTime currentTime;
+
+        public void StartTime(DateTime dateTime)
+        {
+            this.currentTime = dateTime;
+        }
+
+        public DateTime CurrentTime()
+        {
+            DateTime time = currentTime;
+            currentTime = currentTime.AddSeconds(1);
+            return time;
+        }
+        public DateTime PeekCurrentTime()
+        {
+            return currentTime;
+        }
+    }
+
+    public class LastActivityProbeStub : LastActivityProbe
+    {
+        private Queue<int> queue;
+
+        public void Arrange(params int[] dateTimes)
+        {
+            queue = new Queue<int>(dateTimes);
+        }
+
+        public int getLastInputTick()
+        {
+            return queue.Dequeue();
         }
     }
 }

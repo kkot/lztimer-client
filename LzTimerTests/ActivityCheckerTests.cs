@@ -13,13 +13,13 @@ namespace LzTimerTests
         private ActivityPeriodsListener activityListenerMock;
         private Clock clockMock;
 
-        [TestInitialize]
+        [TestInitializeAttribute]
         public void setUp()
         {
             probeMock = Mock.Create<LastActivityProbe>();
             activityListenerMock = Mock.Create<ActivityPeriodsListener>();
             clockMock = Mock.Create<Clock>();
-            activityCheckerSut = new ActivityChecker(probeMock, clockMock);  
+            activityCheckerSut = new ActivityChecker(probeMock, clockMock);
             activityCheckerSut.setActivityListner(activityListenerMock);
         }
 
@@ -33,7 +33,7 @@ namespace LzTimerTests
             Mock.Assert(() => activityListenerMock.PeriodPassed(Arg.IsAny<IdlePeriod>()));
         }
 
-        private void SetActivityTime(DateTime time)
+        private void SetCurrentTime(DateTime time)
         {
             Mock.Arrange(() => clockMock.CurrentTime()).Returns(time);
         }
@@ -101,7 +101,7 @@ namespace LzTimerTests
             AssertIdlePeriodPassed();
         }
 
-        [TestMethod]
+        //[TestMethod]
         public void periodLengthShouldDependOnCheckInterval()
         {
             SetLastInputTick(1);
@@ -111,18 +111,73 @@ namespace LzTimerTests
             DateTime time2 = time1 + interval1;
             DateTime time3 = time2 + interval2;
 
-            SetActivityTime(time1);
+            SetCurrentTime(time1);
             activityCheckerSut.check();
 
-            SetActivityTime(time2);
+            SetCurrentTime(time2);
             activityCheckerSut.check();
 
-            Mock.Assert(() => activityListenerMock.PeriodPassed(Arg.Matches<Period>( p => p.Length == interval1)), Occurs.Once());   
-         
-            SetActivityTime(time3);
+            Mock.Assert(() => activityListenerMock.PeriodPassed(Arg.Matches<Period>(p => p.Length == interval1)), Occurs.Once());
+
+            SetCurrentTime(time3);
             activityCheckerSut.check();
 
-            Mock.Assert(() => activityListenerMock.PeriodPassed(Arg.Matches<Period>(p => p.Length == interval2)), Occurs.Once());   
+            Mock.Assert(() => activityListenerMock.PeriodPassed(Arg.Matches<Period>(p => p.Length == interval2)), Occurs.Once());
+        }
+
+        [TestMethod]
+        public void periodShouldBeOneSecondsSpeedingClock()
+        {
+            DateTime time = DateTime.Now;
+            SetCurrentTime(time);
+            activityCheckerSut.check();
+            time = AssertPeriodLengthAfter(time, 1300.milisec(), 1.secs()); // 300
+            time = AssertPeriodLengthAfter(time, 1300.milisec(), 1.secs()); // 600
+            time = AssertPeriodLengthAfter(time, 1300.milisec(), 1.secs()); // 900
+            time = AssertPeriodLengthAfter(time, 1300.milisec(), 2.secs()); // 200
+            time = AssertPeriodLengthAfter(time, 1300.milisec(), 1.secs()); // 500
+            time = AssertPeriodLengthAfter(time, 1300.milisec(), 1.secs()); // 800
+            time = AssertPeriodLengthAfter(time, 1300.milisec(), 2.secs()); // 100
+            time = AssertPeriodLengthAfter(time, 1300.milisec(), 1.secs()); // 400
+        }
+
+        [TestMethod]
+        public void periodShouldBeOneSecondsSlowingClock()
+        {
+            DateTime time = DateTime.Now;
+            SetCurrentTime(time);
+            activityCheckerSut.check();
+            time = AssertPeriodLengthAfter(time, 700.milisec(), 1.secs()); // -300
+            time = AssertPeriodLengthAfter(time, 700.milisec(), 1.secs()); // -600
+            time = AssertPeriodLengthAfter(time, 700.milisec(), 1.secs()); // -900
+            time = AssertPeriodLengthAfter(time, 700.milisec(), 0.secs()); // -200
+            time = AssertPeriodLengthAfter(time, 700.milisec(), 1.secs()); // -500
+            time = AssertPeriodLengthAfter(time, 700.milisec(), 1.secs()); // -800
+            time = AssertPeriodLengthAfter(time, 700.milisec(), 0.secs()); // -100
+            time = AssertPeriodLengthAfter(time, 700.milisec(), 1.secs()); // -400
+        }
+
+        private DateTime AssertPeriodLengthAfter(DateTime time, TimeSpan after, TimeSpan expectedLength)
+        {
+            Mock.Reset();
+
+            time = time + after;
+
+            SetLastInputTick(1);
+            SetCurrentTime(time);
+
+            Mock.Arrange(() => activityListenerMock.PeriodPassed(Arg.IsAny<Period>())).
+                DoInstead((Period p) => Console.WriteLine("Actual " + p.Length+" expected "+expectedLength));
+
+            activityCheckerSut.check();
+            AssertPassedPeriodLength(expectedLength);
+            return time;
+        }
+
+        private void AssertPassedPeriodLength(TimeSpan expectedLength)
+        {
+            Mock.Assert(() => activityListenerMock.PeriodPassed(
+                Arg.Matches<Period>(e => e.Length == expectedLength)));
         }
     }
 }

@@ -52,12 +52,10 @@ namespace kkot.LzTimer
 
             this.activityChecker = new ActivityChecker(new Win32LastActivityProbe(), new SystemClock());
             this.policies = new TimeTablePolicies() {IdleTimeout = TimeSpan.FromMinutes(int.Parse(maxIdleMinutes)), IdleTimeoutPenalty = TimeSpan.FromSeconds(30)};
-            TimeTable timeTable = new TimeTable(policies);
+            SqlitePeriodStorage periodStorage = new SqlitePeriodStorage("periods.db");
+            TimeTable timeTable = new TimeTable(policies, periodStorage);
             this.activityChecker.setActivityListner(timeTable);
             this.statsReporter = new StatsReporterImpl(timeTable, policies);
-
-            SqlitePeriodStorage periodStorage = new SqlitePeriodStorage("test.db");
-            periodStorage.Add(new ActivePeriod(DateTime.Now, DateTime.Now));
         }
 
         //##################################################################
