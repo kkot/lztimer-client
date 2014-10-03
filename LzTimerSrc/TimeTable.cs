@@ -302,7 +302,7 @@ namespace kkot.LzTimer
                 if (last.Length >= policies.IdleTimeout)
                     return last.Length;
                 else
-                    return (Last(2) == null || Last(2) is ActivePeriod) ? TimeSpan.Zero : Last(2).Length;
+                    return (Last(3) == null) ? TimeSpan.Zero : Last(3).Length;
             else
                 return beforeLast.Length;
         }
@@ -337,7 +337,7 @@ namespace kkot.LzTimer
 
         private Period Last(int i = 1)
         {
-            if (periodsAfter.Count >= 0)
+            if (periodsAfter.Count >= i)
               return periodsAfter[periodsAfter.Count-i];
 
             return null;

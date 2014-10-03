@@ -39,7 +39,6 @@ namespace kkot.LzTimer
             // loading configuration
             string maxIdleMinutes = Properties.Settings.Default.MaxIdleMinutes.ToString();
             intervalTextBox.Text = maxIdleMinutes;
-            timer1.Interval = 1000;
             timer1.Enabled = true;
 
             soundPlayer = new SoundPlayer();
@@ -130,7 +129,7 @@ namespace kkot.LzTimer
         private void UpdateLabels(int secondsToday, int secondsAfterLastBreak)
         {
             todayTimeLabel.Text  = Helpers.SecondsToHMS(secondsToday);
-            lastBreakLabel.Text = " "+(secondsAfterLastBreak / 60) + " min";
+            lastBreakLabel.Text = Helpers.SecondsToHMS(secondsAfterLastBreak);
             
             string notifyText = "today " + todayTimeLabel.Text
                 + "\n"
