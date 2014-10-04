@@ -53,7 +53,7 @@ namespace kkot.LzTimer
             this.policies = new TimeTablePolicies() {IdleTimeout = TimeSpan.FromMinutes(int.Parse(maxIdleMinutes)), IdleTimeoutPenalty = TimeSpan.FromSeconds(30)};
             SqlitePeriodStorage periodStorage = new SqlitePeriodStorage("periods.db");
             TimeTable timeTable = new TimeTable(policies, periodStorage);
-            this.activityChecker.setActivityListner(timeTable);
+            this.activityChecker.SetActivityListner(timeTable);
             this.statsReporter = new StatsReporterImpl(timeTable, policies);
         }
 
@@ -61,7 +61,7 @@ namespace kkot.LzTimer
 
         private void timer1_Tick(object sender, EventArgs e)
         {
-            activityChecker.check();
+            activityChecker.Check();
             UpdateStats(statsReporter.GetStatsAfter(DateTime.Now.Date));
         }
 
@@ -74,6 +74,7 @@ namespace kkot.LzTimer
 
             Period currentPeriod = stats.CurrentPeriod;
             UpdateNotifyIcon(currentPeriod is ActivePeriod, (int)currentPeriod.Length.TotalMinutes);
+            UpdateAlldayIcon(stats.TotalActive);
         }
 
         private void RecreateCurrentPeriodIcon(int minutes)
@@ -103,8 +104,11 @@ namespace kkot.LzTimer
             currentPeriodIcon = Icon.FromHandle(funBmp.GetHicon());
         }
 
-        private void UpdateAlldayIcon(int hours, int minutes)
+        private void UpdateAlldayIcon(TimeSpan totalToday)
         {
+            int hours = totalToday.Hours;
+            int minutes = totalToday.Minutes;
+
             Bitmap alldayBmp = new Bitmap(16, 16);
             if (alldayIcon != null)
                 PInvoke.DestroyIcon(alldayIcon.Handle);

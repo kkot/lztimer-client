@@ -99,13 +99,12 @@ namespace LzTimerTests
 
         public DateTime CurrentTime()
         {
-            DateTime time = currentTime;
-            currentTime = currentTime.AddSeconds(1);
-            return time;
-        }
-        public DateTime PeekCurrentTime()
-        {
             return currentTime;
+        }
+
+        public void NextValue()
+        {
+            currentTime += 1.secs();
         }
     }
 
@@ -120,7 +119,12 @@ namespace LzTimerTests
 
         public int getLastInputTick()
         {
-            return queue.Dequeue();
+            return queue.Peek();
+        }
+
+        public void NextValue()
+        {
+            queue.Dequeue();
         }
     }
 }

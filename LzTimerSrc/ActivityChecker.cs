@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.InteropServices;
-using System.Windows.Forms.VisualStyles;
 
 namespace kkot.LzTimer
 {
@@ -25,7 +24,7 @@ namespace kkot.LzTimer
         private ActivityPeriodsListener listener;
         private int? lastInputTick;
         private DateTime lastRealCheckTime;
-        private DateTime lastSentCheckTime;
+        private DateTime lastCheckTime;
 
         public ActivityChecker(LastActivityProbe probe, Clock clock)
         {
@@ -33,54 +32,47 @@ namespace kkot.LzTimer
             this.probe = probe;
         }
 
-        public void setActivityListner(ActivityPeriodsListener listener)
+        public void SetActivityListner(ActivityPeriodsListener listener)
         {
             this.listener = listener;
         }
 
-        public void check()
+        public void Check()
         {
-            int currentInputTick = probe.getLastInputTick();
-
-            if (lastInputTick == null)
+            if (lastInputTick == null || IsAfterWakeUp())
             {
-                lastInputTick = currentInputTick;
-                lastSentCheckTime = clock.CurrentTime();
+                SaveLastInputTick();
                 return;
             }
 
-            TimeSpan length = 1.secs();
-            TimeSpan difference = (lastSentCheckTime + length) - clock.CurrentTime();
-            Console.WriteLine(difference);
-            if (difference.Duration() > 1.secs())
-            {
-                if (difference > 0.secs())
-                {
-                    length = 0.secs();
-                }
-                if (difference < 0.secs())
-                {
-                    length = 2.secs();
-                }
-            }
+            var active = (lastInputTick != probe.GetLastInputTick());
 
-            bool active = (lastInputTick != currentInputTick);
-
-            listener.PeriodPassed(Period.Create(active, lastSentCheckTime, lastSentCheckTime + length));
-            lastSentCheckTime = lastSentCheckTime + length;
+            var now = clock.CurrentTime();
+            listener.PeriodPassed(Period.Create(active, now - 1.secs(), now));
             
-            lastInputTick = currentInputTick;
+            SaveLastInputTick();
+        }
+
+        private bool IsAfterWakeUp()
+        {
+            return (clock.CurrentTime() - lastCheckTime).Duration() > 2.secs();
+        }
+
+        private void SaveLastInputTick()
+        {
+            lastInputTick = probe.GetLastInputTick();
+            lastCheckTime = clock.CurrentTime();
         }
     }   
 
     public interface LastActivityProbe
     {
-        int getLastInputTick();
+        int GetLastInputTick();
     }
 
     public class Win32LastActivityProbe : LastActivityProbe
     {
-        public int getLastInputTick()
+        public int GetLastInputTick()
         {
             int lastInputTicks = 0;
 

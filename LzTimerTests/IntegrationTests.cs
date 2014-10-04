@@ -25,7 +25,7 @@ namespace LzTimerTests
             clockStub = new SimpleClock();
             timeTable = new TimeTable(policies);
             activityChecker = new ActivityChecker(probeStub, clockStub);
-            activityChecker.setActivityListner(timeTable);
+            activityChecker.SetActivityListner(timeTable);
             statsReporter = new StatsReporterImpl(timeTable, policies);
         }
 
@@ -46,16 +46,17 @@ namespace LzTimerTests
             Assert.AreEqual(expectedLength, period.Length);
         }
 
-        private void SimulateActivity(params int[] activityChecks)
+        private void SimulateActivity(params int[] simulatedActivity)
         {
             firstCheck = new DateTime(2014, 1, 1, 12, 0, 0);
             clockStub.StartTime(firstCheck);
+            probeStub.Arrange(simulatedActivity);
 
-            probeStub.Arrange(activityChecks);
-
-            for (int i = 0; i < activityChecks.Length; i++)
+            for (int i = 0; i < simulatedActivity.Length; i++)
             {
-                activityChecker.check();
+                activityChecker.Check();
+                probeStub.NextValue();
+                clockStub.NextValue();
             }
             //var timePeriod = new TimePeriod(firstCheck, clockStub.PeekCurrentTime());
         }
