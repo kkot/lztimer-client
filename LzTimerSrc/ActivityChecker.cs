@@ -23,7 +23,6 @@ namespace kkot.LzTimer
 
         private ActivityPeriodsListener listener;
         private int? lastInputTick;
-        private DateTime lastRealCheckTime;
         private DateTime lastCheckTime;
 
         public ActivityChecker(LastActivityProbe probe, Clock clock)
@@ -48,14 +47,37 @@ namespace kkot.LzTimer
             var active = (lastInputTick != probe.GetLastInputTick());
 
             var now = clock.CurrentTime();
-            listener.PeriodPassed(Period.Create(active, now - 1.s(), now));
+            listener.PeriodPassed(Period.Create(active, now - RoundedTimeSpanSinceLastCheck(), now));
             
             SaveLastInputTick();
         }
 
+        private TimeSpan RoundedTimeSpanSinceLastCheck()
+        {
+            return Round(TimeSpanSinceLastCheck(), 100.milisec());
+        }
+
         private bool IsAfterWakeUp()
         {
-            return (clock.CurrentTime() - lastCheckTime).Duration() > 2.s();
+            return TimeSpanSinceLastCheck().Duration() > 2.s();
+        }
+
+        private TimeSpan Round(TimeSpan toRound, TimeSpan round)
+        {
+            long wholeParts = toRound.Ticks/round.Ticks;
+            long remain = toRound.Ticks%round.Ticks;
+            if (remain < round.Ticks/2)
+                remain = 0;
+            else
+                remain = round.Ticks;
+
+            TimeSpan rounded = new TimeSpan(wholeParts*round.Ticks + remain);
+            return rounded;
+        }
+
+        private TimeSpan TimeSpanSinceLastCheck()
+        {
+            return clock.CurrentTime() - lastCheckTime;
         }
 
         private void SaveLastInputTick()

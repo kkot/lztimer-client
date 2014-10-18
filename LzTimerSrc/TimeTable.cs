@@ -20,7 +20,7 @@ namespace kkot.LzTimer
 
         public override string ToString()
         {
-            return "["+Start.TimeOfDay+" "+End.TimeOfDay+"]";
+            return "["+Start.TimeOfDay+" "+End.TimeOfDay+" length "+Length+"]";
         }
 
         public override bool Equals(object obj)

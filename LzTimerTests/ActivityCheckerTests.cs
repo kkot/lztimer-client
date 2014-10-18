@@ -12,6 +12,7 @@ namespace LzTimerTests
         private ActivityChecker activityCheckerSut;
         private ActivityPeriodsListener activityListenerMock;
         private Clock clockMock;
+        private readonly DateTime START = new DateTime(2014, 1, 1, 12, 0, 0);
 
         [TestInitializeAttribute]
         public void setUp()
@@ -103,13 +104,13 @@ namespace LzTimerTests
             AssertIdlePeriodPassed();
         }
 
-        //[TestMethod]
+        [TestMethod]
         public void periodLengthShouldDependOnCheckInterval()
         {
             SetLastInputTick(1);
-            TimeSpan interval1 = TimeSpan.FromMilliseconds(1500);
-            TimeSpan interval2 = TimeSpan.FromMilliseconds(1000);
-            DateTime time1 = new DateTime();
+            var interval1 = 1500.milisec();
+            var interval2 = 1000.milisec();
+            DateTime time1 = START;
             DateTime time2 = time1 + interval1;
             DateTime time3 = time2 + interval2;
 
@@ -127,36 +128,31 @@ namespace LzTimerTests
             Mock.Assert(() => activityListenerMock.PeriodPassed(Arg.Matches<Period>(p => p.Length == interval2)), Occurs.Once());
         }
 
-        //[TestMethod]
-        public void periodShouldBeOneSecondsSpeedingClock()
+        [TestMethod]
+        public void periodLengthShouldBeRoundedTo100ms()
         {
-            DateTime time = DateTime.Now;
-            SetCurrentTime(time);
-            activityCheckerSut.Check();
-            time = AssertPeriodLengthAfter(time, 1300.milisec(), 1.s()); // 300
-            time = AssertPeriodLengthAfter(time, 1300.milisec(), 1.s()); // 600
-            time = AssertPeriodLengthAfter(time, 1300.milisec(), 1.s()); // 900
-            time = AssertPeriodLengthAfter(time, 1300.milisec(), 2.s()); // 200
-            time = AssertPeriodLengthAfter(time, 1300.milisec(), 1.s()); // 500
-            time = AssertPeriodLengthAfter(time, 1300.milisec(), 1.s()); // 800
-            time = AssertPeriodLengthAfter(time, 1300.milisec(), 2.s()); // 100
-            time = AssertPeriodLengthAfter(time, 1300.milisec(), 1.s()); // 400
-        }
+            DebugView.IsTraceEnabled = true;
 
-        //[TestMethod]
-        public void periodShouldBeOneSecondsSlowingClock()
-        {
-            DateTime time = DateTime.Now;
-            SetCurrentTime(time);
+            SetLastInputTick(1);
+            var interval1 = 1051.milisec();
+            var interval2 = 1049.milisec();
+            DateTime time1 = START;
+            DateTime time2 = time1 + interval1;
+            DateTime time3 = time2 + interval2;
+
+            Mock.Arrange(() => activityListenerMock.PeriodPassed(Arg.Matches<Period>(p => p.Length == 1100.milisec()))).InOrder();
+            Mock.Arrange(() => activityListenerMock.PeriodPassed(Arg.Matches<Period>(p => p.Length == 1000.milisec()))).InOrder();
+
+            SetCurrentTime(time1);
             activityCheckerSut.Check();
-            time = AssertPeriodLengthAfter(time, 700.milisec(), 1.s()); // -300
-            time = AssertPeriodLengthAfter(time, 700.milisec(), 1.s()); // -600
-            time = AssertPeriodLengthAfter(time, 700.milisec(), 1.s()); // -900
-            time = AssertPeriodLengthAfter(time, 700.milisec(), 0.s()); // -200
-            time = AssertPeriodLengthAfter(time, 700.milisec(), 1.s()); // -500
-            time = AssertPeriodLengthAfter(time, 700.milisec(), 1.s()); // -800
-            time = AssertPeriodLengthAfter(time, 700.milisec(), 0.s()); // -100
-            time = AssertPeriodLengthAfter(time, 700.milisec(), 1.s()); // -400
+
+            SetCurrentTime(time2);
+            activityCheckerSut.Check();
+
+            SetCurrentTime(time3);
+            activityCheckerSut.Check();
+
+            Mock.Assert(activityListenerMock);
         }
 
         private DateTime AssertPeriodLengthAfter(DateTime time, TimeSpan after, TimeSpan expectedLength)
@@ -169,7 +165,7 @@ namespace LzTimerTests
             SetCurrentTime(time);
 
             Mock.Arrange(() => activityListenerMock.PeriodPassed(Arg.IsAny<Period>())).
-                DoInstead((Period p) => Console.WriteLine("Actual " + p.Length+" expected "+expectedLength));
+                DoInstead((Period p) => Console.WriteLine("Actual " + p.Length + " expected " + expectedLength));
 
             activityCheckerSut.Check();
             AssertPassedPeriodLength(expectedLength);
