@@ -50,6 +50,11 @@ namespace kkot.LzTimer
             command.ExecuteNonQuery();
         }
 
+        public List<Period> GetSinceFirstActivePeriodBefore(DateTime dateTime)
+        {
+            throw new NotImplementedException();
+        }
+
         public void Close()
         {
             conn.Close();

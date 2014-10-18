@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
 
 namespace kkot.LzTimer
 {
@@ -115,6 +116,8 @@ namespace kkot.LzTimer
     public interface PeriodsReader
     {
         SortedSet<Period> GetPeriodsAfter(DateTime dateTime);
+
+        List<Period> GetSinceFirstActivePeriodBefore(DateTime dateTime);
     }
 
     public interface PeriodStorage
@@ -124,6 +127,7 @@ namespace kkot.LzTimer
         SortedSet<Period> GetAll();
         SortedSet<Period> GetPeriodsFromTimePeriod(TimePeriod period);
         SortedSet<Period> GetPeriodsAfter(DateTime dateTime);
+        List<Period> GetSinceFirstActivePeriodBefore(DateTime dateTime);
         void Close();
     }
 
@@ -157,6 +161,12 @@ namespace kkot.LzTimer
         {
             return new SortedSet<Period>(periods.Where(p =>
                 p.Start >= dateTime));
+        }
+
+        public List<Period> GetSinceFirstActivePeriodBefore(DateTime dateTime)
+        {
+            DateTime fromDate = periods.Where((p) => p.Start < dateTime).ToList().Last().Start;
+            return periods.Where((p) => p.Start >= fromDate).ToList();
         }
 
         public void Close()
@@ -231,18 +241,23 @@ namespace kkot.LzTimer
         {
             return periodStorage.GetPeriodsAfter(dateTime);
         }
+
+        public List<Period> GetSinceFirstActivePeriodBefore(DateTime dateTime)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public class Stats
     {
-        public TimeSpan LastBreak;
-        public Period CurrentPeriod;
+        public TimeSpan LastInactiveTimespan;
+        public Period CurrentLogicalPeriod;
         public TimeSpan TotalActive;
     }
 
     public interface StatsReporter
     {
-        Stats GetStatsAfter(DateTime date);
+        Stats GetStatsAfter(DateTime startDateTime);
     }
 
     public class StatsReporterImpl : StatsReporter
@@ -250,6 +265,7 @@ namespace kkot.LzTimer
         private readonly PeriodsReader periodReader;
         private List<Period> periodsAfter;
         private TimeTablePolicies policies;
+        private DateTime startDateTime;
 
         public StatsReporterImpl(PeriodsReader periodsReader, TimeTablePolicies policies)
         {
@@ -257,13 +273,14 @@ namespace kkot.LzTimer
             this.policies = policies;
         }
 
-        public Stats GetStatsAfter(DateTime date)
+        public Stats GetStatsAfter(DateTime startDateTime)
         {
-            periodsAfter = GetPeriodsAfter(date);
+            this.periodsAfter = GetPeriodsAfter(startDateTime);
+            this.startDateTime = startDateTime;
             return new Stats()
             {
-                CurrentPeriod = GetCurrentPeriod(), 
-                LastBreak = GetLastBreak(), 
+                CurrentLogicalPeriod = GetCurrentPeriod(), 
+                LastInactiveTimespan = GetLastInactiveTimespan(), 
                 TotalActive = GetTotalActive()
             };
         }
@@ -290,21 +307,19 @@ namespace kkot.LzTimer
                 return last;
         }
 
-        public TimeSpan GetLastBreak()
+        public TimeSpan GetLastInactiveTimespan()
         {
-            if (periodsAfter.Count == 0 || periodsAfter.Count == 1)
+            if (periodsAfter.Count == 0)
                 return TimeSpan.Zero;
 
-            var last = Last();
-            var beforeLast = BeforeLast();
+            if (Last() is IdlePeriod && Last().Length > policies.IdleTimeout)
+                return Last().Length;
 
-            if (last is IdlePeriod)
-                if (last.Length >= policies.IdleTimeout)
-                    return last.Length;
-                else
-                    return (Last(3) == null) ? TimeSpan.Zero : Last(3).Length;
-            else
-                return beforeLast.Length;
+            if (ActivePeriods().Count >= 2)
+            {
+                return LastActive(1).Start - LastActive(2).End;
+            }
+            return LastActive(1).Start- startDateTime;
         }
 
         private TimeSpan GetTotalActive()
@@ -312,9 +327,7 @@ namespace kkot.LzTimer
             if (periodsAfter.Count == 0)
                 return TimeSpan.Zero;
 
-            var activePeriods =
-                periodsAfter.
-                Where(e => e is ActivePeriod);
+            var activePeriods = ActivePeriods();
 
             var sum = new TimeSpan();
             foreach (ActivePeriod period in activePeriods)
@@ -330,6 +343,11 @@ namespace kkot.LzTimer
             return sum;
         }
 
+        private List<ActivePeriod> ActivePeriods()
+        {
+            return periodsAfter.Where(e => e is ActivePeriod).Select(p => (ActivePeriod) p).ToList();
+        }
+
         private Period BeforeLast()
         {
             return Last(2);
@@ -341,6 +359,11 @@ namespace kkot.LzTimer
               return periodsAfter[periodsAfter.Count-i];
 
             return null;
+        }
+
+        private Period LastActive(int position)
+        {
+            return ActivePeriods().Last(position);
         }
     }
 }

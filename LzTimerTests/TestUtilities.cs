@@ -26,7 +26,7 @@ namespace LzTimerTests
         public static PeriodBuilder New(DateTime start)
         {
             var periodBuilder = new PeriodBuilder(
-                start, 
+                start,
                 start + DEFAULT_LENGTH_MS);
             return periodBuilder;
         }
@@ -73,28 +73,34 @@ namespace LzTimerTests
         }
     }
 
-    public class ClockStub : Clock
+    public static class PeriodExtensionMethods
     {
-        private Queue<DateTime> queue;
-
-        public void Arrange(params DateTime[] dateTimes)
+        public static PeriodBuilder Length(this DateTime dateTime, TimeSpan length)
         {
-            queue = new Queue<DateTime>(dateTimes);
+            return PeriodBuilder.New(dateTime).Length(length);
         }
 
-        public DateTime CurrentTime()
+        public static PeriodBuilder NewPeriodAfter(this Period period, TimeSpan gap)
         {
-            return queue.Dequeue();
+            return PeriodBuilder.NewAfter(period, gap);
         }
     }
 
-    public class SimpleClock : Clock
+    public class ClockStub : Clock
     {
         private DateTime currentTime;
+        private Queue<TimeSpan> queue;
+        private TimeSpan interval = 1.secs();
 
-        public void StartTime(DateTime dateTime)
+        public void Arrange(DateTime startDateTime, params TimeSpan[] dateTimes)
         {
-            this.currentTime = dateTime;
+            currentTime = startDateTime;
+            queue = new Queue<TimeSpan>(dateTimes);
+        }
+
+        public void Arrange(DateTime startDateTime)
+        {
+            currentTime = startDateTime;
         }
 
         public DateTime CurrentTime()
@@ -104,7 +110,10 @@ namespace LzTimerTests
 
         public void NextValue()
         {
-            currentTime += 1.secs();
+            if (queue == null)
+                currentTime += interval;
+            else
+                currentTime += queue.Dequeue();
         }
     }
 
@@ -117,7 +126,7 @@ namespace LzTimerTests
             queue = new Queue<int>(dateTimes);
         }
 
-        public int getLastInputTick()
+        public int GetLastInputTick()
         {
             return queue.Peek();
         }

@@ -7,19 +7,19 @@ namespace LzTimerTests
 {
     public abstract class PeriodStoreageTests
     {
-        private DateTime START = new DateTime(2014, 1, 1, 12, 0, 0);
+        private DateTime START_DATETIME = new DateTime(2014, 1, 1, 12, 0, 0);
 
         public void howTreatIdenticalPeriods()
         {
-            var activePeriod = PeriodBuilder.New(START).Active();
-            var idlePeriod = PeriodBuilder.New(START).Idle();
+            var activePeriod = PeriodBuilder.New(START_DATETIME).Active();
+            var idlePeriod = PeriodBuilder.New(START_DATETIME).Idle();
             // todo:
         }
 
         [TestMethod]
         public void addedPeriod_shouldBeReaderByAnotherInstance()
         {
-            var activePeriod = PeriodBuilder.New(START).Active();
+            var activePeriod = PeriodBuilder.New(START_DATETIME).Active();
             var idlePeriod = PeriodBuilder.NewAfter(activePeriod, 1.secs()).Idle();
             var expected = new Period[] { activePeriod, idlePeriod };
             {
@@ -43,7 +43,7 @@ namespace LzTimerTests
         [TestMethod]
         public void removePeriod_shouldWork()
         {
-            var firstPeriod = PeriodBuilder.New(START).Length(5.secs()).Active();
+            var firstPeriod = PeriodBuilder.New(START_DATETIME).Length(5.secs()).Active();
             var secondPeriod = PeriodBuilder.NewAfter(firstPeriod, 10.secs()).Idle();
 
             PeriodStorage periodStorageSUT = GetStorage();
@@ -67,7 +67,7 @@ namespace LzTimerTests
         [TestMethod]
         public void getPeriodsFromTimePeriod_shouldWork()
         {
-            var firstPeriod = PeriodBuilder.New(START).Length(5.secs()).Active();
+            var firstPeriod = PeriodBuilder.New(START_DATETIME).Length(5.secs()).Active();
             var secondPeriod = PeriodBuilder.NewAfter(firstPeriod, 10.secs()).Idle();
 
             PeriodStorage periodStorageSUT = GetStorage();
@@ -86,8 +86,24 @@ namespace LzTimerTests
         [TestMethod]
         public void getPeriodsAfter_shouldWork()
         {
-            var firstPeriod = PeriodBuilder.New(START).Length(5.secs()).Active();
+            var firstPeriod = PeriodBuilder.New(START_DATETIME).Length(5.secs()).Active();
             var secondPeriod = PeriodBuilder.NewAfter(firstPeriod, 10.secs()).Idle();
+
+            PeriodStorage periodStorageSUT = GetStorage();
+            periodStorageSUT.Add(firstPeriod);
+            periodStorageSUT.Add(secondPeriod);
+            var expected = new Period[] { secondPeriod };
+
+            var found = periodStorageSUT.GetPeriodsAfter(firstPeriod.End + 1.secs());
+            CollectionAssert.AreEquivalent(expected, found);
+            periodStorageSUT.Close();
+        }
+
+        [TestMethod]
+        public void GetSinceFirstActivePeriodBeforeTest()
+        {
+            var firstPeriod  = START_DATETIME.Length(5.secs()).Active();
+            var secondPeriod = firstPeriod.NewPeriodAfter(10.secs()).Idle();
 
             PeriodStorage periodStorageSUT = GetStorage();
             periodStorageSUT.Add(firstPeriod);

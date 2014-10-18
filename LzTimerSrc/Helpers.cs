@@ -1,8 +1,23 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace kkot.LzTimer
 {
+    public static class ListExensionMethods
+    {
+        public static T BeforeLast<T>(this List<T> list)
+        {
+            return list[list.Count-2];
+        }
+
+        public static T Last<T>(this List<T> list, int position)
+        {
+            return list[list.Count - position];
+        }
+    }
+
     public static class IntegerTimespanExensionMethods
     {
         public static TimeSpan secs(this int seconds)
@@ -13,6 +28,11 @@ namespace kkot.LzTimer
         public static TimeSpan milisec(this int miliseconds)
         {
             return TimeSpan.FromMilliseconds(miliseconds);
+        }
+
+        public static TimeSpan[] secs(this int[] seconds)
+        {
+            return seconds.Select((p) => TimeSpan.FromSeconds(p)).ToArray();
         }
     }
 

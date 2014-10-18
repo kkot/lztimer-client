@@ -41,7 +41,7 @@ namespace LzTimerTests
 
         private void SetLastInputTick(int tick)
         {
-            Mock.Arrange(() => probeMock.getLastInputTick()).Returns(tick);
+            Mock.Arrange(() => probeMock.GetLastInputTick()).Returns(tick);
         }
 
         [TestMethod]
@@ -49,7 +49,7 @@ namespace LzTimerTests
         {
             activityCheckerSut.Check();
 
-            Mock.Assert(() => probeMock.getLastInputTick());
+            Mock.Assert(() => probeMock.GetLastInputTick());
         }
 
         [TestMethod]
