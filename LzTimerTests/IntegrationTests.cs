@@ -1,4 +1,5 @@
-﻿using kkot.LzTimer;
+﻿using System.Linq;
+using kkot.LzTimer;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 
@@ -19,7 +20,7 @@ namespace LzTimerTests
         [TestInitializeAttribute]
         public void setUp()
         {
-            policies = new TimeTablePolicies {IdleTimeoutPenalty = 30.secs()};
+            policies = new TimeTablePolicies {IdleTimeoutPenalty = 30.s()};
             probeStub = new LastActivityProbeStub();
             simpleClockStub = new ClockStub();
             var timeTable = new TimeTable(policies);
@@ -45,27 +46,17 @@ namespace LzTimerTests
             Assert.AreEqual(expectedLength, period.Length);
         }
 
-        private void SimulateActivity(params int[] simulatedActivity)
+        private void Simulate(params object[] simulated)
         {
             firstCheck = new DateTime(2014, 1, 1, 12, 0, 0);
-            simpleClockStub.Arrange(firstCheck);
+
+            var simulatedActivity = simulated.Where(e => e is int).Select(e => (int)e).ToArray();
+            var periodLengths = simulated.Where(e => e is TimeSpan).Select(e => (TimeSpan)e).ToArray();
+
+            simpleClockStub.Arrange(firstCheck, periodLengths);
             probeStub.Arrange(simulatedActivity);
 
-            for (int i = 0; i < simulatedActivity.Length; i++)
-            {
-                activityChecker.Check();
-                probeStub.NextValue();
-                simpleClockStub.NextValue();
-            }
-        }
-
-        private void SimulateActivityAndClock(int[] simulatedActivity, TimeSpan[] clockIntervalsSecs)
-        {
-            firstCheck = new DateTime(2014, 1, 1, 12, 0, 0);
-            simpleClockStub.Arrange(firstCheck, clockIntervalsSecs);
-            probeStub.Arrange(simulatedActivity);
-
-            for (int i = 0; i < simulatedActivity.Length; i++)
+            for (var i = 0; i < simulatedActivity.Length; i++)
             {
                 activityChecker.Check();
                 probeStub.NextValue();
@@ -76,117 +67,123 @@ namespace LzTimerTests
         [TestMethod]
         public void checkTwoActive()
         {
-            policies.IdleTimeout = 5.secs();
-            SimulateActivity(1, 2, 3);
-            AssertTotalActive(2.secs());
-            AssertCurrentLogicalPeriod(ACTIVE, 2.secs());
-            AssertLastInactiveTimespan(0.secs());
+            policies.IdleTimeout = 5.s();
+            Simulate(1, 2, 3);
+            AssertTotalActive(2.s());
+            AssertCurrentLogicalPeriod(ACTIVE, 2.s());
+            AssertLastInactiveTimespan(0.s());
         }
 
         [TestMethod]
         public void checkTwoActiveWithIdleInside()
         {
-            policies.IdleTimeout = 5.secs();
-            SimulateActivity(1, 2, 3, 3, 4);
-            AssertTotalActive(4.secs());
-            AssertCurrentLogicalPeriod(ACTIVE, 4.secs());
-            AssertLastInactiveTimespan(0.secs());
+            policies.IdleTimeout = 5.s();
+            Simulate(1, 2, 3, 3, 4);
+            AssertTotalActive(4.s());
+            AssertCurrentLogicalPeriod(ACTIVE, 4.s());
+            AssertLastInactiveTimespan(0.s());
         }
 
         [TestMethod]
         public void checkTwoActiveIdleActiveIdleWithoutTimeOut()
         {
-            policies.IdleTimeout = 5.secs();
-            SimulateActivity(1, 2, 3, 3, 4, 4, 4);
-            AssertTotalActive(6.secs());
-            AssertLastInactiveTimespan(0.secs());
-            AssertCurrentLogicalPeriod(ACTIVE, 6.secs());
+            policies.IdleTimeout = 5.s();
+            Simulate(1, 2, 3, 3, 4, 4, 4);
+            AssertTotalActive(6.s());
+            AssertLastInactiveTimespan(0.s());
+            AssertCurrentLogicalPeriod(ACTIVE, 6.s());
         }
 
         [TestMethod]
         public void checkTwoActiveIdleActiveIdleWithTimeOut()
         {
-            policies.IdleTimeout = 5.secs();
-            SimulateActivity(1, 2, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4);
-            AssertTotalActive(4.secs());
-            AssertLastInactiveTimespan(8.secs());
-            AssertCurrentLogicalPeriod(IDLE, 8.secs());
+            policies.IdleTimeout = 5.s();
+            Simulate(1, 2, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4);
+            AssertTotalActive(4.s());
+            AssertLastInactiveTimespan(8.s());
+            AssertCurrentLogicalPeriod(IDLE, 8.s());
         }
 
         [TestMethod]
         public void checkWithTimeout()
         {
-            policies.IdleTimeout = 2.secs();
+            policies.IdleTimeout = 2.s();
 
-            SimulateActivity(1, 2, 3, 3, 3, 3, 4);
-            AssertTotalActive(3.secs());
+            Simulate(1, 2, 3, 3, 3, 3, 4);
+            AssertTotalActive(3.s());
         }
 
         [TestMethod]
         public void checkWithoutTimeout()
         {
-            policies.IdleTimeout = 4.secs();
+            policies.IdleTimeout = 4.s();
 
-            SimulateActivity(1, 2, 3, 3, 3, 3, 4);
-            AssertTotalActive(6.secs());
+            Simulate(1, 2, 3, 3, 3, 3, 4);
+            AssertTotalActive(6.s());
         }
 
         [TestMethod]
         public void lastBreakShouldntBeCountIfNotAfterTimeout()
         {
-            policies.IdleTimeout = 3.secs();
+            policies.IdleTimeout = 3.s();
 
-            SimulateActivity(1, 3, 4, 4, 4);
-            AssertTotalActive(4.secs());
-            AssertLastInactiveTimespan(0.secs());
+            Simulate(1, 3, 4, 4, 4);
+            AssertTotalActive(4.s());
+            AssertLastInactiveTimespan(0.s());
         }
 
         [TestMethod]
         public void lastBreak_IfNotAfterTimeoutTakesPreviousBreak()
         {
-            policies.IdleTimeout = 3.secs();
+            policies.IdleTimeout = 3.s();
 
-            SimulateActivity(1, 2, 2, 2, 2, 2, 3, 4);
-            AssertTotalActive(3.secs());
-            AssertLastInactiveTimespan(4.secs());
+            Simulate(1, 2, 2, 2, 2, 2, 3, 4);
+            AssertTotalActive(3.s());
+            AssertLastInactiveTimespan(4.s());
         }
 
         [TestMethod]
         public void lastInactiveTimespan_AfterStartMustBe0()
         {
-            policies.IdleTimeout = 3.secs();
+            policies.IdleTimeout = 3.s();
 
-            SimulateActivity(1, 2);
-            AssertTotalActive(1.secs());
-            AssertLastInactiveTimespan(0.secs());
+            Simulate(1, 2);
+            AssertTotalActive(1.s());
+            AssertLastInactiveTimespan(0.s());
         }
 
         [TestMethod]
         public void lastInactiveTimespan_InactiveBeforeActive()
         {
-            policies.IdleTimeout = 3.secs();
+            policies.IdleTimeout = 3.s();
 
-            SimulateActivity(1, 1, 2);
-            AssertTotalActive(1.secs());
-            AssertLastInactiveTimespan(1.secs());
+            Simulate(1, 1, 2);
+            AssertTotalActive(1.s());
+            AssertLastInactiveTimespan(1.s());
         }
 
         [TestMethod]
         public void lastInactiveTimespan_SleepAndActive()
         {
-            policies.IdleTimeout = 3.secs();
+            policies.IdleTimeout = 3.s();
 
-            SimulateActivityAndClock(
-                new[] {1, 1, 2},
-                new[] {10, 1, 1}.secs());
-            AssertTotalActive(1.secs());
-            AssertLastInactiveTimespan(10.secs());
-            AssertCurrentLogicalPeriod(ACTIVE, 1.secs());
+            Simulate(
+                1, 10.s(), 1, 1.s(), 2);
+            AssertTotalActive(1.s());
+            AssertLastInactiveTimespan(10.s());
+            AssertCurrentLogicalPeriod(ACTIVE, 1.s());
         }
 
         [TestMethod]
         public void ActiveSleepIdleActive()
         {
+            policies.IdleTimeout = 3.s();
+
+            Simulate(
+                1, 1.s(), 2, 10.s(), 2, 1.s(), 2, 1.s(), 3);
+            AssertTotalActive(2.s());
+            AssertLastInactiveTimespan(11.s());
+            AssertCurrentLogicalPeriod(ACTIVE, 1.s());
 
         }
     }

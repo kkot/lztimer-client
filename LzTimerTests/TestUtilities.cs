@@ -89,13 +89,25 @@ namespace LzTimerTests
     public class ClockStub : Clock
     {
         private DateTime currentTime;
-        private Queue<TimeSpan> queue;
-        private TimeSpan interval = 1.secs();
+        private Queue<TimeSpan> timeSpans;
+        private TimeSpan interval = 1.s();
 
-        public void Arrange(DateTime startDateTime, params TimeSpan[] dateTimes)
+        public void Arrange(DateTime startDateTime, params TimeSpan[] timeSpans)
         {
             currentTime = startDateTime;
-            queue = new Queue<TimeSpan>(dateTimes);
+
+            if (timeSpans.Length > 0)
+            {
+                var q = AddZeroToBeginning(timeSpans);
+                this.timeSpans = new Queue<TimeSpan>(q);                
+            }
+        }
+
+        private static List<TimeSpan> AddZeroToBeginning(TimeSpan[] dateTimes)
+        {
+            var q = new List<TimeSpan>(dateTimes);
+            q.Add(TimeSpan.Zero);
+            return q;
         }
 
         public void Arrange(DateTime startDateTime)
@@ -110,10 +122,10 @@ namespace LzTimerTests
 
         public void NextValue()
         {
-            if (queue == null)
+            if (timeSpans == null)
                 currentTime += interval;
             else
-                currentTime += queue.Dequeue();
+                currentTime += timeSpans.Dequeue();
         }
     }
 

@@ -133,14 +133,14 @@ namespace LzTimerTests
             DateTime time = DateTime.Now;
             SetCurrentTime(time);
             activityCheckerSut.Check();
-            time = AssertPeriodLengthAfter(time, 1300.milisec(), 1.secs()); // 300
-            time = AssertPeriodLengthAfter(time, 1300.milisec(), 1.secs()); // 600
-            time = AssertPeriodLengthAfter(time, 1300.milisec(), 1.secs()); // 900
-            time = AssertPeriodLengthAfter(time, 1300.milisec(), 2.secs()); // 200
-            time = AssertPeriodLengthAfter(time, 1300.milisec(), 1.secs()); // 500
-            time = AssertPeriodLengthAfter(time, 1300.milisec(), 1.secs()); // 800
-            time = AssertPeriodLengthAfter(time, 1300.milisec(), 2.secs()); // 100
-            time = AssertPeriodLengthAfter(time, 1300.milisec(), 1.secs()); // 400
+            time = AssertPeriodLengthAfter(time, 1300.milisec(), 1.s()); // 300
+            time = AssertPeriodLengthAfter(time, 1300.milisec(), 1.s()); // 600
+            time = AssertPeriodLengthAfter(time, 1300.milisec(), 1.s()); // 900
+            time = AssertPeriodLengthAfter(time, 1300.milisec(), 2.s()); // 200
+            time = AssertPeriodLengthAfter(time, 1300.milisec(), 1.s()); // 500
+            time = AssertPeriodLengthAfter(time, 1300.milisec(), 1.s()); // 800
+            time = AssertPeriodLengthAfter(time, 1300.milisec(), 2.s()); // 100
+            time = AssertPeriodLengthAfter(time, 1300.milisec(), 1.s()); // 400
         }
 
         //[TestMethod]
@@ -149,14 +149,14 @@ namespace LzTimerTests
             DateTime time = DateTime.Now;
             SetCurrentTime(time);
             activityCheckerSut.Check();
-            time = AssertPeriodLengthAfter(time, 700.milisec(), 1.secs()); // -300
-            time = AssertPeriodLengthAfter(time, 700.milisec(), 1.secs()); // -600
-            time = AssertPeriodLengthAfter(time, 700.milisec(), 1.secs()); // -900
-            time = AssertPeriodLengthAfter(time, 700.milisec(), 0.secs()); // -200
-            time = AssertPeriodLengthAfter(time, 700.milisec(), 1.secs()); // -500
-            time = AssertPeriodLengthAfter(time, 700.milisec(), 1.secs()); // -800
-            time = AssertPeriodLengthAfter(time, 700.milisec(), 0.secs()); // -100
-            time = AssertPeriodLengthAfter(time, 700.milisec(), 1.secs()); // -400
+            time = AssertPeriodLengthAfter(time, 700.milisec(), 1.s()); // -300
+            time = AssertPeriodLengthAfter(time, 700.milisec(), 1.s()); // -600
+            time = AssertPeriodLengthAfter(time, 700.milisec(), 1.s()); // -900
+            time = AssertPeriodLengthAfter(time, 700.milisec(), 0.s()); // -200
+            time = AssertPeriodLengthAfter(time, 700.milisec(), 1.s()); // -500
+            time = AssertPeriodLengthAfter(time, 700.milisec(), 1.s()); // -800
+            time = AssertPeriodLengthAfter(time, 700.milisec(), 0.s()); // -100
+            time = AssertPeriodLengthAfter(time, 700.milisec(), 1.s()); // -400
         }
 
         private DateTime AssertPeriodLengthAfter(DateTime time, TimeSpan after, TimeSpan expectedLength)

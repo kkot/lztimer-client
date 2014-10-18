@@ -48,14 +48,14 @@ namespace kkot.LzTimer
             var active = (lastInputTick != probe.GetLastInputTick());
 
             var now = clock.CurrentTime();
-            listener.PeriodPassed(Period.Create(active, now - 1.secs(), now));
+            listener.PeriodPassed(Period.Create(active, now - 1.s(), now));
             
             SaveLastInputTick();
         }
 
         private bool IsAfterWakeUp()
         {
-            return (clock.CurrentTime() - lastCheckTime).Duration() > 2.secs();
+            return (clock.CurrentTime() - lastCheckTime).Duration() > 2.s();
         }
 
         private void SaveLastInputTick()
