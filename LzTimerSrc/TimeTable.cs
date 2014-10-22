@@ -120,15 +120,14 @@ namespace kkot.LzTimer
         List<Period> GetSinceFirstActivePeriodBefore(DateTime dateTime);
     }
 
-    public interface PeriodStorage
+    public interface PeriodStorage : IDisposable
     {
         void Add(Period period);
         void Remove(Period period);
         SortedSet<Period> GetAll();
-        SortedSet<Period> GetPeriodsFromTimePeriod(TimePeriod period);
+        SortedSet<Period> GetPeriodsFromTimePeriod(TimePeriod searchedTimePeriod);
         SortedSet<Period> GetPeriodsAfter(DateTime dateTime);
         List<Period> GetSinceFirstActivePeriodBefore(DateTime dateTime);
-        void Close();
     }
 
     public class MemoryPeriodStorage : PeriodStorage
@@ -150,17 +149,17 @@ namespace kkot.LzTimer
             periods.Add(period);
         }
 
-        public SortedSet<Period> GetPeriodsFromTimePeriod(TimePeriod period)
+        public SortedSet<Period> GetPeriodsFromTimePeriod(TimePeriod searchedTimePeriod)
         {
             return new SortedSet<Period>(periods.Where(p => 
-                p.Start >= period.Start && 
-                p.End <= period.End));
+                p.End > searchedTimePeriod.Start && 
+                p.Start < searchedTimePeriod.End));
         }
 
         public SortedSet<Period> GetPeriodsAfter(DateTime dateTime)
         {
             return new SortedSet<Period>(periods.Where(p =>
-                p.Start >= dateTime));
+                p.End > dateTime));
         }
 
         public List<Period> GetSinceFirstActivePeriodBefore(DateTime dateTime)
@@ -169,7 +168,7 @@ namespace kkot.LzTimer
             return periods.Where((p) => p.Start >= fromDate).ToList();
         }
 
-        public void Close()
+        public void Dispose()
         {
             periods = null;
         }

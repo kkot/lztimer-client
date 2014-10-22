@@ -55,11 +55,6 @@ namespace kkot.LzTimer
             throw new NotImplementedException();
         }
 
-        public void Close()
-        {
-            conn.Close();
-        }
-
         public void Remove(Period period)
         {
             SQLiteCommand command = conn.CreateCommand();
@@ -83,14 +78,14 @@ namespace kkot.LzTimer
             return result;
         }
 
-        public SortedSet<Period> GetPeriodsFromTimePeriod(TimePeriod period)
+        public SortedSet<Period> GetPeriodsFromTimePeriod(TimePeriod searchedTimePeriod)
         {
             var sql = "SELECT start, end, type " +
                       "FROM Periods " +
-                      "WHERE start >= :start AND end <= :end ";
+                      "WHERE end > :start AND start < :end ";
             SQLiteCommand command = new SQLiteCommand(sql, conn);
-            command.Parameters.AddWithValue("start", period.Start);
-            command.Parameters.AddWithValue("end", period.End);
+            command.Parameters.AddWithValue("start", searchedTimePeriod.Start);
+            command.Parameters.AddWithValue("end", searchedTimePeriod.End);
             SQLiteDataReader reader = command.ExecuteReader();
 
             SortedSet<Period> result = new SortedSet<Period>();
@@ -105,7 +100,7 @@ namespace kkot.LzTimer
         {
             var sql = "SELECT start, end, type " +
                 "FROM Periods " +
-                "WHERE start >= :start ";
+                "WHERE end > :start ";
             SQLiteCommand command = new SQLiteCommand(sql, conn);
             command.Parameters.AddWithValue("start", dateTime);
             SQLiteDataReader reader = command.ExecuteReader();
@@ -133,6 +128,11 @@ namespace kkot.LzTimer
                 period = new IdlePeriod(DateTime.Parse(start), DateTime.Parse(end));
             }
             return period;
+        }
+
+        public void Dispose()
+        {
+            conn.Close();
         }
     }
 }

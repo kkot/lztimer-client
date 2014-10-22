@@ -28,7 +28,7 @@ namespace LzTimerTests
                 instance1.Add(idlePeriod);
 
                 CollectionAssert.AreEquivalent(expected, instance1.GetAll());
-                instance1.Close();
+                instance1.Dispose();
             }
 
             if (IsPersisent())
@@ -36,7 +36,7 @@ namespace LzTimerTests
                 WaitForConnectionToDbClosed();
                 PeriodStorage instance2 = GetStorage();
                 CollectionAssert.AreEquivalent(expected, instance2.GetAll());
-                instance2.Close();
+                instance2.Dispose();
             }
         }
 
@@ -49,61 +49,103 @@ namespace LzTimerTests
             PeriodStorage periodStorageSUT = GetStorage();
             periodStorageSUT.Add(firstPeriod);
             periodStorageSUT.Add(secondPeriod);
-            var expected = new Period[] { secondPeriod };            
-            
+            var expected = new Period[] { secondPeriod };
+
             periodStorageSUT.Remove(firstPeriod);
             CollectionAssert.AreEquivalent(expected, periodStorageSUT.GetAll());
-            periodStorageSUT.Close();
+            periodStorageSUT.Dispose();
 
             if (IsPersisent())
             {
                 WaitForConnectionToDbClosed();
                 PeriodStorage newInstance = GetStorage();
                 CollectionAssert.AreEquivalent(expected, newInstance.GetAll());
-                newInstance.Close();
+                newInstance.Dispose();
             }
         }
 
         [TestMethod]
-        public void getPeriodsFromTimePeriod_shouldWork()
+        public void GetPeriodsFromTimePeriod_shouldReturnPeriodsPartiallyInsideRange()
         {
-            var firstPeriod = PeriodBuilder.New(START_DATETIME).Length(5.s()).Active();
-            var secondPeriod = PeriodBuilder.NewAfter(firstPeriod, 10.s()).Idle();
+            var firstPeriod = START_DATETIME.Length(5.s()).Active();
+            var secondPeriod = firstPeriod.NewAfter(10.s()).Length(5.s()).Active();
+            var thirdPeriod = secondPeriod.NewAfter(10.s()).Length(5.s()).Active();
 
-            PeriodStorage periodStorageSUT = GetStorage();
-            periodStorageSUT.Add(firstPeriod);
-            periodStorageSUT.Add(secondPeriod);
-            var expected = new Period[] { firstPeriod };
+            var enclosingSearchPeriod = new TimePeriod(
+                secondPeriod.Start - 1.s(),
+                secondPeriod.End + 1.s());
 
-            var found = periodStorageSUT.GetPeriodsFromTimePeriod(
-                new TimePeriod(
-                    firstPeriod.Start - 1.s(),
-                    firstPeriod.End + 1.s()));
-            CollectionAssert.AreEquivalent(expected, found);
-            periodStorageSUT.Close();
+            var enclosingOnlyEndSearchTimePriod = new TimePeriod(
+                secondPeriod.Start + 1.s(),
+                secondPeriod.End + 1.s());
+
+            var enclosingOnlyStartSearchTimePeriod = new TimePeriod(
+                secondPeriod.Start - 1.s(),
+                secondPeriod.End - 1.s());
+
+            var notEnclosingSearchTimePeriod = new TimePeriod(
+                secondPeriod.Start - 2.s(),
+                secondPeriod.Start - 1.s());
+
+            using (PeriodStorage periodStorageSUT = GetStorage())
+            {
+                periodStorageSUT.Add(firstPeriod);
+                periodStorageSUT.Add(secondPeriod);
+                periodStorageSUT.Add(thirdPeriod);
+
+                var found = periodStorageSUT.GetPeriodsFromTimePeriod(
+                    enclosingSearchPeriod);
+                CollectionAssert.AreEquivalent(new Period[] {secondPeriod}, found);
+
+                found = periodStorageSUT.GetPeriodsFromTimePeriod(
+                    enclosingOnlyEndSearchTimePriod);
+                CollectionAssert.AreEquivalent(new Period[] {secondPeriod}, found);
+
+                found = periodStorageSUT.GetPeriodsFromTimePeriod(
+                    enclosingOnlyStartSearchTimePeriod);
+                CollectionAssert.AreEquivalent(new Period[] {secondPeriod}, found);
+
+                found = periodStorageSUT.GetPeriodsFromTimePeriod(
+                    notEnclosingSearchTimePeriod);
+                CollectionAssert.AreEquivalent(new Period[] {}, found);
+            }
         }
 
         [TestMethod]
-        public void getPeriodsAfter_shouldWork()
+        public void getPeriodsAfter_shouldReturnPeriodsPartiallyAfter()
         {
-            var firstPeriod = PeriodBuilder.New(START_DATETIME).Length(5.s()).Active();
-            var secondPeriod = PeriodBuilder.NewAfter(firstPeriod, 10.s()).Idle();
+            var periodBefore = PeriodBuilder.New(START_DATETIME).Length(5.s()).Active();
+            var period = PeriodBuilder.NewAfter(periodBefore, 10.s()).Length(5.s()).Idle();
 
             PeriodStorage periodStorageSUT = GetStorage();
-            periodStorageSUT.Add(firstPeriod);
-            periodStorageSUT.Add(secondPeriod);
-            var expected = new Period[] { secondPeriod };
+            periodStorageSUT.Add(periodBefore);
+            periodStorageSUT.Add(period);
+            var expected = new Period[] { period };
 
-            var found = periodStorageSUT.GetPeriodsAfter(firstPeriod.End + 1.s());
+            var beforeStart = period.Start - 1.s();
+            var found = periodStorageSUT.GetPeriodsAfter(beforeStart);
             CollectionAssert.AreEquivalent(expected, found);
-            periodStorageSUT.Close();
+
+            var afterStart = period.Start + 1.s();
+            found = periodStorageSUT.GetPeriodsAfter(afterStart);
+            CollectionAssert.AreEquivalent(expected, found);
+
+            var atEnd = period.End;
+            found = periodStorageSUT.GetPeriodsAfter(atEnd);
+            CollectionAssert.AreEquivalent(new Period[] { }, found);
+
+            var afterEnd = period.End + 1.s();
+            found = periodStorageSUT.GetPeriodsAfter(afterEnd);
+            CollectionAssert.AreEquivalent(new Period[] { }, found);
+
+            periodStorageSUT.Dispose();
         }
 
         [TestMethod]
         public void GetSinceFirstActivePeriodBeforeTest()
         {
-            var firstPeriod  = START_DATETIME.Length(5.s()).Active();
-            var secondPeriod = firstPeriod.NewPeriodAfter(10.s()).Idle();
+            var firstPeriod = START_DATETIME.Length(5.s()).Active();
+            var secondPeriod = firstPeriod.NewAfter(10.s()).Idle();
 
             PeriodStorage periodStorageSUT = GetStorage();
             periodStorageSUT.Add(firstPeriod);
@@ -112,7 +154,7 @@ namespace LzTimerTests
 
             var found = periodStorageSUT.GetPeriodsAfter(firstPeriod.End + 1.s());
             CollectionAssert.AreEquivalent(expected, found);
-            periodStorageSUT.Close();
+            periodStorageSUT.Dispose();
         }
 
         protected abstract PeriodStorage GetStorage();
