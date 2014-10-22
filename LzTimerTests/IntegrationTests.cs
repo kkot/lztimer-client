@@ -13,7 +13,7 @@ namespace LzTimerTests
         private LastActivityProbeStub probeStub;
         private TimeTablePolicies policies;
         private StatsReporter statsReporter;
-        private DateTime firstCheck;
+        private DateTime simulationStart;
         private const bool ACTIVE = true;
         private const bool IDLE = false;
 
@@ -31,29 +31,29 @@ namespace LzTimerTests
 
         private void AssertTotalActive(TimeSpan expected)
         {
-            Assert.AreEqual(expected, statsReporter.GetStatsAfter(firstCheck).TotalActive);
+            Assert.AreEqual(expected, statsReporter.GetStatsAfter(simulationStart).TotalActiveToday);
         }
 
         private void AssertLastInactiveTimespan(TimeSpan expected)
         {
-            Assert.AreEqual(expected, statsReporter.GetStatsAfter(firstCheck).LastInactiveTimespan);
+            Assert.AreEqual(expected, statsReporter.GetStatsAfter(simulationStart).LastInactiveTimespan);
         }
 
         private void AssertCurrentLogicalPeriod(bool expectedActive, TimeSpan expectedLength)
         {
-            Period period = statsReporter.GetStatsAfter(firstCheck).CurrentLogicalPeriod;
+            Period period = statsReporter.GetStatsAfter(simulationStart).CurrentLogicalPeriod;
             Assert.AreEqual(expectedActive, period is ActivePeriod);
             Assert.AreEqual(expectedLength, period.Length);
         }
 
         private void Simulate(params object[] simulated)
         {
-            firstCheck = new DateTime(2014, 1, 1, 12, 0, 0);
+            simulationStart = new DateTime(2014, 1, 1, 12, 0, 0);
 
             var simulatedActivity = simulated.Where(e => e is int).Select(e => (int)e).ToArray();
             var periodLengths = simulated.Where(e => e is TimeSpan).Select(e => (TimeSpan)e).ToArray();
 
-            simpleClockStub.Arrange(firstCheck, periodLengths);
+            simpleClockStub.Arrange(simulationStart, periodLengths);
             probeStub.Arrange(simulatedActivity);
 
             for (var i = 0; i < simulatedActivity.Length; i++)
@@ -184,7 +184,6 @@ namespace LzTimerTests
             AssertTotalActive(2.s());
             AssertLastInactiveTimespan(11.s());
             AssertCurrentLogicalPeriod(ACTIVE, 1.s());
-
         }
     }
 }

@@ -251,7 +251,7 @@ namespace kkot.LzTimer
     {
         public TimeSpan LastInactiveTimespan;
         public Period CurrentLogicalPeriod;
-        public TimeSpan TotalActive;
+        public TimeSpan TotalActiveToday;
     }
 
     public interface StatsReporter
@@ -280,7 +280,7 @@ namespace kkot.LzTimer
             {
                 CurrentLogicalPeriod = GetCurrentPeriod(), 
                 LastInactiveTimespan = GetLastInactiveTimespan(), 
-                TotalActive = GetTotalActive()
+                TotalActiveToday = GetTotalActive()
             };
         }
 

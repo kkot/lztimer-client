@@ -68,13 +68,13 @@ namespace kkot.LzTimer
         private void UpdateStats(Stats stats)
         {
             UpdateLabels(
-                (int) stats.TotalActive.TotalSeconds, 
+                (int) stats.TotalActiveToday.TotalSeconds, 
                 (int) stats.LastInactiveTimespan.TotalSeconds
                 );
 
             Period currentPeriod = stats.CurrentLogicalPeriod;
             UpdateNotifyIcon(currentPeriod is ActivePeriod, (int)currentPeriod.Length.TotalMinutes);
-            UpdateAlldayIcon(stats.TotalActive);
+            UpdateAlldayIcon(stats.TotalActiveToday);
         }
 
         private void RecreateCurrentPeriodIcon(int minutes)
