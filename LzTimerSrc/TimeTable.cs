@@ -259,9 +259,7 @@ namespace kkot.LzTimer
     public class StatsReporterImpl : StatsReporter
     {
         private readonly PeriodsReader periodReader;
-        private List<Period> periodsAfter;
         private TimeTablePolicies policies;
-        private DateTime startDateTime;
 
         public StatsReporterImpl(PeriodsReader periodsReader, TimeTablePolicies policies)
         {
@@ -269,94 +267,66 @@ namespace kkot.LzTimer
             this.policies = policies;
         }
 
-        private void ReadPeriodsAfter(DateTime date)
+        private List<Period> ReadPeriodsAfter(DateTime date)
         {
-            this.periodsAfter = periodReader.GetPeriodsAfter(date).ToList();
-            this.startDateTime = startDateTime;
+            return periodReader.GetPeriodsAfter(date).ToList();
         }
 
-        private void ReadAllPeriods()
+        private List<Period> ReadAllPeriods()
         {
-            this.periodsAfter = periodReader.GetAll().ToList();
-            this.startDateTime = startDateTime;
+            return periodReader.GetAll().ToList();
         }
 
         public TimeSpan GetLastInactiveTimespan()
         {
-            ReadAllPeriods();
+            List<Period> periods = ReadAllPeriods();
 
-            if (periodsAfter.Count == 0)
+            if (periods.Count == 0)
                 return TimeSpan.Zero;
 
-            if (Last() is IdlePeriod && Last().Length > policies.IdleTimeout)
-                return Last().Length;
+            if (GetCurrentLogicalPeriod() is IdlePeriod)
+                return GetCurrentLogicalPeriod().Length;
 
-            if (ActivePeriods().Count >= 2)
+            if (ActivePeriods(periods).Count >= 2)
             {
-                return LastActive(1).Start - LastActive(2).End;
+                return LastActive(periods, 1).Start - LastActive(periods, 2).End;
             }
-            //return LastActive(1).Start- startDateTime;
-            if (ActivePeriods().Count == 1)
+            else if (ActivePeriods(periods).Count == 1)
             {
-                return LastActive(1).Start - periodsAfter[0].Start;
+                return LastActive(periods, 1).Start - periods[0].Start;
             }
+
 
             return TimeSpan.Zero;
         }
 
-        private TimeSpan GetTotalActive()
+        private List<ActivePeriod> ActivePeriods(List<Period> periods)
         {
-            if (periodsAfter.Count == 0)
-                return TimeSpan.Zero;
-
-            var activePeriods = ActivePeriods();
-
-            var sum = new TimeSpan();
-            foreach (ActivePeriod period in activePeriods)
-            {
-                sum += period.Length;
-            }
-
-            if (Last() is IdlePeriod && Last().Length <= policies.IdleTimeout)
-            {
-                sum += Last().Length;                
-            }
-
-            return sum;
+            return periods.Where(e => e is ActivePeriod).Select(p => (ActivePeriod) p).ToList();
         }
 
-        private List<ActivePeriod> ActivePeriods()
+        private Period Last(List<Period> periods, int i = 1)
         {
-            return periodsAfter.Where(e => e is ActivePeriod).Select(p => (ActivePeriod) p).ToList();
-        }
-
-        private Period BeforeLast()
-        {
-            return Last(2);
-        }
-
-        private Period Last(int i = 1)
-        {
-            if (periodsAfter.Count >= i)
-              return periodsAfter[periodsAfter.Count-i];
+            if (periods.Count >= i)
+              return periods[periods.Count-i];
 
             return null;
         }
 
-        private Period LastActive(int position)
+        private Period LastActive(List<Period> periods, int position)
         {
-            return ActivePeriods().Last(position);
+            return ActivePeriods(periods).Last(position);
         }
 
 
         public TimeSpan GetTotalActiveToday(DateTime todayBegin)
         {
-            ReadPeriodsAfter(todayBegin);
+            List<Period> periods = ReadPeriodsAfter(todayBegin);
 
-            if (periodsAfter.Count == 0)
+            if (periods.Count == 0)
                 return TimeSpan.Zero;
 
-            var activePeriods = ActivePeriods();
+            var activePeriods = ActivePeriods(periods);
 
             var sum = new TimeSpan();
             foreach (ActivePeriod period in activePeriods)
@@ -364,9 +334,9 @@ namespace kkot.LzTimer
                 sum += period.Length;
             }
 
-            if (Last() is IdlePeriod && Last().Length <= policies.IdleTimeout)
+            if (Last(periods) is IdlePeriod && Last(periods).Length <= policies.IdleTimeout)
             {
-                sum += Last().Length;
+                sum += Last(periods).Length;
             }
 
             return sum;
@@ -374,16 +344,16 @@ namespace kkot.LzTimer
 
         public Period GetCurrentLogicalPeriod()
         {
-            ReadAllPeriods();
+            List<Period> periods = ReadAllPeriods();
 
-            if (periodsAfter.Count == 0)
+            if (periods.Count == 0)
                 return new IdlePeriod(DateTime.Now, DateTime.Now);
 
-            if (periodsAfter.Count == 1)
-                return Last();
+            if (periods.Count == 1)
+                return Last(periods);
 
-            var last = Last();
-            var beforeLast = BeforeLast();
+            var last = Last(periods);
+            var beforeLast = Last(periods, 2);
 
             if (last is IdlePeriod && last.Length < policies.IdleTimeout)
                 return beforeLast.Merge(last);
