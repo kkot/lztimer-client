@@ -16,7 +16,6 @@ namespace LzTimerTests
         {
             protected TimeTable timeTableSUT;
             protected readonly TimeSpan IDLE_TIMEOUT_SECS = 5.s();
-            protected readonly TimeSpan SHORT_IDLE_SECS = 3.s();
 
             [TestInitializeAttribute]
             public virtual void setUp()
@@ -24,7 +23,6 @@ namespace LzTimerTests
                 TimeTablePolicies policies = new TimeTablePolicies()
                 {
                     IdleTimeout = IDLE_TIMEOUT_SECS,
-                    IdleTimeoutPenalty = SHORT_IDLE_SECS
                 };
                 timeTableSUT = new TimeTable(policies);
             }
@@ -40,8 +38,8 @@ namespace LzTimerTests
                     var merged = timeTableSUT.Add(period);
 
                     Assert.AreEqual(period, merged);
-                    Assert.AreEqual(1, timeTableSUT.getAll().Count);
-                    CollectionAssert.Contains(timeTableSUT.getAll(), merged);
+                    Assert.AreEqual(1, timeTableSUT.GetAll().Count);
+                    CollectionAssert.Contains(timeTableSUT.GetAll(), merged);
                 }
 
                 [TestMethod]
@@ -55,8 +53,8 @@ namespace LzTimerTests
 
                     var periodMerged = new ActivePeriod(period1.Start, period2.End);
 
-                    Assert.AreEqual(periodMerged, timeTableSUT.getAll().First());
-                    CollectionAssert.AreEquivalent(new[] {periodMerged}, timeTableSUT.getAll());
+                    Assert.AreEqual(periodMerged, timeTableSUT.GetAll().First());
+                    CollectionAssert.AreEquivalent(new[] {periodMerged}, timeTableSUT.GetAll());
                 }
 
                 [TestMethod]
@@ -72,7 +70,7 @@ namespace LzTimerTests
 
                     var periodMerged = new IdlePeriod(period2.Start, period3.End);
 
-                    CollectionAssert.AreEquivalent(new Period[] {period1, periodMerged}, timeTableSUT.getAll());
+                    CollectionAssert.AreEquivalent(new Period[] {period1, periodMerged}, timeTableSUT.GetAll());
                 }
 
                 [TestMethod]
@@ -86,7 +84,7 @@ namespace LzTimerTests
 
                     Assert.AreEqual(period1, returned1);
                     Assert.AreEqual(period2, returned2);
-                    CollectionAssert.AreEquivalent(timeTableSUT.getAll(), new[] {period2, period1});
+                    CollectionAssert.AreEquivalent(timeTableSUT.GetAll(), new[] {period2, period1});
                 }
 
                 [TestMethod]
@@ -98,7 +96,7 @@ namespace LzTimerTests
                     timeTableSUT.Add(period1);
                     timeTableSUT.Add(period2);
 
-                    CollectionAssert.AreEquivalent(timeTableSUT.getAll(), new Period[] {period2, period1});
+                    CollectionAssert.AreEquivalent(timeTableSUT.GetAll(), new Period[] {period2, period1});
                 }
 
                 [TestMethod]
@@ -114,8 +112,8 @@ namespace LzTimerTests
 
                     var mergedPeriod = new ActivePeriod(period1.Start, period3.End);
 
-                    CollectionAssert.DoesNotContain(timeTableSUT.getAll(), period2);
-                    CollectionAssert.AreEquivalent(timeTableSUT.getAll(), new[] {mergedPeriod});
+                    CollectionAssert.DoesNotContain(timeTableSUT.GetAll(), period2);
+                    CollectionAssert.AreEquivalent(timeTableSUT.GetAll(), new[] {mergedPeriod});
                 }
 
                 [TestMethod]
@@ -131,68 +129,8 @@ namespace LzTimerTests
 
                     var mergedPeriod = new ActivePeriod(period1Active.Start, period3Active.End);
 
-                    CollectionAssert.AreEquivalent(timeTableSUT.getAll(),
+                    CollectionAssert.AreEquivalent(timeTableSUT.GetAll(),
                         new Period[] {period1Active, period2Idle, period3Active});
-                }
-
-                [TestClass]
-                public class LastActivePeriodTests : TimeTableTest
-                {
-                    //[TestMethod]
-                    public void whenLastPeriodActive_shouldBeEqualLengthOfLastPeriod()
-                    {
-                        var period1 = PeriodBuilder.New(MIDDAY).Length(secs(10)).Active();
-                        var period2 = PeriodBuilder.NewAfter(period1).Length(secs(10)).Active();
-
-                        timeTableSUT.Add(period1);
-                        timeTableSUT.Add(period2);
-
-                        var merged = new ActivePeriod(period1.Start, period2.End);
-                        //Assert.AreEqual(merged, timeTableSUT.GetCurrentPeriod());
-                    }
-
-                    //[TestMethod]
-                    public void whenLastIdlePeriodIsShort_shouldBeEqualLengthOfLastActivePlusIdlePeriod()
-                    {
-                        var period1 = PeriodBuilder.New(MIDDAY).Length(secs(10)).Active();
-                        var period2 = PeriodBuilder.NewAfter(period1).Length(SHORT_IDLE_SECS - 1.s()).Idle();
-
-                        timeTableSUT.Add(period1);
-                        timeTableSUT.Add(period2);
-
-                        var merged = new ActivePeriod(period1.Start, period2.End);
-                        //Assert.AreEqual(merged, timeTableSUT.GetCurrentPeriod());
-                    }
-
-                    //[TestMethod]
-                    public void whenLastIdlePeriodIsLong_shouldBeEqualLengthOfLastIdle()
-                    {
-                        var period1Active = PeriodBuilder.New(MIDDAY).Length(secs(10)).Active();
-                        var period2Idle =
-                            PeriodBuilder.NewAfter(period1Active).Length(IDLE_TIMEOUT_SECS + 1.s()).Idle();
-
-                        timeTableSUT.Add(period1Active);
-                        timeTableSUT.Add(period2Idle);
-
-                        //Assert.AreEqual(period2Idle, timeTableSUT.GetCurrentPeriod());
-                    }
-
-                    //[TestMethod]
-                    public void lastIdlePeriod_shouldBeNull()
-                    {
-                        //Assert.AreEqual(null, timeTableSUT.GetCurrentPeriod());
-                        //Assert.AreEqual(null, timeTableSUT.GetLastIdlePeriod());
-                    }
-
-                    //[TestMethod]
-                    public void whenOnlyActive_lastIdleShouldBeNull()
-                    {
-                        var period1Active = PeriodBuilder.New(MIDDAY).Length(secs(10)).Active();
-                        timeTableSUT.Add(period1Active);
-
-                        //Assert.AreEqual(period1Active, timeTableSUT.GetCurrentPeriod());
-                        //Assert.AreEqual(null, timeTableSUT.GetLastIdlePeriod());
-                    }
                 }
 
                 [TestClass]

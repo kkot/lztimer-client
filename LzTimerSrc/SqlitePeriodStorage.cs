@@ -134,5 +134,12 @@ namespace kkot.LzTimer
         {
             conn.Close();
         }
+
+        internal void Reset()
+        {
+            SQLiteCommand command = conn.CreateCommand();
+            command.CommandText = "DELETE FROM Periods";
+            command.ExecuteNonQuery();
+        }
     }
 }

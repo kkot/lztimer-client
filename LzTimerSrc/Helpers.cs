@@ -25,9 +25,14 @@ namespace kkot.LzTimer
             return TimeSpan.FromSeconds(seconds);
         }
 
-        public static TimeSpan milisec(this int miliseconds)
+        public static TimeSpan ms(this int miliseconds)
         {
             return TimeSpan.FromMilliseconds(miliseconds);
+        }
+
+        public static TimeSpan min(this int minutes)
+        {
+            return TimeSpan.FromMinutes(minutes);
         }
 
         public static TimeSpan[] s(this int[] seconds)

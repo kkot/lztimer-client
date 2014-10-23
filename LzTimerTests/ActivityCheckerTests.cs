@@ -108,8 +108,8 @@ namespace LzTimerTests
         public void periodLengthShouldDependOnCheckInterval()
         {
             SetLastInputTick(1);
-            var interval1 = 1500.milisec();
-            var interval2 = 1000.milisec();
+            var interval1 = 1500.ms();
+            var interval2 = 1000.ms();
             DateTime time1 = START;
             DateTime time2 = time1 + interval1;
             DateTime time3 = time2 + interval2;
@@ -134,14 +134,14 @@ namespace LzTimerTests
             DebugView.IsTraceEnabled = true;
 
             SetLastInputTick(1);
-            var interval1 = 1051.milisec();
-            var interval2 = 1049.milisec();
+            var interval1 = 1051.ms();
+            var interval2 = 1049.ms();
             DateTime time1 = START;
             DateTime time2 = time1 + interval1;
             DateTime time3 = time2 + interval2;
 
-            Mock.Arrange(() => activityListenerMock.PeriodPassed(Arg.Matches<Period>(p => p.Length == 1100.milisec()))).InOrder();
-            Mock.Arrange(() => activityListenerMock.PeriodPassed(Arg.Matches<Period>(p => p.Length == 1000.milisec()))).InOrder();
+            Mock.Arrange(() => activityListenerMock.PeriodPassed(Arg.Matches<Period>(p => p.Length == 1100.ms()))).InOrder();
+            Mock.Arrange(() => activityListenerMock.PeriodPassed(Arg.Matches<Period>(p => p.Length == 1000.ms()))).InOrder();
 
             SetCurrentTime(time1);
             activityCheckerSut.Check();

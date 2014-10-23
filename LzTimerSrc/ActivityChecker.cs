@@ -54,7 +54,7 @@ namespace kkot.LzTimer
 
         private TimeSpan RoundedTimeSpanSinceLastCheck()
         {
-            return Round(TimeSpanSinceLastCheck(), 100.milisec());
+            return Round(TimeSpanSinceLastCheck(), 100.ms());
         }
 
         private bool IsAfterWakeUp()

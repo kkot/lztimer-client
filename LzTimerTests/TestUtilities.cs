@@ -9,7 +9,7 @@ namespace LzTimerTests
         public DateTime Start { get; private set; }
         public DateTime End { get; private set; }
 
-        public static TimeSpan DEFAULT_LENGTH_MS = 1000.milisec();
+        public static TimeSpan DEFAULT_LENGTH_MS = 1000.ms();
 
         private PeriodBuilder(Period period)
         {

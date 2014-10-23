@@ -35,6 +35,7 @@ namespace kkot.LzTimer
             this.lastBreakLabel = new System.Windows.Forms.Label();
             this.label5 = new System.Windows.Forms.Label();
             this.notifyIconAllday = new System.Windows.Forms.NotifyIcon(this.components);
+            this.reset = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // label2
@@ -126,11 +127,22 @@ namespace kkot.LzTimer
             this.notifyIconAllday.Visible = true;
             this.notifyIconAllday.MouseClick += new System.Windows.Forms.MouseEventHandler(this.notifyIcon1_MouseClick);
             // 
+            // reset
+            // 
+            this.reset.Location = new System.Drawing.Point(16, 90);
+            this.reset.Name = "reset";
+            this.reset.Size = new System.Drawing.Size(54, 22);
+            this.reset.TabIndex = 15;
+            this.reset.Text = "Reset";
+            this.reset.UseVisualStyleBackColor = true;
+            this.reset.Click += new System.EventHandler(this.reset_Click);
+            // 
             // MainWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(237, 92);
+            this.ClientSize = new System.Drawing.Size(246, 124);
+            this.Controls.Add(this.reset);
             this.Controls.Add(this.lastBreakLabel);
             this.Controls.Add(this.label5);
             this.Controls.Add(this.historyButton);
@@ -161,6 +173,7 @@ namespace kkot.LzTimer
         private System.Windows.Forms.Label lastBreakLabel;
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.NotifyIcon notifyIconAllday;
+        private System.Windows.Forms.Button reset;
 
     }
 }

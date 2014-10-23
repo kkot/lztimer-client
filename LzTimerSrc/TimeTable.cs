@@ -179,8 +179,6 @@ namespace kkot.LzTimer
     public class TimeTablePolicies
     {
         public TimeSpan IdleTimeout { get; set; }
-
-        public TimeSpan IdleTimeoutPenalty { get; set; } 
     }
 
     public class TimeTable : ActivityPeriodsListener, PeriodsReader
@@ -228,11 +226,6 @@ namespace kkot.LzTimer
             this.Add(period);
         }
 
-        public SortedSet<Period> getAll()
-        {
-            return periodStorage.GetAll();
-        }
-
         public SortedSet<Period> GetPeriodsFromPeriod(TimePeriod period)
         {
             return periodStorage.GetPeriodsFromTimePeriod(period);
@@ -252,12 +245,6 @@ namespace kkot.LzTimer
         {
             return periodStorage.GetAll();
         }
-    }
-
-    public class Stats
-    {
-        public TimeSpan LastInactiveTimespan;
-        public Period CurrentLogicalPeriod;
     }
 
     public interface StatsReporter

@@ -20,7 +20,7 @@ namespace LzTimerTests
         [TestInitializeAttribute]
         public void setUp()
         {
-            policies = new TimeTablePolicies {IdleTimeoutPenalty = 30.s()};
+            policies = new TimeTablePolicies {};
             probeStub = new LastActivityProbeStub();
             simpleClockStub = new ClockStub();
             var timeTable = new TimeTable(policies);
@@ -85,13 +85,23 @@ namespace LzTimerTests
         }
 
         [TestMethod]
-        public void checkTwoActiveIdleActiveIdleWithoutTimeOut()
+        public void checkTwoActiveShortIdleActiveIdleWithoutTimeOut()
         {
             policies.IdleTimeout = 5.s();
             Simulate(1, 2, 3, 3, 4, 4, 4);
             AssertTotalActive(6.s());
             AssertLastInactiveTimespan(0.s());
             AssertCurrentLogicalPeriod(ACTIVE, 6.s());
+        }
+
+        [TestMethod]
+        public void checkActiveLongInactiveActiveShortInactive()
+        {
+            policies.IdleTimeout = 3.s();
+            Simulate(1, 2, 3, 3, 3, 3, 3, 4, 5, 6, 6);
+            AssertTotalActive(6.s());
+            AssertLastInactiveTimespan(4.s());
+            AssertCurrentLogicalPeriod(ACTIVE, 4.s());
         }
 
         [TestMethod]

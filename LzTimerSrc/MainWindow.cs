@@ -22,6 +22,7 @@ namespace kkot.LzTimer
         private StatsReporter statsReporter;
         private ActivityChecker activityChecker;
         private TimeTablePolicies policies;
+        private SqlitePeriodStorage periodStorage;
 
         public MainWindow()
         {
@@ -37,8 +38,8 @@ namespace kkot.LzTimer
             initialWidth = Width;
 
             // loading configuration
-            string maxIdleMinutes = Properties.Settings.Default.MaxIdleMinutes.ToString();
-            intervalTextBox.Text = maxIdleMinutes;
+            int maxIdleMinutes = int.Parse(Properties.Settings.Default.MaxIdleMinutes.ToString());
+            intervalTextBox.Text = maxIdleMinutes.ToString();
             timer1.Enabled = true;
 
             soundPlayer = new SoundPlayer();
@@ -50,8 +51,8 @@ namespace kkot.LzTimer
             MoveToBottomRight();
 
             this.activityChecker = new ActivityChecker(new Win32LastActivityProbe(), new SystemClock());
-            this.policies = new TimeTablePolicies() {IdleTimeout = TimeSpan.FromMinutes(int.Parse(maxIdleMinutes)), IdleTimeoutPenalty = TimeSpan.FromSeconds(30)};
-            SqlitePeriodStorage periodStorage = new SqlitePeriodStorage("periods.db");
+            this.policies = new TimeTablePolicies() {IdleTimeout = maxIdleMinutes.min()};
+            periodStorage = new SqlitePeriodStorage("periods.db");
             TimeTable timeTable = new TimeTable(policies, periodStorage);
             this.activityChecker.SetActivityListner(timeTable);
             this.statsReporter = new StatsReporterImpl(timeTable, policies);
@@ -227,6 +228,12 @@ namespace kkot.LzTimer
             ShortcutsManager.UnregisterHotKey(this, (int)Keys.Z);
             ShortcutsManager.UnregisterHotKey(this, (int)Keys.A);
             Properties.Settings.Default.Save();
+            periodStorage.Dispose();
+        }
+
+        private void reset_Click(object sender, EventArgs e)
+        {
+            periodStorage.Reset();
         }
     }
 }
