@@ -62,19 +62,19 @@ namespace kkot.LzTimer
         private void timer1_Tick(object sender, EventArgs e)
         {
             activityChecker.Check();
-            UpdateStats(statsReporter.GetStatsAfter(DateTime.Now.Date));
+            UpdateStats(statsReporter);
         }
 
-        private void UpdateStats(Stats stats)
+        private void UpdateStats(StatsReporter reporter)
         {
             UpdateLabels(
-                (int) stats.TotalActiveToday.TotalSeconds, 
-                (int) stats.LastInactiveTimespan.TotalSeconds
+                (int) reporter.GetTotalActiveToday(DateTime.Now.Date).TotalSeconds, 
+                (int) reporter.GetLastInactiveTimespan().TotalSeconds
                 );
 
-            Period currentPeriod = stats.CurrentLogicalPeriod;
+            Period currentPeriod = reporter.GetCurrentLogicalPeriod();
             UpdateNotifyIcon(currentPeriod is ActivePeriod, (int)currentPeriod.Length.TotalMinutes);
-            UpdateAlldayIcon(stats.TotalActiveToday);
+            UpdateAlldayIcon(reporter.GetTotalActiveToday(DateTime.Now.Date));
         }
 
         private void RecreateCurrentPeriodIcon(int minutes)

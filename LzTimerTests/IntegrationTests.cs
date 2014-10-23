@@ -31,17 +31,17 @@ namespace LzTimerTests
 
         private void AssertTotalActive(TimeSpan expected)
         {
-            Assert.AreEqual(expected, statsReporter.GetStatsAfter(simulationStart).TotalActiveToday);
+            Assert.AreEqual(expected, statsReporter.GetTotalActiveToday(simulationStart));
         }
 
         private void AssertLastInactiveTimespan(TimeSpan expected)
         {
-            Assert.AreEqual(expected, statsReporter.GetStatsAfter(simulationStart).LastInactiveTimespan);
+            Assert.AreEqual(expected, statsReporter.GetLastInactiveTimespan());
         }
 
         private void AssertCurrentLogicalPeriod(bool expectedActive, TimeSpan expectedLength)
         {
-            Period period = statsReporter.GetStatsAfter(simulationStart).CurrentLogicalPeriod;
+            Period period = statsReporter.GetCurrentLogicalPeriod();
             Assert.AreEqual(expectedActive, period is ActivePeriod);
             Assert.AreEqual(expectedLength, period.Length);
         }
@@ -187,4 +187,3 @@ namespace LzTimerTests
         }
     }
 }
-

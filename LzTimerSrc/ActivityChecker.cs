@@ -38,7 +38,7 @@ namespace kkot.LzTimer
 
         public void Check()
         {
-            if (lastInputTick == null || IsAfterWakeUp())
+            if (lastInputTick == null) // || IsAfterWakeUp())
             {
                 SaveLastInputTick();
                 return;

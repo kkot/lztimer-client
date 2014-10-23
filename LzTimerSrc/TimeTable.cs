@@ -115,6 +115,8 @@ namespace kkot.LzTimer
 
     public interface PeriodsReader
     {
+        SortedSet<Period> GetAll();
+
         SortedSet<Period> GetPeriodsAfter(DateTime dateTime);
 
         List<Period> GetSinceFirstActivePeriodBefore(DateTime dateTime);
@@ -245,18 +247,26 @@ namespace kkot.LzTimer
         {
             throw new NotImplementedException();
         }
+
+        public SortedSet<Period> GetAll()
+        {
+            return periodStorage.GetAll();
+        }
     }
 
     public class Stats
     {
         public TimeSpan LastInactiveTimespan;
         public Period CurrentLogicalPeriod;
-        public TimeSpan TotalActiveToday;
     }
 
     public interface StatsReporter
     {
-        Stats GetStatsAfter(DateTime startDateTime);
+        TimeSpan GetTotalActiveToday(DateTime todayBegin);
+
+        TimeSpan GetLastInactiveTimespan();
+
+        Period GetCurrentLogicalPeriod();
     }
 
     public class StatsReporterImpl : StatsReporter
@@ -272,42 +282,22 @@ namespace kkot.LzTimer
             this.policies = policies;
         }
 
-        public Stats GetStatsAfter(DateTime startDateTime)
+        private void ReadPeriodsAfter(DateTime date)
         {
-            this.periodsAfter = GetPeriodsAfter(startDateTime);
+            this.periodsAfter = periodReader.GetPeriodsAfter(date).ToList();
             this.startDateTime = startDateTime;
-            return new Stats()
-            {
-                CurrentLogicalPeriod = GetCurrentPeriod(), 
-                LastInactiveTimespan = GetLastInactiveTimespan(), 
-                TotalActiveToday = GetTotalActive()
-            };
         }
 
-        private List<Period> GetPeriodsAfter(DateTime date)
+        private void ReadAllPeriods()
         {
-            return periodReader.GetPeriodsAfter(date).ToList();
-        }
-
-        public Period GetCurrentPeriod()
-        {
-            if (periodsAfter.Count == 0)
-                return new IdlePeriod(DateTime.Now, DateTime.Now);
-
-            if (periodsAfter.Count == 1)
-                return Last();
-
-            var last = Last();
-            var beforeLast = BeforeLast();
-
-            if (last is IdlePeriod && last.Length < policies.IdleTimeout)
-                return beforeLast.Merge(last);
-            else
-                return last;
+            this.periodsAfter = periodReader.GetAll().ToList();
+            this.startDateTime = startDateTime;
         }
 
         public TimeSpan GetLastInactiveTimespan()
         {
+            ReadAllPeriods();
+
             if (periodsAfter.Count == 0)
                 return TimeSpan.Zero;
 
@@ -318,7 +308,13 @@ namespace kkot.LzTimer
             {
                 return LastActive(1).Start - LastActive(2).End;
             }
-            return LastActive(1).Start- startDateTime;
+            //return LastActive(1).Start- startDateTime;
+            if (ActivePeriods().Count == 1)
+            {
+                return LastActive(1).Start - periodsAfter[0].Start;
+            }
+
+            return TimeSpan.Zero;
         }
 
         private TimeSpan GetTotalActive()
@@ -363,6 +359,49 @@ namespace kkot.LzTimer
         private Period LastActive(int position)
         {
             return ActivePeriods().Last(position);
+        }
+
+
+        public TimeSpan GetTotalActiveToday(DateTime todayBegin)
+        {
+            ReadPeriodsAfter(todayBegin);
+
+            if (periodsAfter.Count == 0)
+                return TimeSpan.Zero;
+
+            var activePeriods = ActivePeriods();
+
+            var sum = new TimeSpan();
+            foreach (ActivePeriod period in activePeriods)
+            {
+                sum += period.Length;
+            }
+
+            if (Last() is IdlePeriod && Last().Length <= policies.IdleTimeout)
+            {
+                sum += Last().Length;
+            }
+
+            return sum;
+        }
+
+        public Period GetCurrentLogicalPeriod()
+        {
+            ReadAllPeriods();
+
+            if (periodsAfter.Count == 0)
+                return new IdlePeriod(DateTime.Now, DateTime.Now);
+
+            if (periodsAfter.Count == 1)
+                return Last();
+
+            var last = Last();
+            var beforeLast = BeforeLast();
+
+            if (last is IdlePeriod && last.Length < policies.IdleTimeout)
+                return beforeLast.Merge(last);
+            else
+                return last;
         }
     }
 }
