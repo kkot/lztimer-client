@@ -38,7 +38,7 @@ namespace kkot.LzTimer
 
         public void Check()
         {
-            if (lastInputTick == null) // || IsAfterWakeUp())
+            if (lastInputTick == null || IsAfterWakeUp())
             {
                 SaveLastInputTick();
                 return;
@@ -47,32 +47,14 @@ namespace kkot.LzTimer
             var active = (lastInputTick != probe.GetLastInputTick());
 
             var now = clock.CurrentTime();
-            listener.PeriodPassed(Period.Create(active, now - RoundedTimeSpanSinceLastCheck(), now));
+            listener.PeriodPassed(Period.Create(active, now - TimeSpanSinceLastCheck(), now));
             
             SaveLastInputTick();
-        }
-
-        private TimeSpan RoundedTimeSpanSinceLastCheck()
-        {
-            return Round(TimeSpanSinceLastCheck(), 100.ms());
         }
 
         private bool IsAfterWakeUp()
         {
             return TimeSpanSinceLastCheck().Duration() > 2.s();
-        }
-
-        private TimeSpan Round(TimeSpan toRound, TimeSpan round)
-        {
-            long wholeParts = toRound.Ticks/round.Ticks;
-            long remain = toRound.Ticks%round.Ticks;
-            if (remain < round.Ticks/2)
-                remain = 0;
-            else
-                remain = round.Ticks;
-
-            TimeSpan rounded = new TimeSpan(wholeParts*round.Ticks + remain);
-            return rounded;
         }
 
         private TimeSpan TimeSpanSinceLastCheck()

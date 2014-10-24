@@ -18,6 +18,22 @@ namespace kkot.LzTimer
         }
     }
 
+    public static class TimeSpanExensionMethods
+    {
+        public static TimeSpan Round(this TimeSpan toRound, TimeSpan round)
+        {
+            long wholeParts = toRound.Ticks / round.Ticks;
+            long remain = toRound.Ticks % round.Ticks;
+            if (remain < round.Ticks / 2)
+                remain = 0;
+            else
+                remain = round.Ticks;
+
+            TimeSpan rounded = new TimeSpan(wholeParts * round.Ticks + remain);
+            return rounded;
+        }
+    }
+
     public static class IntegerTimespanExensionMethods
     {
         public static TimeSpan s(this int seconds)
@@ -64,7 +80,7 @@ namespace kkot.LzTimer
             int minutes = (allSeconds - (hours * 60 * 60)) / 60;
             int secunds = allSeconds - (hours * 60 * 60) - (minutes * 60);
 
-            string result = String.Format("{0,2} h {1,2} m {2,2} s", new object[] { hours, minutes, secunds });
+            string result = String.Format("{0:00} h {1:00} m {2:00} s", new object[] { hours, minutes, secunds });
             return result;
         }
 

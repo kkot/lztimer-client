@@ -86,7 +86,7 @@ namespace LzTimerTests
         }
     }
 
-    public class ClockStub : Clock
+    public class ArrangableClockStub : Clock
     {
         private DateTime currentTime;
         private Queue<TimeSpan> timeSpans;
@@ -129,7 +129,27 @@ namespace LzTimerTests
         }
     }
 
-    public class LastActivityProbeStub : LastActivityProbe
+    public class SimpleClockStub : Clock
+    {
+        private DateTime currentTime;
+
+        public void Arrange(DateTime startDateTime)
+        {
+            currentTime = startDateTime;
+        }
+
+        public DateTime CurrentTime()
+        {
+            return currentTime;
+        }
+
+        public void SetValue(DateTime currentTime)
+        {
+            this.currentTime = currentTime;
+        }
+    }
+
+    public class ArrangableLastActivityProbeStub : LastActivityProbe
     {
         private Queue<int> queue;
 
@@ -146,6 +166,21 @@ namespace LzTimerTests
         public void NextValue()
         {
             queue.Dequeue();
+        }
+    }
+
+    public class SimpleLastActivityProbeStub : LastActivityProbe
+    {
+        private int currentValue;
+
+        public int GetLastInputTick()
+        {
+            return GetLastInputTick();
+        }
+
+        public void SetValue(int value)
+        {
+            this.currentValue = value;
         }
     }
 }

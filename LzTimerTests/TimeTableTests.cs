@@ -61,8 +61,8 @@ namespace LzTimerTests
                 public void twoCloseIdlePeriodShouldBeMerged()
                 {
                     var period1 = PeriodBuilder.New(MIDDAY).Active();
-                    var period2 = PeriodBuilder.NewAfter(period1, mili(10)).Idle();
-                    var period3 = PeriodBuilder.NewAfter(period2, mili(10)).Idle();
+                    var period2 = PeriodBuilder.NewAfter(period1, 10.ms()).Idle();
+                    var period3 = PeriodBuilder.NewAfter(period2, 10.ms()).Idle();
 
                     timeTableSUT.Add(period1);
                     timeTableSUT.Add(period2);
@@ -132,16 +132,6 @@ namespace LzTimerTests
                     CollectionAssert.AreEquivalent(timeTableSUT.GetAll(),
                         new Period[] {period1Active, period2Idle, period3Active});
                 }
-            }
-
-            private static TimeSpan secs(int seconds)
-            {
-                return TimeSpan.FromSeconds(seconds);
-            }
-
-            private static TimeSpan mili(int miliseconds)
-            {
-                return TimeSpan.FromMilliseconds(miliseconds);
             }
         }
     }

@@ -22,7 +22,7 @@ namespace kkot.LzTimer
         private StatsReporter statsReporter;
         private ActivityChecker activityChecker;
         private TimeTablePolicies policies;
-        private SqlitePeriodStorage periodStorage;
+        private PeriodStorage periodStorage;
 
         public MainWindow()
         {
@@ -52,7 +52,8 @@ namespace kkot.LzTimer
 
             this.activityChecker = new ActivityChecker(new Win32LastActivityProbe(), new SystemClock());
             this.policies = new TimeTablePolicies() {IdleTimeout = maxIdleMinutes.min()};
-            periodStorage = new SqlitePeriodStorage("periods.db");
+            //this.policies = new TimeTablePolicies() {IdleTimeout = 10.s()};
+            periodStorage = new MemoryPeriodStorage(); //new SqlitePeriodStorage("periods.db");
             TimeTable timeTable = new TimeTable(policies, periodStorage);
             this.activityChecker.SetActivityListner(timeTable);
             this.statsReporter = new StatsReporterImpl(timeTable, policies);
@@ -69,8 +70,8 @@ namespace kkot.LzTimer
         private void UpdateStats(StatsReporter reporter)
         {
             UpdateLabels(
-                (int) reporter.GetTotalActiveToday(DateTime.Now.Date).TotalSeconds, 
-                (int) reporter.GetLastInactiveTimespan().TotalSeconds
+                (int) reporter.GetTotalActiveToday(DateTime.Now.Date).Round(100.ms()).TotalSeconds, 
+                (int) reporter.GetLastInactiveTimespan().Round(100.ms()).TotalSeconds
                 );
 
             Period currentPeriod = reporter.GetCurrentLogicalPeriod();

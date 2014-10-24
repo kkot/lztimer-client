@@ -128,7 +128,7 @@ namespace LzTimerTests
             Mock.Assert(() => activityListenerMock.PeriodPassed(Arg.Matches<Period>(p => p.Length == interval2)), Occurs.Once());
         }
 
-        [TestMethod]
+        //[TestMethod]
         public void periodLengthShouldBeRoundedTo100ms()
         {
             DebugView.IsTraceEnabled = true;

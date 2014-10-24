@@ -83,6 +83,14 @@ namespace kkot.LzTimer
             var end = End > aPeriod.End ? End : aPeriod.End;
             return new Period(start, end);
         }
+
+        public bool Overlap(Period other)
+        {
+            if (this.Start >= other.End ||
+                this.End <= other.Start)
+                return false;
+            return true;
+        }
     }
 
     public class ActivePeriod : Period
@@ -130,6 +138,8 @@ namespace kkot.LzTimer
         SortedSet<Period> GetPeriodsFromTimePeriod(TimePeriod searchedTimePeriod);
         SortedSet<Period> GetPeriodsAfter(DateTime dateTime);
         List<Period> GetSinceFirstActivePeriodBefore(DateTime dateTime);
+
+        void Reset();
     }
 
     public class MemoryPeriodStorage : PeriodStorage
@@ -174,6 +184,12 @@ namespace kkot.LzTimer
         {
             periods = null;
         }
+
+
+        public void Reset()
+        {
+            periods.Clear();
+        }
     }
 
     public class TimeTablePolicies
@@ -199,7 +215,22 @@ namespace kkot.LzTimer
 
         public Period Add(Period period)
         {
-            return merge(period);
+            assertNotOverlapping();
+            return merge(period);   
+        }
+
+        private void assertNotOverlapping()
+        {
+            foreach (var period1 in periodStorage.GetAll())
+            {
+                foreach (var period2 in periodStorage.GetAll())
+                {
+                    if (period1 != period2 && period1.Overlap(period2))
+                    {
+                        throw new Exception();
+                    }
+                }
+            }
         }
 
         private Period merge(Period aPeriod)
@@ -334,12 +365,17 @@ namespace kkot.LzTimer
                 sum += period.Length;
             }
 
-            if (Last(periods) is IdlePeriod && Last(periods).Length <= policies.IdleTimeout)
+            if (IsLastIdlePeriodTreatedAsActive(periods))
             {
                 sum += Last(periods).Length;
             }
 
             return sum;
+        }
+
+        private bool IsLastIdlePeriodTreatedAsActive(List<Period> periods)
+        {
+            return Last(periods) is IdlePeriod && Last(periods).Length <= policies.IdleTimeout;
         }
 
         public Period GetCurrentLogicalPeriod()
@@ -355,7 +391,7 @@ namespace kkot.LzTimer
             var last = Last(periods);
             var beforeLast = Last(periods, 2);
 
-            if (last is IdlePeriod && last.Length < policies.IdleTimeout)
+            if (IsLastIdlePeriodTreatedAsActive(periods))
                 return beforeLast.Merge(last);
             else
                 return last;
