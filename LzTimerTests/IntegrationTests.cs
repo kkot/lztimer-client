@@ -21,7 +21,7 @@ namespace LzTimerTests
             var timeTable = new TimeTable(policies);
             activityChecker = new ActivityChecker(GetLastActivityProbeStub(), GetClockStub());
             activityChecker.SetActivityListner(timeTable);
-            statsReporter = new StatsReporterImpl(timeTable, policies);
+            statsReporter = new StatsReporterImpl(timeTable, policies, GetClockStub());
         }
 
         public abstract LastActivityProbe GetLastActivityProbeStub();

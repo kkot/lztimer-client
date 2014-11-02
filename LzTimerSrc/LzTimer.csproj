@@ -67,7 +67,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="SqlitePeriodStorage.cs" />
+    <Compile Include="PeriodStorage.cs" />
     <Compile Include="TimeTable.cs" />
     <Compile Include="DataStoreManager.cs" />
     <Compile Include="FullscreenDetector.cs" />

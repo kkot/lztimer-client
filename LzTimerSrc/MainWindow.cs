@@ -57,7 +57,7 @@ namespace kkot.LzTimer
             periodStorage = new SqlitePeriodStorage("periods.db");            
             TimeTable timeTable = new TimeTable(policies, periodStorage);
             this.activityChecker.SetActivityListner(timeTable);
-            this.statsReporter = new StatsReporterImpl(timeTable, policies);
+            this.statsReporter = new StatsReporterImpl(timeTable, policies, new SystemClock());
         }
 
         //##################################################################

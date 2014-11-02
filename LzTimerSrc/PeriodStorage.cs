@@ -1,11 +1,61 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
+using System.Linq;
 using System.IO;
 
 namespace kkot.LzTimer
 {
-    public class SqlitePeriodStorage : PeriodStorage
+    public class MemoryPeriodStorage : TestablePeriodStorage
+    {
+        private SortedSet<Period> periods = new SortedSet<Period>();
+
+        public void Remove(Period period)
+        {
+            periods.Remove(period);
+        }
+
+        public SortedSet<Period> GetAll()
+        {
+            return periods;
+        }
+
+        public void Add(Period period)
+        {
+            periods.Add(period);
+        }
+
+        public SortedSet<Period> GetPeriodsFromTimePeriod(TimePeriod searchedTimePeriod)
+        {
+            return new SortedSet<Period>(periods.Where(p =>
+                p.End > searchedTimePeriod.Start &&
+                p.Start < searchedTimePeriod.End));
+        }
+
+        public SortedSet<Period> GetPeriodsAfter(DateTime dateTime)
+        {
+            return new SortedSet<Period>(periods.Where(p =>
+                p.End > dateTime));
+        }
+
+        public List<Period> GetSinceFirstActivePeriodBefore(DateTime dateTime)
+        {
+            DateTime fromDate = periods.Where((p) => p.Start < dateTime).ToList().Last().Start;
+            return periods.Where((p) => p.Start >= fromDate).ToList();
+        }
+
+        public void Dispose()
+        {
+            periods = null;
+        }
+
+        public void Reset()
+        {
+            periods.Clear();
+        }
+    }
+
+    public class SqlitePeriodStorage : TestablePeriodStorage
     {
         private readonly SQLiteConnection conn;
 

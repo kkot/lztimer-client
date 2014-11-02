@@ -15,6 +15,7 @@ namespace LzTimerTests
         public class TimeTableTest
         {
             protected TimeTable timeTableSUT;
+            protected TestablePeriodStorage periodStorage;
             protected readonly TimeSpan IDLE_TIMEOUT_SECS = 5.s();
 
             [TestInitializeAttribute]
@@ -24,7 +25,8 @@ namespace LzTimerTests
                 {
                     IdleTimeout = IDLE_TIMEOUT_SECS,
                 };
-                timeTableSUT = new TimeTable(policies);
+                periodStorage = new MemoryPeriodStorage();
+                timeTableSUT = new TimeTable(policies, periodStorage);
             }
 
             [TestClass]
@@ -38,8 +40,8 @@ namespace LzTimerTests
                     var merged = timeTableSUT.Add(period);
 
                     Assert.AreEqual(period, merged);
-                    Assert.AreEqual(1, timeTableSUT.GetAll().Count);
-                    CollectionAssert.Contains(timeTableSUT.GetAll(), merged);
+                    Assert.AreEqual(1, periodStorage.GetAll().Count);
+                    CollectionAssert.Contains(periodStorage.GetAll(), merged);
                 }
 
                 [TestMethod]
@@ -53,8 +55,8 @@ namespace LzTimerTests
 
                     var periodMerged = new ActivePeriod(period1.Start, period2.End);
 
-                    Assert.AreEqual(periodMerged, timeTableSUT.GetAll().First());
-                    CollectionAssert.AreEquivalent(new[] {periodMerged}, timeTableSUT.GetAll());
+                    Assert.AreEqual(periodMerged, periodStorage.GetAll().First());
+                    CollectionAssert.AreEquivalent(new[] { periodMerged }, periodStorage.GetAll());
                 }
 
                 [TestMethod]
@@ -70,7 +72,7 @@ namespace LzTimerTests
 
                     var periodMerged = new IdlePeriod(period2.Start, period3.End);
 
-                    CollectionAssert.AreEquivalent(new Period[] {period1, periodMerged}, timeTableSUT.GetAll());
+                    CollectionAssert.AreEquivalent(new Period[] { period1, periodMerged }, periodStorage.GetAll());
                 }
 
                 [TestMethod]
@@ -84,7 +86,7 @@ namespace LzTimerTests
 
                     Assert.AreEqual(period1, returned1);
                     Assert.AreEqual(period2, returned2);
-                    CollectionAssert.AreEquivalent(timeTableSUT.GetAll(), new[] {period2, period1});
+                    CollectionAssert.AreEquivalent(periodStorage.GetAll(), new[] { period2, period1 });
                 }
 
                 [TestMethod]
@@ -96,7 +98,7 @@ namespace LzTimerTests
                     timeTableSUT.Add(period1);
                     timeTableSUT.Add(period2);
 
-                    CollectionAssert.AreEquivalent(timeTableSUT.GetAll(), new Period[] {period2, period1});
+                    CollectionAssert.AreEquivalent(periodStorage.GetAll(), new Period[] { period2, period1 });
                 }
 
                 [TestMethod]
@@ -112,8 +114,8 @@ namespace LzTimerTests
 
                     var mergedPeriod = new ActivePeriod(period1.Start, period3.End);
 
-                    CollectionAssert.DoesNotContain(timeTableSUT.GetAll(), period2);
-                    CollectionAssert.AreEquivalent(timeTableSUT.GetAll(), new[] {mergedPeriod});
+                    CollectionAssert.DoesNotContain(periodStorage.GetAll(), period2);
+                    CollectionAssert.AreEquivalent(periodStorage.GetAll(), new[] { mergedPeriod });
                 }
 
                 [TestMethod]
@@ -129,7 +131,7 @@ namespace LzTimerTests
 
                     var mergedPeriod = new ActivePeriod(period1Active.Start, period3Active.End);
 
-                    CollectionAssert.AreEquivalent(timeTableSUT.GetAll(),
+                    CollectionAssert.AreEquivalent(periodStorage.GetAll(),
                         new Period[] {period1Active, period2Idle, period3Active});
                 }
             }

@@ -16,7 +16,7 @@ namespace LzTimerTests
             var period2 = period1.NewAfter(2.s()).Idle();
             var expected = new Period[] { period1, period2 };
 
-            using (PeriodStorage instance1 = GetStorage())
+            using (TestablePeriodStorage instance1 = GetStorage())
             {
                 instance1.Add(period1);
                 instance1.Add(period2);
@@ -27,7 +27,7 @@ namespace LzTimerTests
             if (IsPersisent())
             {
                 WaitForConnectionToDbClosed();
-                using (PeriodStorage instance2 = GetStorage())
+                using (TestablePeriodStorage instance2 = GetStorage())
                 {
                     CollectionAssert.AreEquivalent(expected, instance2.GetAll());
                 }
@@ -41,7 +41,7 @@ namespace LzTimerTests
             var secondPeriod = firstPeriod.NewAfter(10.s()).Idle();
 
             Period[] expected;
-            using (PeriodStorage periodStorageSUT = GetStorage())
+            using (TestablePeriodStorage periodStorageSUT = GetStorage())
             {
                 periodStorageSUT.Add(firstPeriod);
                 periodStorageSUT.Add(secondPeriod);
@@ -54,7 +54,7 @@ namespace LzTimerTests
             if (IsPersisent())
             {
                 WaitForConnectionToDbClosed();
-                using (PeriodStorage newInstance = GetStorage())
+                using (TestablePeriodStorage newInstance = GetStorage())
                 {
                     CollectionAssert.AreEquivalent(expected, newInstance.GetAll());
                 }
@@ -138,7 +138,7 @@ namespace LzTimerTests
             }
         }
 
-        protected abstract PeriodStorage GetStorage();
+        protected abstract TestablePeriodStorage GetStorage();
 
         protected abstract bool IsPersisent();
 
@@ -161,7 +161,7 @@ namespace LzTimerTests
             File.Delete(DB_FILE);
         }
 
-        protected override PeriodStorage GetStorage()
+        protected override TestablePeriodStorage GetStorage()
         {
             return new SqlitePeriodStorage(DB_FILE);
         }
@@ -180,7 +180,7 @@ namespace LzTimerTests
         {
         }
 
-        protected override PeriodStorage GetStorage()
+        protected override TestablePeriodStorage GetStorage()
         {
             return new MemoryPeriodStorage();
         }

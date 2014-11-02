@@ -133,7 +133,6 @@ namespace kkot.LzTimer
 
     public interface PeriodsReader
     {
-        SortedSet<Period> GetAll();
         SortedSet<Period> GetPeriodsAfter(DateTime dateTime);
     }
 
@@ -141,60 +140,14 @@ namespace kkot.LzTimer
     {
         void Add(Period period);
         void Remove(Period period);
-        SortedSet<Period> GetAll();
         SortedSet<Period> GetPeriodsFromTimePeriod(TimePeriod searchedTimePeriod);
         SortedSet<Period> GetPeriodsAfter(DateTime dateTime);
         void Reset();
     }
 
-    public class MemoryPeriodStorage : PeriodStorage
+    public interface TestablePeriodStorage : PeriodStorage
     {
-        private SortedSet<Period> periods = new SortedSet<Period>();
-
-        public void Remove(Period period)
-        {
-            periods.Remove(period);
-        }
-
-        public SortedSet<Period> GetAll()
-        {
-            return periods;
-        }
-
-        public void Add(Period period)
-        {
-            periods.Add(period);
-        }
-
-        public SortedSet<Period> GetPeriodsFromTimePeriod(TimePeriod searchedTimePeriod)
-        {
-            return new SortedSet<Period>(periods.Where(p => 
-                p.End > searchedTimePeriod.Start && 
-                p.Start < searchedTimePeriod.End));
-        }
-
-        public SortedSet<Period> GetPeriodsAfter(DateTime dateTime)
-        {
-            return new SortedSet<Period>(periods.Where(p =>
-                p.End > dateTime));
-        }
-
-        public List<Period> GetSinceFirstActivePeriodBefore(DateTime dateTime)
-        {
-            DateTime fromDate = periods.Where((p) => p.Start < dateTime).ToList().Last().Start;
-            return periods.Where((p) => p.Start >= fromDate).ToList();
-        }
-
-        public void Dispose()
-        {
-            periods = null;
-        }
-
-
-        public void Reset()
-        {
-            periods.Clear();
-        }
+        SortedSet<Period> GetAll();
     }
 
     public class TimeTablePolicies
@@ -226,9 +179,11 @@ namespace kkot.LzTimer
 
         private void assertNotOverlapping()
         {
-            foreach (var period1 in periodStorage.GetAll())
+
+            var storage = (TestablePeriodStorage)periodStorage;
+            foreach (var period1 in storage.GetAll())
             {
-                foreach (var period2 in periodStorage.GetAll())
+                foreach (var period2 in storage.GetAll())
                 {
                     if (!period1.Equals(period2) && period1.Overlap(period2))
                     {
@@ -240,7 +195,7 @@ namespace kkot.LzTimer
 
         private Period merge(Period aPeriod)
         {
-            foreach (var period in periodStorage.GetAll())
+            foreach (var period in periodStorage.GetPeriodsAfter(aPeriod.Start - policies.IdleTimeout))
             {
                 if (period.CanBeMerged(aPeriod, policies.IdleTimeout))
                 {
@@ -271,11 +226,6 @@ namespace kkot.LzTimer
         {
             return periodStorage.GetPeriodsAfter(dateTime);
         }
-
-        public SortedSet<Period> GetAll()
-        {
-            return periodStorage.GetAll();
-        }
     }
 
     public interface StatsReporter
@@ -291,11 +241,13 @@ namespace kkot.LzTimer
     {
         private readonly PeriodsReader periodReader;
         private TimeTablePolicies policies;
+        private Clock clock;
 
-        public StatsReporterImpl(PeriodsReader periodsReader, TimeTablePolicies policies)
+        public StatsReporterImpl(PeriodsReader periodsReader, TimeTablePolicies policies, Clock clock)
         {
             this.periodReader = periodsReader;
             this.policies = policies;
+            this.clock = clock;
         }
 
         private List<Period> ReadPeriodsAfter(DateTime date)
@@ -303,14 +255,15 @@ namespace kkot.LzTimer
             return periodReader.GetPeriodsAfter(date).ToList();
         }
 
-        private List<Period> ReadAllPeriods()
+        private List<Period> ReadPeriodsFromLast24h()
         {
-            return periodReader.GetAll().ToList();
+            return periodReader.GetPeriodsAfter(clock.CurrentTime().AddDays(-1)).ToList();
         }
+
 
         public TimeSpan GetLastInactiveTimespan()
         {
-            List<Period> periods = ReadAllPeriods();
+            List<Period> periods = ReadPeriodsFromLast24h();
 
             if (periods.Count == 0)
                 return TimeSpan.Zero;
@@ -380,7 +333,7 @@ namespace kkot.LzTimer
 
         public Period GetCurrentLogicalPeriod()
         {
-            List<Period> periods = ReadAllPeriods();
+            List<Period> periods = ReadPeriodsFromLast24h();
 
             if (periods.Count == 0)
                 return new IdlePeriod(DateTime.Now, DateTime.Now);
