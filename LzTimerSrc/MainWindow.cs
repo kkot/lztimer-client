@@ -53,7 +53,8 @@ namespace kkot.LzTimer
             this.activityChecker = new ActivityChecker(new Win32LastActivityProbe(), new SystemClock());
             this.policies = new TimeTablePolicies() {IdleTimeout = maxIdleMinutes.min()};
             //this.policies = new TimeTablePolicies() {IdleTimeout = 10.s()};
-            periodStorage = new MemoryPeriodStorage(); //new SqlitePeriodStorage("periods.db");
+            //periodStorage = new MemoryPeriodStorage(); //new SqlitePeriodStorage("periods.db");
+            periodStorage = new SqlitePeriodStorage("periods.db");            
             TimeTable timeTable = new TimeTable(policies, periodStorage);
             this.activityChecker.SetActivityListner(timeTable);
             this.statsReporter = new StatsReporterImpl(timeTable, policies);
@@ -67,12 +68,34 @@ namespace kkot.LzTimer
             UpdateStats(statsReporter);
         }
 
+        private TimeSpan lastActiveToday;
+        private TimeSpan lastInactive;
+        private int numOfBoth = 0;
+
         private void UpdateStats(StatsReporter reporter)
         {
             UpdateLabels(
                 (int) reporter.GetTotalActiveToday(DateTime.Now.Date).Round(100.ms()).TotalSeconds, 
                 (int) reporter.GetLastInactiveTimespan().Round(100.ms()).TotalSeconds
                 );
+
+            bool bothChanged = true;
+            if (reporter.GetTotalActiveToday(DateTime.Now.Date) != lastActiveToday)
+                bothChanged = false;
+
+            if (reporter.GetLastInactiveTimespan() != lastInactive)
+                bothChanged = false;
+
+            if (bothChanged)
+                numOfBoth++;
+            else
+                numOfBoth = 0;
+
+            if (numOfBoth > 5)
+                Console.WriteLine("xxx");
+
+            lastActiveToday = reporter.GetTotalActiveToday(DateTime.Now.Date);
+            lastInactive = reporter.GetLastInactiveTimespan();
 
             Period currentPeriod = reporter.GetCurrentLogicalPeriod();
             UpdateNotifyIcon(currentPeriod is ActivePeriod, (int)currentPeriod.Length.TotalMinutes);
@@ -100,7 +123,7 @@ namespace kkot.LzTimer
 
             using (Graphics g = Graphics.FromImage(funBmp))
             {
-                g.FillEllipse(Brushes.Green, 0, 0, 16, 16);
+                g.FillEllipse(Brushes.Red, 0, 0, 16, 16);
                 g.DrawString(minutes.ToString(), font, Brushes.White, 0, 1);
             }
             currentPeriodIcon = Icon.FromHandle(funBmp.GetHicon());
@@ -117,7 +140,7 @@ namespace kkot.LzTimer
 
             using (Graphics g = Graphics.FromImage(alldayBmp))
             {
-                g.FillRectangle(Brushes.White, 0, 0, 16, 16);
+                g.FillRectangle(Brushes.Wheat, 0, 0, 16, 16);
                 string hoursStr = (hours > 9) ? "X" : "" + hours;
                 g.DrawString(hoursStr, font, Brushes.Black, -1, -3);
                 g.DrawString(""+minutes, fontSmall, Brushes.Red, 3, 6);

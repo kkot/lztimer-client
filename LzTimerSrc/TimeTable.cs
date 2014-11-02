@@ -91,6 +91,16 @@ namespace kkot.LzTimer
                 return false;
             return true;
         }
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null || GetType() != obj.GetType())
+            {
+                return false;
+            }
+            var period = (Period)obj;
+            return Start.Equals(period.Start) && End.Equals(period.End);
+        }
     }
 
     public class ActivePeriod : Period
@@ -125,9 +135,9 @@ namespace kkot.LzTimer
     {
         SortedSet<Period> GetAll();
 
-        SortedSet<Period> GetPeriodsAfter(DateTime dateTime);
+        SortedSet<Period> GetPeriodsUptoNumOfActive(int numberOfActive);
 
-        List<Period> GetSinceFirstActivePeriodBefore(DateTime dateTime);
+        SortedSet<Period> GetPeriodsAfter(DateTime dateTime);
     }
 
     public interface PeriodStorage : IDisposable
@@ -215,7 +225,7 @@ namespace kkot.LzTimer
 
         public Period Add(Period period)
         {
-            assertNotOverlapping();
+            //assertNotOverlapping();
             return merge(period);   
         }
 
@@ -225,7 +235,7 @@ namespace kkot.LzTimer
             {
                 foreach (var period2 in periodStorage.GetAll())
                 {
-                    if (period1 != period2 && period1.Overlap(period2))
+                    if (!period1.Equals(period2) && period1.Overlap(period2))
                     {
                         throw new Exception();
                     }
@@ -267,14 +277,15 @@ namespace kkot.LzTimer
             return periodStorage.GetPeriodsAfter(dateTime);
         }
 
-        public List<Period> GetSinceFirstActivePeriodBefore(DateTime dateTime)
-        {
-            throw new NotImplementedException();
-        }
-
         public SortedSet<Period> GetAll()
         {
             return periodStorage.GetAll();
+        }
+
+
+        public SortedSet<Period> GetPeriodsUptoNumOfActive(int numberOfActive)
+        {
+            throw new NotImplementedException();
         }
     }
 
@@ -365,7 +376,7 @@ namespace kkot.LzTimer
                 sum += period.Length;
             }
 
-            if (IsLastIdlePeriodTreatedAsActive(periods))
+            if (IsLastIdlePeriodTreatedAsActive(Last(periods)))
             {
                 sum += Last(periods).Length;
             }
@@ -373,9 +384,9 @@ namespace kkot.LzTimer
             return sum;
         }
 
-        private bool IsLastIdlePeriodTreatedAsActive(List<Period> periods)
+        private bool IsLastIdlePeriodTreatedAsActive(Period last)
         {
-            return Last(periods) is IdlePeriod && Last(periods).Length <= policies.IdleTimeout;
+            return last is IdlePeriod && last.Length <= policies.IdleTimeout;
         }
 
         public Period GetCurrentLogicalPeriod()
@@ -385,13 +396,14 @@ namespace kkot.LzTimer
             if (periods.Count == 0)
                 return new IdlePeriod(DateTime.Now, DateTime.Now);
 
-            if (periods.Count == 1)
-                return Last(periods);
+            var last = Last(periods, 1);
 
-            var last = Last(periods);
+            if (periods.Count == 1)
+                return last;
+
             var beforeLast = Last(periods, 2);
 
-            if (IsLastIdlePeriodTreatedAsActive(periods))
+            if (IsLastIdlePeriodTreatedAsActive(last))
                 return beforeLast.Merge(last);
             else
                 return last;
