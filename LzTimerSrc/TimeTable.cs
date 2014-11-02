@@ -134,9 +134,6 @@ namespace kkot.LzTimer
     public interface PeriodsReader
     {
         SortedSet<Period> GetAll();
-
-        SortedSet<Period> GetPeriodsUptoNumOfActive(int numberOfActive);
-
         SortedSet<Period> GetPeriodsAfter(DateTime dateTime);
     }
 
@@ -147,8 +144,6 @@ namespace kkot.LzTimer
         SortedSet<Period> GetAll();
         SortedSet<Period> GetPeriodsFromTimePeriod(TimePeriod searchedTimePeriod);
         SortedSet<Period> GetPeriodsAfter(DateTime dateTime);
-        List<Period> GetSinceFirstActivePeriodBefore(DateTime dateTime);
-
         void Reset();
     }
 
@@ -280,12 +275,6 @@ namespace kkot.LzTimer
         public SortedSet<Period> GetAll()
         {
             return periodStorage.GetAll();
-        }
-
-
-        public SortedSet<Period> GetPeriodsUptoNumOfActive(int numberOfActive)
-        {
-            throw new NotImplementedException();
         }
     }
 
