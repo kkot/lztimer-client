@@ -68,34 +68,12 @@ namespace kkot.LzTimer
             UpdateStats(statsReporter);
         }
 
-        private TimeSpan lastActiveToday;
-        private TimeSpan lastInactive;
-        private int numOfBoth = 0;
-
         private void UpdateStats(StatsReporter reporter)
         {
             UpdateLabels(
                 (int) reporter.GetTotalActiveToday(DateTime.Now.Date).Round(100.ms()).TotalSeconds, 
                 (int) reporter.GetLastInactiveTimespan().Round(100.ms()).TotalSeconds
                 );
-
-            bool bothChanged = true;
-            if (reporter.GetTotalActiveToday(DateTime.Now.Date) != lastActiveToday)
-                bothChanged = false;
-
-            if (reporter.GetLastInactiveTimespan() != lastInactive)
-                bothChanged = false;
-
-            if (bothChanged)
-                numOfBoth++;
-            else
-                numOfBoth = 0;
-
-            if (numOfBoth > 5)
-                Console.WriteLine("xxx");
-
-            lastActiveToday = reporter.GetTotalActiveToday(DateTime.Now.Date);
-            lastInactive = reporter.GetLastInactiveTimespan();
 
             Period currentPeriod = reporter.GetCurrentLogicalPeriod();
             UpdateNotifyIcon(currentPeriod is ActivePeriod, (int)currentPeriod.Length.TotalMinutes);

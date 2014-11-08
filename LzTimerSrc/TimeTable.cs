@@ -173,24 +173,7 @@ namespace kkot.LzTimer
 
         public Period Add(Period period)
         {
-            //assertNotOverlapping();
             return merge(period);   
-        }
-
-        private void assertNotOverlapping()
-        {
-
-            var storage = (TestablePeriodStorage)periodStorage;
-            foreach (var period1 in storage.GetAll())
-            {
-                foreach (var period2 in storage.GetAll())
-                {
-                    if (!period1.Equals(period2) && period1.Overlap(period2))
-                    {
-                        throw new Exception();
-                    }
-                }
-            }
         }
 
         private Period merge(Period aPeriod)
