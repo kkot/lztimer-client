@@ -5,7 +5,7 @@ using System.Media;
 
 namespace kkot.LzTimer
 {
-    public partial class MainWindow : Form
+    public partial class MainWindow : Form, UserActivityListner
     {
         private int initialWidth;
         private int initialHeight;
@@ -135,8 +135,8 @@ namespace kkot.LzTimer
 
         private void UpdateLabels(int secondsToday, int secondsAfterLastBreak)
         {
-            todayTimeLabel.Text  = Helpers.SecondsToHMS(secondsToday);
-            lastBreakLabel.Text = Helpers.SecondsToHMS(secondsAfterLastBreak);
+            todayTimeLabel.Text  = Utilities.SecondsToHMS(secondsToday);
+            lastBreakLabel.Text = Utilities.SecondsToHMS(secondsAfterLastBreak);
             
             string notifyText = "today " + todayTimeLabel.Text
                 + "\n"
@@ -163,7 +163,6 @@ namespace kkot.LzTimer
         {
             if (WindowState == FormWindowState.Minimized)
             {
-
                 WindowState = FormWindowState.Normal;
                 Show();
                 MoveToBottomRight();
@@ -222,7 +221,7 @@ namespace kkot.LzTimer
 
         private void historyButton_Click(object sender, EventArgs e)
         {
-            new HistoryForm().Show();
+
         }
 
         private void MainWindow_FormClosing(object sender, FormClosingEventArgs e)
@@ -236,6 +235,11 @@ namespace kkot.LzTimer
         private void reset_Click(object sender, EventArgs e)
         {
             periodStorage.Reset();
+        }
+
+        public void notifyActiveAfterBreak(TimeSpan leaveTime)
+        {
+            notifyIcon1.ShowBalloonTip(/*milisecs*/ 10000, "leave", "time " + (int) leaveTime.TotalSeconds, ToolTipIcon.Info);
         }
     }
 }

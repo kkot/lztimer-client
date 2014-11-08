@@ -6,6 +6,20 @@ using System.IO;
 
 namespace kkot.LzTimer
 {
+    public interface PeriodStorage : IDisposable
+    {
+        void Add(Period period);
+        void Remove(Period period);
+        SortedSet<Period> GetPeriodsFromTimePeriod(TimePeriod searchedTimePeriod);
+        SortedSet<Period> GetPeriodsAfter(DateTime dateTime);
+        void Reset();
+    }
+
+    public interface TestablePeriodStorage : PeriodStorage
+    {
+        SortedSet<Period> GetAll();
+    }
+
     public class MemoryPeriodStorage : TestablePeriodStorage
     {
         private SortedSet<Period> periods = new SortedSet<Period>();

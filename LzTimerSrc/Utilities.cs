@@ -57,7 +57,7 @@ namespace kkot.LzTimer
         }
     }
 
-    class Helpers
+    class Utilities
     {
         public static string NowShortDateString()
         {
