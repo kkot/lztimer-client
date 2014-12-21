@@ -90,7 +90,7 @@ namespace LzTimerTests
                 }
 
                 [TestMethod]
-                public void twoCloseActiveAndIdlePeriodShouldNotBeMerged()
+                public void closeActiveAndIdlePeriodShouldNotBeMerged()
                 {
                     var period1 = PeriodBuilder.New(MIDDAY).Active();
                     var period2 = PeriodBuilder.NewAfter(period1, IDLE_TIMEOUT_SECS - 1.s()).Idle();
@@ -104,35 +104,35 @@ namespace LzTimerTests
                 [TestMethod]
                 public void twoCloseActivePeriodEnclosingIdlePeriodShouldBeMerged()
                 {
-                    var period1 = PeriodBuilder.New(MIDDAY).Active();
-                    var period2 = PeriodBuilder.NewAfter(period1).Idle();
-                    var period3 = PeriodBuilder.NewAfter(period2).Active();
+                    var period1a = PeriodBuilder.New(MIDDAY).Active();
+                    var period2i = PeriodBuilder.NewAfter(period1a).Idle();
+                    var period3a = PeriodBuilder.NewAfter(period2i).Active();
 
-                    timeTableSUT.Add(period1);
-                    timeTableSUT.Add(period2);
-                    timeTableSUT.Add(period3);
+                    timeTableSUT.Add(period1a);
+                    timeTableSUT.Add(period2i);
+                    timeTableSUT.Add(period3a);
 
-                    var mergedPeriod = new ActivePeriod(period1.Start, period3.End);
+                    var mergedPeriod = new ActivePeriod(period1a.Start, period3a.End);
 
-                    CollectionAssert.DoesNotContain(periodStorage.GetAll(), period2);
+                    CollectionAssert.DoesNotContain(periodStorage.GetAll(), period2i);
                     CollectionAssert.AreEquivalent(periodStorage.GetAll(), new[] { mergedPeriod });
                 }
 
                 [TestMethod]
                 public void twoCloseIdlePeriodEnclosingActivePeriodShouldNotBeMerged()
                 {
-                    var period1Active = PeriodBuilder.New(MIDDAY).Idle();
-                    var period2Idle = PeriodBuilder.NewAfter(period1Active).Active();
-                    var period3Active = PeriodBuilder.NewAfter(period2Idle).Idle();
+                    var period1i = PeriodBuilder.New(MIDDAY).Idle();
+                    var period2a = PeriodBuilder.NewAfter(period1i).Active();
+                    var period3a = PeriodBuilder.NewAfter(period2a).Idle();
 
-                    timeTableSUT.Add(period1Active);
-                    timeTableSUT.Add(period2Idle);
-                    timeTableSUT.Add(period3Active);
+                    timeTableSUT.Add(period1i);
+                    timeTableSUT.Add(period2a);
+                    timeTableSUT.Add(period3a);
 
-                    var mergedPeriod = new ActivePeriod(period1Active.Start, period3Active.End);
+                    var mergedPeriod = new ActivePeriod(period1i.Start, period3a.End);
 
                     CollectionAssert.AreEquivalent(periodStorage.GetAll(),
-                        new Period[] {period1Active, period2Idle, period3Active});
+                        new Period[] {period1i, period2a, period3a});
                 }
             }
         }

@@ -87,7 +87,7 @@ namespace LzTimerTests
         }
 
         [TestMethod]
-        public void checkTwoActive()
+        public void twoActive()
         {
             policies.IdleTimeout = 5.s();
             Simulate(1, 2, 3);
@@ -97,7 +97,7 @@ namespace LzTimerTests
         }
 
         [TestMethod]
-        public void checkTwoActiveWithIdleInside()
+        public void twoActiveWithShortIdleInside()
         {
             policies.IdleTimeout = 5.s();
             Simulate(1, 2, 3, 3, 4);

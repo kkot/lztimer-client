@@ -80,8 +80,7 @@ namespace kkot.LzTimer
                 SQLiteConnection.CreateFile(name);
             }
 
-            //conn = new SQLiteConnection("Data Source=" + name + ";Synchronous=Full");
-            conn = new SQLiteConnection(String.Format("Data Source={0}",name));
+            conn = new SQLiteConnection(String.Format("Data Source={0};Synchronous=Full;locking_mode=NORMAL", name));
             conn.Open();
             CreateTable();
             PragmaExlusiveAccess();

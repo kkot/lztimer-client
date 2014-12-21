@@ -80,6 +80,11 @@ namespace LzTimerTests
             return PeriodBuilder.New(dateTime).Length(length);
         }
 
+        public static PeriodBuilder New(this DateTime dateTime)
+        {
+            return PeriodBuilder.New(dateTime);
+        }
+
         public static PeriodBuilder NewAfter(this Period period, TimeSpan gap)
         {
             return PeriodBuilder.NewAfter(period, gap);

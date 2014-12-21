@@ -63,7 +63,7 @@ namespace LzTimerTests
         }
 
         [TestMethod]
-        public void whenLastInputTimeDontChangeShouldNotifyIdlePeriod()
+        public void whenLastInputTimeDontChange_ShouldNotifyIdlePeriod()
         {
             SetLastInputTick(1);
             activityCheckerSut.Check();
@@ -73,7 +73,7 @@ namespace LzTimerTests
         }
 
         [TestMethod]
-        public void whenLastInputTimeDoChangeShouldNotifyActivePeriod()
+        public void whenLastInputTimeChange_ShouldNotifyActivePeriod()
         {
             SetLastInputTick(1);
             activityCheckerSut.Check();
@@ -85,22 +85,24 @@ namespace LzTimerTests
         }
 
         [TestMethod]
-        public void whenLastInputTimeChangeEverySecondTimeNotifyActiveAndIdlePeriod()
+        public void testIdleActiveIdle()
         {
-            SetCurrentTime(DateTime.Now);
             SetLastInputTick(1);
             activityCheckerSut.Check();
 
             SetLastInputTick(1);
             activityCheckerSut.Check();
+            
             AssertIdlePeriodPassed();
 
             SetLastInputTick(2);
             activityCheckerSut.Check();
+            
             AssertActivePeriodPassed();
 
             SetLastInputTick(2);
             activityCheckerSut.Check();
+            
             AssertIdlePeriodPassed();
         }
 
