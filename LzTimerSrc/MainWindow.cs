@@ -23,9 +23,11 @@ namespace kkot.LzTimer
         private ActivityChecker activityChecker;
         private TimeTablePolicies policies;
         private PeriodStorage periodStorage;
+        private ShortcutsManager shortcutsManager;
 
         public MainWindow()
         {
+            shortcutsManager = new ShortcutsManager(this);
             InitializeComponent();
         }
 
@@ -45,8 +47,7 @@ namespace kkot.LzTimer
             soundPlayer = new SoundPlayer();
 
             // rejestruje klawisze
-            ShortcutsManager.RegisterHotKey(this, Keys.Z, ShortcutsManager.MOD_WIN);
-            ShortcutsManager.RegisterHotKey(this, Keys.A, ShortcutsManager.MOD_WIN);
+            shortcutsManager.Register();
 
             MoveToBottomRight();
 
@@ -159,7 +160,7 @@ namespace kkot.LzTimer
             Close();
         }
 
-        private void toggleVisible()
+        internal void toggleVisible()
         {
             if (WindowState == FormWindowState.Minimized)
             {
@@ -189,14 +190,7 @@ namespace kkot.LzTimer
         protected override void WndProc(ref Message m)
         {
             base.WndProc(ref m);
-
-            if (m.Msg == ShortcutsManager.WM_HOTKEY)
-            {
-                if ((int)m.WParam == (int)Keys.A)
-                {
-                    toggleVisible();
-                }
-            }
+            shortcutsManager.ProcessMessage(ref m);
         }
 
         private void MoveToBottomRight()
@@ -226,8 +220,7 @@ namespace kkot.LzTimer
 
         private void MainWindow_FormClosing(object sender, FormClosingEventArgs e)
         {
-            ShortcutsManager.UnregisterHotKey(this, (int)Keys.Z);
-            ShortcutsManager.UnregisterHotKey(this, (int)Keys.A);
+            shortcutsManager.UnRegister();
             Properties.Settings.Default.Save();
             periodStorage.Dispose();
         }

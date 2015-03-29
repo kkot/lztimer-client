@@ -75,7 +75,6 @@
     <Compile Include="Utilities.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="ShortcutsManager.cs" />
-    <Compile Include="PInvoke.cs" />
     <Compile Include="MainWindow.cs">
       <SubType>Form</SubType>
     </Compile>

@@ -4,7 +4,7 @@ using System.Windows.Forms;
 
 namespace kkot.LzTimer
 {
-    public class ShortcutsManager
+    internal class ShortcutsManager
     {
         #region fields
         public static int MOD_ALT = 0x1;
@@ -14,32 +14,57 @@ namespace kkot.LzTimer
         public static int WM_HOTKEY = 0x312;
         #endregion
 
+        private readonly MainWindow form;
+
+        internal ShortcutsManager(MainWindow mainWindow)
+        {
+            this.form = mainWindow;
+        }
+
         [DllImport("user32.dll")]
         private static extern bool RegisterHotKey(IntPtr hWnd, int id, int fsModifiers, int vlc);
 
         [DllImport("user32.dll")]
         private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
 
-        private static int keyId;
-        public static void RegisterHotKey(Form f, Keys key, int modifiers)
+        private static void RegisterHotKey(Form f, Keys key, int modifiers)
         {
             Keys k = key;
-            keyId = (int)k;//f.GetHashCode(); // this should be a key unique ID, modify this if you want more than one hotkey
+            int keyId = (int)k; //f.GetHashCode(); // this should be a key unique ID, modify this if you want more than one hotkey
             RegisterHotKey((IntPtr)f.Handle, keyId, (int)modifiers, (int)k);
         }
 
-        private delegate void Func();
-
-        public static void UnregisterHotKey(Form f, int keyId)
+        private static void UnregisterHotKey(Form f, Keys key)
         {
             try
             {
-                UnregisterHotKey(f.Handle, keyId);
+                UnregisterHotKey(f.Handle, (int)key);
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.ToString());
             }
+        }
+
+        internal void ProcessMessage(ref Message m)
+        {
+            if (m.Msg == ShortcutsManager.WM_HOTKEY)
+            {
+                if ((int)m.WParam == (int)Keys.A)
+                {
+                    form.toggleVisible();
+                }
+            }
+        }
+
+        internal void Register()
+        {
+            ShortcutsManager.RegisterHotKey(form, Keys.A, ShortcutsManager.MOD_WIN);
+        }
+
+        internal void UnRegister()
+        {
+            ShortcutsManager.UnregisterHotKey(form, Keys.A);
         }
     }
 }

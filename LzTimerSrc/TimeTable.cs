@@ -10,7 +10,7 @@ namespace kkot.LzTimer
         void PeriodPassed(Period period);
     }
 
-    public interface PeriodsReader
+    public interface PeriodsInfoProvider
     {
         SortedSet<Period> GetPeriodsAfter(DateTime dateTime);
     }
@@ -20,7 +20,7 @@ namespace kkot.LzTimer
         public TimeSpan IdleTimeout { get; set; }
     }
 
-    public class TimeTable : ActivityPeriodsListener, PeriodsReader
+    public class TimeTable : ActivityPeriodsListener, PeriodsInfoProvider
     {
         private readonly PeriodStorage periodStorage;
         private readonly TimeTablePolicies policies;

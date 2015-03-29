@@ -16,11 +16,11 @@ namespace kkot.LzTimer
 
     public class StatsReporterImpl : StatsReporter
     {
-        private readonly PeriodsReader periodReader;
+        private readonly PeriodsInfoProvider periodReader;
         private TimeTablePolicies policies;
         private Clock clock;
 
-        public StatsReporterImpl(PeriodsReader periodsReader, TimeTablePolicies policies, Clock clock)
+        public StatsReporterImpl(PeriodsInfoProvider periodsReader, TimeTablePolicies policies, Clock clock)
         {
             this.periodReader = periodsReader;
             this.policies = policies;
