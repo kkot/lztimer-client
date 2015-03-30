@@ -213,11 +213,6 @@ namespace kkot.LzTimer
             }
         }
 
-        private void historyButton_Click(object sender, EventArgs e)
-        {
-
-        }
-
         private void MainWindow_FormClosing(object sender, FormClosingEventArgs e)
         {
             shortcutsManager.UnRegister();
