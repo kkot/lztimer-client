@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace kkot.LzTimer
 {
@@ -37,7 +36,6 @@ namespace kkot.LzTimer
             return periodReader.GetPeriodsAfter(clock.CurrentTime().AddDays(-1)).ToList();
         }
 
-
         public TimeSpan GetLastInactiveTimespan()
         {
             List<Period> periods = ReadPeriodsFromLast24h();
@@ -56,7 +54,6 @@ namespace kkot.LzTimer
             {
                 return LastActive(periods, 1).Start - periods[0].Start;
             }
-
 
             return TimeSpan.Zero;
         }
@@ -78,7 +75,6 @@ namespace kkot.LzTimer
         {
             return ActivePeriods(periods).Last(position);
         }
-
 
         public TimeSpan GetTotalActiveToday(DateTime todayBegin)
         {
@@ -128,5 +124,4 @@ namespace kkot.LzTimer
                 return last;
         }
     }
-
 }

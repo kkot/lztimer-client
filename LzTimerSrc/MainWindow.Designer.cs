@@ -97,7 +97,6 @@ namespace kkot.LzTimer
             this.historyButton.TabIndex = 12;
             this.historyButton.Text = "history";
             this.historyButton.UseVisualStyleBackColor = true;
-            this.historyButton.Click += new System.EventHandler(this.historyButton_Click);
             // 
             // lastBreakLabel
             // 
