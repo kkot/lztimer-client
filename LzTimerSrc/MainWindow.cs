@@ -7,16 +7,15 @@ namespace kkot.LzTimer
 {
     public partial class MainWindow : Form, UserActivityListner
     {
-        private int initialWidth;
-        private int initialHeight;
-
-        //private Font font = new Font(FontFamily.GenericMonospace, 8.0f);
         private readonly Font font = new Font(FontFamily.GenericMonospace, 11, GraphicsUnit.Pixel);
         private readonly Font fontSmall = new Font(FontFamily.GenericMonospace, 9, GraphicsUnit.Pixel);
 
+        private const int TIME_LIMIT_NORMAL = 50;
+        private const int TIME_LIMIT_WARNING = 60;
+
         private Icon idleIcon;
-        private Icon currentPeriodIcon;
-        private Icon alldayIcon;
+        private Icon currentTimeIcon;
+        private Icon alldayTimeIcon;
 
         private SoundPlayer soundPlayer;
         private StatsReporter statsReporter;
@@ -36,9 +35,6 @@ namespace kkot.LzTimer
             RecreateCurrentPeriodIcon(0);
             UpdateNotifyIcon(false, 0);
 
-            initialHeight = Height;
-            initialWidth = Width;
-
             // loading configuration
             int maxIdleMinutes = int.Parse(Properties.Settings.Default.MaxIdleMinutes.ToString());
             intervalTextBox.Text = maxIdleMinutes.ToString();
@@ -46,15 +42,13 @@ namespace kkot.LzTimer
 
             soundPlayer = new SoundPlayer();
 
-            // rejestruje klawisze
+            // register shotcuts keys
             shortcutsManager.Register();
 
-            MoveToBottomRight();
+            MoveToPosition();
 
             this.activityChecker = new ActivityChecker(new Win32LastActivityProbe(), new SystemClock());
             this.policies = new TimeTablePolicies() {IdleTimeout = maxIdleMinutes.min()};
-            //this.policies = new TimeTablePolicies() {IdleTimeout = 10.s()};
-            //periodStorage = new MemoryPeriodStorage(); //new SqlitePeriodStorage("periods.db");
             periodStorage = new SqlitePeriodStorage("periods.db");            
             TimeTable timeTable = new TimeTable(policies, periodStorage);
             this.activityChecker.SetActivityListner(timeTable);
@@ -81,6 +75,19 @@ namespace kkot.LzTimer
             UpdateAlldayIcon(reporter.GetTotalActiveToday(DateTime.Now.Date));
         }
 
+        private static Brush getCurrentTimeIconColor(int minutes)
+        {
+            if (minutes < TIME_LIMIT_NORMAL)
+            {
+                return Brushes.Green;
+            }
+            else if (minutes < TIME_LIMIT_WARNING)
+            {
+                return Brushes.Orange;
+            }
+            return Brushes.Red;
+        }
+
         private void RecreateCurrentPeriodIcon(int minutes)
         {
             if (minutes > 99)
@@ -97,15 +104,15 @@ namespace kkot.LzTimer
             }
 
             Bitmap funBmp = new Bitmap(16, 16);
-            if (currentPeriodIcon != null)
-                PInvoke.DestroyIcon(currentPeriodIcon.Handle);
+            if (currentTimeIcon != null)
+                PInvoke.DestroyIcon(currentTimeIcon.Handle);
 
             using (Graphics g = Graphics.FromImage(funBmp))
             {
-                g.FillEllipse(Brushes.Red, 0, 0, 16, 16);
+                g.FillEllipse(getCurrentTimeIconColor(minutes), 0, 0, 16, 16);
                 g.DrawString(minutes.ToString(), font, Brushes.White, 0, 1);
             }
-            currentPeriodIcon = Icon.FromHandle(funBmp.GetHicon());
+            currentTimeIcon = Icon.FromHandle(funBmp.GetHicon());
         }
 
         private void UpdateAlldayIcon(TimeSpan totalToday)
@@ -114,8 +121,8 @@ namespace kkot.LzTimer
             int minutes = totalToday.Minutes;
 
             Bitmap alldayBmp = new Bitmap(16, 16);
-            if (alldayIcon != null)
-                PInvoke.DestroyIcon(alldayIcon.Handle);
+            if (alldayTimeIcon != null)
+                PInvoke.DestroyIcon(alldayTimeIcon.Handle);
 
             using (Graphics g = Graphics.FromImage(alldayBmp))
             {
@@ -124,14 +131,14 @@ namespace kkot.LzTimer
                 g.DrawString(hoursStr, font, Brushes.Black, -1, -3);
                 g.DrawString(""+minutes, fontSmall, Brushes.Red, 3, 6);
             }
-            alldayIcon = Icon.FromHandle(alldayBmp.GetHicon());
-            notifyIconAllday.Icon = alldayIcon;
+            alldayTimeIcon = Icon.FromHandle(alldayBmp.GetHicon());
+            notifyIconAllday.Icon = alldayTimeIcon;
         }
 
         private void UpdateNotifyIcon(bool active, int totalMinutes)
         {
             RecreateCurrentPeriodIcon(totalMinutes);
-            notifyIcon1.Icon = !active ? idleIcon : currentPeriodIcon;
+            notifyIcon1.Icon = !active ? idleIcon : currentTimeIcon;
         }
 
         private void UpdateLabels(int secondsToday, int secondsAfterLastBreak)
@@ -166,7 +173,7 @@ namespace kkot.LzTimer
             {
                 WindowState = FormWindowState.Normal;
                 Show();
-                MoveToBottomRight();
+                MoveToPosition();
             }
             else
             {
@@ -181,10 +188,6 @@ namespace kkot.LzTimer
             {
                 toggleVisible();
             }
-            else if (e.Button == MouseButtons.Middle)
-            {
-                MoveToBottomRight();
-            }
         }
 
         protected override void WndProc(ref Message m)
@@ -193,12 +196,18 @@ namespace kkot.LzTimer
             shortcutsManager.ProcessMessage(ref m);
         }
 
-        private void MoveToBottomRight()
+        private void MoveToPosition()
         {
-            Width = initialWidth;
-            Height = initialHeight;
-            Left = Screen.PrimaryScreen.WorkingArea.Width - Width - 10;
-            Top = Screen.PrimaryScreen.WorkingArea.Height - Height - 10;
+            if (Screen.PrimaryScreen.Bounds.Height > Screen.PrimaryScreen.WorkingArea.Height) // taskbar on bottom
+            {
+                Left = Screen.PrimaryScreen.WorkingArea.Width - Width - 10;
+                Top = Screen.PrimaryScreen.WorkingArea.Height - Height - 10;
+            }
+            else // taskbar on left
+            {
+                Left = Screen.PrimaryScreen.WorkingArea.Left + 10;
+                Top = Screen.PrimaryScreen.WorkingArea.Height - Height - 10;
+            }
         }
 
         private void intervalTextBox_TextChanged(object sender, EventArgs e)
@@ -227,7 +236,8 @@ namespace kkot.LzTimer
 
         public void notifyActiveAfterBreak(TimeSpan leaveTime)
         {
-            notifyIcon1.ShowBalloonTip(/*milisecs*/ 10000, "leave", "time " + (int) leaveTime.TotalSeconds, ToolTipIcon.Info);
+            const int balloonTimeoutMs = 10000;
+            notifyIcon1.ShowBalloonTip(balloonTimeoutMs, "leave", "time " + (int) leaveTime.TotalSeconds, ToolTipIcon.Info);
         }
     }
 }

@@ -140,7 +140,7 @@ namespace kkot.LzTimer
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(246, 124);
+            this.ClientSize = new System.Drawing.Size(268, 124);
             this.Controls.Add(this.reset);
             this.Controls.Add(this.lastBreakLabel);
             this.Controls.Add(this.label5);
@@ -149,6 +149,7 @@ namespace kkot.LzTimer
             this.Controls.Add(this.intervalTextBox);
             this.Controls.Add(this.todayTimeLabel);
             this.Controls.Add(this.label2);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Name = "MainWindow";
             this.Text = "LzTimer";
             this.TopMost = true;
