@@ -4,12 +4,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values To modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Gma.GlobalHookDemo")]
+[assembly: AssemblyTitle("LzTimer")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Siemens and Partners")]
-[assembly: AssemblyProduct("Gma.GlobalHookDemo")]
-[assembly: AssemblyCopyright("Copyright © Siemens and Partners 2008")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("LzTimer")]
+[assembly: AssemblyCopyright("Krzysztof Kot")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
