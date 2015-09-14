@@ -55,6 +55,11 @@ namespace kkot.LzTimer
         {
             return seconds.Select((p) => TimeSpan.FromSeconds(p)).ToArray();
         }
+
+        public static TimeSpan hours(this int hours)
+        {
+            return TimeSpan.FromHours(hours);
+        }
     }
 
     class Utilities

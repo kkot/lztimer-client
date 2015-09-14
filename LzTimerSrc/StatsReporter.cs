@@ -12,7 +12,7 @@ namespace kkot.LzTimer
 
         Period GetCurrentLogicalPeriod();
 
-        IList<Period> TodayPeriods();
+        IList<Period> PeriodsFromDay(DateTime day);
     }
 
     public class StatsReporterImpl : StatsReporter
@@ -126,7 +126,7 @@ namespace kkot.LzTimer
                 return last;
         }
 
-        public IList<Period> TodayPeriods()
+        public IList<Period> PeriodsFromDay(DateTime day)
         {
             throw new NotImplementedException();
         }
