@@ -73,8 +73,8 @@ namespace kkot.LzTimer
                 (int) reporter.GetLastInactiveTimespan().Round(100.ms()).TotalSeconds
                 );
 
-            Period currentPeriod = reporter.GetCurrentLogicalPeriod();
-            UpdateNotifyIcon(currentPeriod is ActivePeriod, (int)currentPeriod.Length.TotalMinutes);
+            ActivityPeriod currentActivityPeriod = reporter.GetCurrentLogicalPeriod();
+            UpdateNotifyIcon(currentActivityPeriod is ActivePeriod, (int)currentActivityPeriod.Length.TotalMinutes);
             UpdateAlldayIcon(reporter.GetTotalActiveToday(DateTime.Now.Date));
         }
 

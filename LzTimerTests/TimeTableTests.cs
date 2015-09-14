@@ -9,7 +9,7 @@ namespace LzTimerTests
     {
         private static readonly DateTime MIDDAY = new DateTime(2014, 1, 1, 12, 0, 0, 0);
         private static readonly DateTime MIDNIGHT_BEFORE = new DateTime(2014, 1, 1, 0, 0, 0, 0);
-        private static readonly TimePeriod WHOLE_DAY = new TimePeriod(MIDDAY.AddHours(-12), MIDDAY.AddHours(12));
+        private static readonly Period WHOLE_DAY = new Period(MIDDAY.AddHours(-12), MIDDAY.AddHours(12));
 
         [TestClass]
         public class TimeTableTest
@@ -72,7 +72,7 @@ namespace LzTimerTests
 
                     var periodMerged = new IdlePeriod(period2.Start, period3.End);
 
-                    CollectionAssert.AreEquivalent(new Period[] { period1, periodMerged }, periodStorage.GetAll());
+                    CollectionAssert.AreEquivalent(new ActivityPeriod[] { period1, periodMerged }, periodStorage.GetAll());
                 }
 
                 [TestMethod]
@@ -98,7 +98,7 @@ namespace LzTimerTests
                     timeTableSUT.Add(period1);
                     timeTableSUT.Add(period2);
 
-                    CollectionAssert.AreEquivalent(periodStorage.GetAll(), new Period[] { period2, period1 });
+                    CollectionAssert.AreEquivalent(periodStorage.GetAll(), new ActivityPeriod[] { period2, period1 });
                 }
 
                 [TestMethod]
@@ -132,7 +132,7 @@ namespace LzTimerTests
                     var mergedPeriod = new ActivePeriod(period1i.Start, period3a.End);
 
                     CollectionAssert.AreEquivalent(periodStorage.GetAll(),
-                        new Period[] {period1i, period2a, period3a});
+                        new ActivityPeriod[] {period1i, period2a, period3a});
                 }
             }
         }

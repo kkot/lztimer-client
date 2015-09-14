@@ -47,7 +47,7 @@ namespace kkot.LzTimer
             var active = (lastInputTick != probe.GetLastInputTick());
 
             var now = clock.CurrentTime();
-            listener.PeriodPassed(Period.Create(active, now - TimeSpanSinceLastCheck(), now));
+            listener.PeriodPassed(ActivityPeriod.Create(active, now - TimeSpanSinceLastCheck(), now));
             
             SaveLastInputTick();
         }

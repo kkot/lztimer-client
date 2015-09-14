@@ -11,21 +11,21 @@ namespace LzTimerTests
     [TestClass]
     public class StatsReporterTests
     {
-        private StatsReporter _statsReporterSUT;
-        private TimeTablePolicies _policies;
-        private Clock _clockMock;
-        private PeriodsInfoProvider _periodsInfoProvider;
-        private ActivityPeriodsListener _activityPeriodsListener;
+        private StatsReporter statsReporterSUT;
+        private TimeTablePolicies policies;
+        private Clock clockMock;
+        private PeriodsInfoProvider periodsInfoProvider;
+        private ActivityPeriodsListener activityPeriodsListener;
 
         [TestInitializeAttribute]
         public void SetUp()
         {
-            _policies = new TimeTablePolicies();
-            var timeTable = new TimeTable(_policies);
-            _periodsInfoProvider = timeTable;
-            _activityPeriodsListener = timeTable;
-            _clockMock = A.Fake<Clock>();
-            _statsReporterSUT = new StatsReporterImpl(_periodsInfoProvider, _policies, _clockMock);
+            policies = new TimeTablePolicies();
+            var timeTable = new TimeTable(policies);
+            periodsInfoProvider = timeTable;
+            activityPeriodsListener = timeTable;
+            clockMock = A.Fake<Clock>();
+            statsReporterSUT = new StatsReporterImpl(periodsInfoProvider, policies, clockMock);
         }
 
         [TestMethod]
@@ -38,20 +38,20 @@ namespace LzTimerTests
             var period1 = PassOnePeriod(day1);
             var period2 = PassOnePeriod(day2);
 
-            var periods = _statsReporterSUT.PeriodsFromDay(day1);
+            var periods = statsReporterSUT.PeriodsFromDay(day1);
             CollectionAssert.AreEquivalent(new Period[] { period1 }, periods.ToList());
 
-            periods = _statsReporterSUT.PeriodsFromDay(day2);
+            periods = statsReporterSUT.PeriodsFromDay(day2);
             CollectionAssert.AreEquivalent(new Period[] { period2 }, periods.ToList());
 
-            periods = _statsReporterSUT.PeriodsFromDay(day3);
+            periods = statsReporterSUT.PeriodsFromDay(day3);
             Assert.IsTrue(periods.ToList().Any() == false);
         }
 
         private ActivePeriod PassOnePeriod(DateTime day)
         {
             var period = PeriodBuilder.New(day.AddHours(12)).Length(1.hours()).Active();
-            _activityPeriodsListener.PeriodPassed(period);
+            activityPeriodsListener.PeriodPassed(period);
             return period;
         }
     }

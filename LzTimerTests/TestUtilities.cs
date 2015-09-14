@@ -11,10 +11,10 @@ namespace LzTimerTests
 
         public static TimeSpan DEFAULT_LENGTH_MS = 1000.ms();
 
-        private PeriodBuilder(Period period)
+        private PeriodBuilder(ActivityPeriod activityPeriod)
         {
-            this.Start = period.Start;
-            this.End = period.End;
+            this.Start = activityPeriod.Start;
+            this.End = activityPeriod.End;
         }
 
         private PeriodBuilder(DateTime start, DateTime end)
@@ -36,20 +36,20 @@ namespace LzTimerTests
             return new PeriodBuilder(DateTime.Now, DateTime.Now + DEFAULT_LENGTH_MS);
         }
 
-        private static PeriodBuilder After(Period period, TimeSpan gap)
+        private static PeriodBuilder After(ActivityPeriod activityPeriod, TimeSpan gap)
         {
-            var periodBuilder = New(period.End + gap);
+            var periodBuilder = New(activityPeriod.End + gap);
             return periodBuilder;
         }
 
-        public static PeriodBuilder NewAfter(Period period)
+        public static PeriodBuilder NewAfter(ActivityPeriod activityPeriod)
         {
-            return After(period, TimeSpan.Zero);
+            return After(activityPeriod, TimeSpan.Zero);
         }
 
-        public static PeriodBuilder NewAfter(Period period, TimeSpan gap)
+        public static PeriodBuilder NewAfter(ActivityPeriod activityPeriod, TimeSpan gap)
         {
-            return After(period, gap);
+            return After(activityPeriod, gap);
         }
         public PeriodBuilder NewAfter(TimeSpan gap)
         {
@@ -85,9 +85,9 @@ namespace LzTimerTests
             return PeriodBuilder.New(dateTime);
         }
 
-        public static PeriodBuilder NewAfter(this Period period, TimeSpan gap)
+        public static PeriodBuilder NewAfter(this ActivityPeriod activityPeriod, TimeSpan gap)
         {
-            return PeriodBuilder.NewAfter(period, gap);
+            return PeriodBuilder.NewAfter(activityPeriod, gap);
         }
     }
 

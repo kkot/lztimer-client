@@ -59,7 +59,7 @@ namespace LzTimerTests
             SetLastInputTick(123);
             activityCheckerSut.Check();
 
-            Mock.Assert(() => activityListenerMock.PeriodPassed(Arg.IsAny<Period>()), Occurs.Never());
+            Mock.Assert(() => activityListenerMock.PeriodPassed(Arg.IsAny<ActivityPeriod>()), Occurs.Never());
         }
 
         [TestMethod]
@@ -122,12 +122,12 @@ namespace LzTimerTests
             SetCurrentTime(time2);
             activityCheckerSut.Check();
 
-            Mock.Assert(() => activityListenerMock.PeriodPassed(Arg.Matches<Period>(p => p.Length == interval1)), Occurs.Once());
+            Mock.Assert(() => activityListenerMock.PeriodPassed(Arg.Matches<ActivityPeriod>(p => p.Length == interval1)), Occurs.Once());
 
             SetCurrentTime(time3);
             activityCheckerSut.Check();
 
-            Mock.Assert(() => activityListenerMock.PeriodPassed(Arg.Matches<Period>(p => p.Length == interval2)), Occurs.Once());
+            Mock.Assert(() => activityListenerMock.PeriodPassed(Arg.Matches<ActivityPeriod>(p => p.Length == interval2)), Occurs.Once());
         }
 
         //[TestMethod]
@@ -142,8 +142,8 @@ namespace LzTimerTests
             DateTime time2 = time1 + interval1;
             DateTime time3 = time2 + interval2;
 
-            Mock.Arrange(() => activityListenerMock.PeriodPassed(Arg.Matches<Period>(p => p.Length == 1100.ms()))).InOrder();
-            Mock.Arrange(() => activityListenerMock.PeriodPassed(Arg.Matches<Period>(p => p.Length == 1000.ms()))).InOrder();
+            Mock.Arrange(() => activityListenerMock.PeriodPassed(Arg.Matches<ActivityPeriod>(p => p.Length == 1100.ms()))).InOrder();
+            Mock.Arrange(() => activityListenerMock.PeriodPassed(Arg.Matches<ActivityPeriod>(p => p.Length == 1000.ms()))).InOrder();
 
             SetCurrentTime(time1);
             activityCheckerSut.Check();
@@ -166,8 +166,8 @@ namespace LzTimerTests
             SetLastInputTick(1);
             SetCurrentTime(time);
 
-            Mock.Arrange(() => activityListenerMock.PeriodPassed(Arg.IsAny<Period>())).
-                DoInstead((Period p) => Console.WriteLine("Actual " + p.Length + " expected " + expectedLength));
+            Mock.Arrange(() => activityListenerMock.PeriodPassed(Arg.IsAny<ActivityPeriod>())).
+                DoInstead((ActivityPeriod p) => Console.WriteLine("Actual " + p.Length + " expected " + expectedLength));
 
             activityCheckerSut.Check();
             AssertPassedPeriodLength(expectedLength);
@@ -177,7 +177,7 @@ namespace LzTimerTests
         private void AssertPassedPeriodLength(TimeSpan expectedLength)
         {
             Mock.Assert(() => activityListenerMock.PeriodPassed(
-                Arg.Matches<Period>(e => e.Length == expectedLength)));
+                Arg.Matches<ActivityPeriod>(e => e.Length == expectedLength)));
         }
     }
 }

@@ -40,9 +40,9 @@ namespace LzTimerTests
 
         protected void AssertCurrentLogicalPeriod(bool expectedActive, TimeSpan expectedLength)
         {
-            Period period = statsReporter.GetCurrentLogicalPeriod();
-            Assert.AreEqual(expectedActive, period is ActivePeriod);
-            Assert.AreEqual(expectedLength, period.Length);
+            ActivityPeriod activityPeriod = statsReporter.GetCurrentLogicalPeriod();
+            Assert.AreEqual(expectedActive, activityPeriod is ActivePeriod);
+            Assert.AreEqual(expectedLength, activityPeriod.Length);
         }
     }
 
