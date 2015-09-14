@@ -11,6 +11,8 @@ namespace kkot.LzTimer
         TimeSpan GetLastInactiveTimespan();
 
         Period GetCurrentLogicalPeriod();
+
+        IList<Period> TodayPeriods();
     }
 
     public class StatsReporterImpl : StatsReporter
@@ -122,6 +124,11 @@ namespace kkot.LzTimer
                 return beforeLast.Merge(last);
             else
                 return last;
+        }
+
+        public IList<Period> TodayPeriods()
+        {
+            throw new NotImplementedException();
         }
     }
 }

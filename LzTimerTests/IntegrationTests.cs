@@ -72,8 +72,8 @@ namespace LzTimerTests
         {
             simulationStart = new DateTime(2014, 1, 1, 12, 0, 0);
 
-            var simulatedActivity = simulated.Where(e => e is int).Select(e => (int)e).ToArray();
-            var periodLengths = simulated.Where(e => e is TimeSpan).Select(e => (TimeSpan)e).ToArray();
+            var simulatedActivity = simulated.OfType<int>().ToArray();
+            var periodLengths = simulated.OfType<TimeSpan>().ToArray();
 
             clockStub.Arrange(simulationStart, periodLengths);
             probeStub.Arrange(simulatedActivity);

@@ -7,6 +7,8 @@ namespace kkot.LzTimer
 {
     public partial class MainWindow : Form, UserActivityListner
     {
+        private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         private readonly Font font = new Font(FontFamily.GenericMonospace, 11, GraphicsUnit.Pixel);
         private readonly Font fontSmall = new Font(FontFamily.GenericMonospace, 9, GraphicsUnit.Pixel);
 
@@ -32,6 +34,7 @@ namespace kkot.LzTimer
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            log.Info("Form load");
             RecreateCurrentPeriodIcon(0);
             UpdateNotifyIcon(false, 0);
 
@@ -169,10 +172,11 @@ namespace kkot.LzTimer
 
         internal void toggleVisible()
         {
+            log.Info("WindowState " + WindowState);
             if (WindowState == FormWindowState.Minimized)
             {
-                WindowState = FormWindowState.Normal;
                 Show();
+                WindowState = FormWindowState.Normal;
                 MoveToPosition();
             }
             else
@@ -198,6 +202,14 @@ namespace kkot.LzTimer
 
         private void MoveToPosition()
         {
+            log.Debug("Height " + Height);
+            log.Debug("ClientSize.Height " + ClientSize.Height);
+
+            if (ClientSize.Height <= 0)
+            {
+                return;
+            }
+
             if (Screen.PrimaryScreen.Bounds.Height > Screen.PrimaryScreen.WorkingArea.Height) // taskbar on bottom
             {
                 Left = Screen.PrimaryScreen.WorkingArea.Width - Width - 10;

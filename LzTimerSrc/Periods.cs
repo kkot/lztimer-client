@@ -7,16 +7,16 @@ namespace kkot.LzTimer
 {
     public class TimePeriod : IComparable
     {
+        public DateTime Start { get; private set; }
+        public DateTime End { get; private set; }
+        public TimeSpan Length { get; private set; }
+
         public TimePeriod(DateTime @start, DateTime end)
         {
             this.Start = start;
             this.End = end;
             this.Length = end - start;
         }
-
-        public DateTime Start { get; private set; }
-        public DateTime End { get; private set; }
-        public TimeSpan Length { get; private set; }
 
         public override string ToString()
         {
