@@ -13,6 +13,7 @@ namespace kkot.LzTimer
     public interface PeriodsInfoProvider
     {
         SortedSet<Period> GetPeriodsAfter(DateTime dateTime);
+        SortedSet<Period> GetPeriods(TimePeriod period);
     }
 
     public class TimeTablePolicies
@@ -72,6 +73,11 @@ namespace kkot.LzTimer
         public SortedSet<Period> GetPeriodsAfter(DateTime dateTime)
         {
             return periodStorage.GetPeriodsAfter(dateTime);
+        }
+
+        public SortedSet<Period> GetPeriods(TimePeriod period)
+        {
+            return periodStorage.GetPeriodsFromTimePeriod(period);
         }
     }
 

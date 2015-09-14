@@ -7,8 +7,8 @@ namespace kkot.LzTimer
 {
     public class TimePeriod : IComparable
     {
-        public DateTime Start { get; private set; }
-        public DateTime End { get; private set; }
+        public DateTime Start { get; }
+        public DateTime End { get; }
         public TimeSpan Length { get; private set; }
 
         public TimePeriod(DateTime @start, DateTime end)
@@ -29,7 +29,7 @@ namespace kkot.LzTimer
             {
                 return false;
             }
-            var period = (Period)obj;
+            var period = (TimePeriod) obj;
             return Start.Equals(period.Start) && End.Equals(period.End);
         }
 
@@ -40,7 +40,7 @@ namespace kkot.LzTimer
 
         public int CompareTo(object obj)
         {
-            Period period = (Period)obj;
+            var period = (TimePeriod) obj;
             return Start.CompareTo(period.Start);
         }
     }

@@ -12,14 +12,14 @@ namespace kkot.LzTimer
 
         Period GetCurrentLogicalPeriod();
 
-        IList<Period> PeriodsFromDay(DateTime day);
+        SortedSet<Period> PeriodsFromDay(DateTime day);
     }
 
     public class StatsReporterImpl : StatsReporter
     {
         private readonly PeriodsInfoProvider periodReader;
-        private TimeTablePolicies policies;
-        private Clock clock;
+        private readonly TimeTablePolicies policies;
+        private readonly Clock clock;
 
         public StatsReporterImpl(PeriodsInfoProvider periodsReader, TimeTablePolicies policies, Clock clock)
         {
@@ -126,9 +126,15 @@ namespace kkot.LzTimer
                 return last;
         }
 
-        public IList<Period> PeriodsFromDay(DateTime day)
+        public SortedSet<Period> PeriodsFromDay(DateTime day)
         {
-            throw new NotImplementedException();
+            if (day.Date != day)
+            {
+                throw new ArgumentException("Only date without time should be passed");
+            }
+            var startDateTime = day;
+            var endDateTime = day.AddDays(1);
+            return periodReader.GetPeriods(new TimePeriod(startDateTime, endDateTime));
         }
     }
 }
