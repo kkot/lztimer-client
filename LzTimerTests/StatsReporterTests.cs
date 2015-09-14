@@ -39,10 +39,10 @@ namespace LzTimerTests
             var period2 = PassOnePeriod(day2);
 
             var periods = statsReporterSUT.PeriodsFromDay(day1);
-            CollectionAssert.AreEquivalent(new Period[] { period1 }, periods.ToList());
+            CollectionAssert.AreEquivalent(new ActivityPeriod[] { period1 }, periods.ToList());
 
             periods = statsReporterSUT.PeriodsFromDay(day2);
-            CollectionAssert.AreEquivalent(new Period[] { period2 }, periods.ToList());
+            CollectionAssert.AreEquivalent(new ActivityPeriod[] { period2 }, periods.ToList());
 
             periods = statsReporterSUT.PeriodsFromDay(day3);
             Assert.IsTrue(periods.ToList().Any() == false);

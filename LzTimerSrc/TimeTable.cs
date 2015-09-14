@@ -7,13 +7,13 @@ namespace kkot.LzTimer
 {
     public interface ActivityPeriodsListener
     {
-        void PeriodPassed(Period period);
+        void PeriodPassed(ActivityPeriod activityPeriod);
     }
 
     public interface PeriodsInfoProvider
     {
-        SortedSet<Period> GetPeriodsAfter(DateTime dateTime);
-        SortedSet<Period> GetPeriods(TimePeriod period);
+        SortedSet<ActivityPeriod> GetPeriodsAfter(DateTime dateTime);
+        SortedSet<ActivityPeriod> GetPeriods(Period period);
     }
 
     public class TimeTablePolicies
@@ -36,19 +36,19 @@ namespace kkot.LzTimer
             this.periodStorage = storage;
         }
 
-        public Period Add(Period period)
+        public ActivityPeriod Add(ActivityPeriod activityPeriod)
         {
-            return merge(period);   
+            return merge(activityPeriod);   
         }
 
-        private Period merge(Period aPeriod)
+        private ActivityPeriod merge(ActivityPeriod aActivityPeriod)
         {
-            foreach (var period in periodStorage.GetPeriodsAfter(aPeriod.Start - policies.IdleTimeout))
+            foreach (var period in periodStorage.GetPeriodsAfter(aActivityPeriod.Start - policies.IdleTimeout))
             {
-                if (period.CanBeMerged(aPeriod, policies.IdleTimeout))
+                if (period.CanBeMerged(aActivityPeriod, policies.IdleTimeout))
                 {
-                    var merged = period.Merge(aPeriod);
-                    foreach(Period innerPeriod in periodStorage.GetPeriodsFromTimePeriod(merged))
+                    var merged = period.Merge(aActivityPeriod);
+                    foreach(ActivityPeriod innerPeriod in periodStorage.GetPeriodsFromTimePeriod(merged))
                     {
                         periodStorage.Remove(innerPeriod);
                     }
@@ -56,26 +56,26 @@ namespace kkot.LzTimer
                     return merged;
                 }
             }
-            periodStorage.Add(aPeriod);
-            return aPeriod;
+            periodStorage.Add(aActivityPeriod);
+            return aActivityPeriod;
         }
 
-        public void PeriodPassed(Period period)
+        public void PeriodPassed(ActivityPeriod activityPeriod)
         {
-            this.Add(period);
+            this.Add(activityPeriod);
         }
 
-        public SortedSet<Period> GetPeriodsFromPeriod(TimePeriod period)
+        public SortedSet<ActivityPeriod> GetPeriodsFromPeriod(Period period)
         {
             return periodStorage.GetPeriodsFromTimePeriod(period);
         }
 
-        public SortedSet<Period> GetPeriodsAfter(DateTime dateTime)
+        public SortedSet<ActivityPeriod> GetPeriodsAfter(DateTime dateTime)
         {
             return periodStorage.GetPeriodsAfter(dateTime);
         }
 
-        public SortedSet<Period> GetPeriods(TimePeriod period)
+        public SortedSet<ActivityPeriod> GetPeriods(Period period)
         {
             return periodStorage.GetPeriodsFromTimePeriod(period);
         }

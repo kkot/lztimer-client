@@ -8,51 +8,51 @@ namespace kkot.LzTimer
 {
     public interface PeriodStorage : IDisposable
     {
-        void Add(Period period);
-        void Remove(Period period);
-        SortedSet<Period> GetPeriodsFromTimePeriod(TimePeriod searchedTimePeriod);
-        SortedSet<Period> GetPeriodsAfter(DateTime dateTime);
+        void Add(ActivityPeriod activityPeriod);
+        void Remove(ActivityPeriod activityPeriod);
+        SortedSet<ActivityPeriod> GetPeriodsFromTimePeriod(Period searchedPeriod);
+        SortedSet<ActivityPeriod> GetPeriodsAfter(DateTime dateTime);
         void Reset();
     }
 
     public interface TestablePeriodStorage : PeriodStorage
     {
-        SortedSet<Period> GetAll();
+        SortedSet<ActivityPeriod> GetAll();
     }
 
     public class MemoryPeriodStorage : TestablePeriodStorage
     {
-        private SortedSet<Period> periods = new SortedSet<Period>();
+        private SortedSet<ActivityPeriod> periods = new SortedSet<ActivityPeriod>();
 
-        public void Remove(Period period)
+        public void Remove(ActivityPeriod activityPeriod)
         {
-            periods.Remove(period);
+            periods.Remove(activityPeriod);
         }
 
-        public SortedSet<Period> GetAll()
+        public SortedSet<ActivityPeriod> GetAll()
         {
             return periods;
         }
 
-        public void Add(Period period)
+        public void Add(ActivityPeriod activityPeriod)
         {
-            periods.Add(period);
+            periods.Add(activityPeriod);
         }
 
-        public SortedSet<Period> GetPeriodsFromTimePeriod(TimePeriod searchedTimePeriod)
+        public SortedSet<ActivityPeriod> GetPeriodsFromTimePeriod(Period searchedPeriod)
         {
-            return new SortedSet<Period>(periods.Where(p =>
-                p.End > searchedTimePeriod.Start &&
-                p.Start < searchedTimePeriod.End));
+            return new SortedSet<ActivityPeriod>(periods.Where(p =>
+                p.End > searchedPeriod.Start &&
+                p.Start < searchedPeriod.End));
         }
 
-        public SortedSet<Period> GetPeriodsAfter(DateTime dateTime)
+        public SortedSet<ActivityPeriod> GetPeriodsAfter(DateTime dateTime)
         {
-            return new SortedSet<Period>(periods.Where(p =>
+            return new SortedSet<ActivityPeriod>(periods.Where(p =>
                 p.End > dateTime));
         }
 
-        public List<Period> GetSinceFirstActivePeriodBefore(DateTime dateTime)
+        public List<ActivityPeriod> GetSinceFirstActivePeriodBefore(DateTime dateTime)
         {
             DateTime fromDate = periods.Where((p) => p.Start < dateTime).ToList().Last().Start;
             return periods.Where((p) => p.Start >= fromDate).ToList();
@@ -86,13 +86,13 @@ namespace kkot.LzTimer
             PragmaExlusiveAccess();
         }
 
-        public void Add(Period period)
+        public void Add(ActivityPeriod activityPeriod)
         {
             SQLiteCommand command = conn.CreateCommand();
             command.CommandText = "INSERT INTO Periods (start, end, type) VALUES (:start, :end, :type)";
-            command.Parameters.AddWithValue("start", period.Start);
-            command.Parameters.AddWithValue("end", period.End);
-            command.Parameters.AddWithValue("type", period is ActivePeriod ? "A" : "I");
+            command.Parameters.AddWithValue("start", activityPeriod.Start);
+            command.Parameters.AddWithValue("end", activityPeriod.End);
+            command.Parameters.AddWithValue("type", activityPeriod is ActivePeriod ? "A" : "I");
             command.ExecuteNonQuery();
         }
 
@@ -113,27 +113,27 @@ namespace kkot.LzTimer
             command.ExecuteNonQuery();
         }
 
-        public List<Period> GetSinceFirstActivePeriodBefore(DateTime dateTime)
+        public List<ActivityPeriod> GetSinceFirstActivePeriodBefore(DateTime dateTime)
         {
             throw new NotImplementedException();
         }
 
-        public void Remove(Period period)
+        public void Remove(ActivityPeriod activityPeriod)
         {
             SQLiteCommand command = conn.CreateCommand();
             command.CommandText = "DELETE FROM Periods WHERE start = :start AND end = :end AND type = :type";
-            command.Parameters.AddWithValue("start", period.Start);
-            command.Parameters.AddWithValue("end", period.End);
-            command.Parameters.AddWithValue("type", period is ActivePeriod ? "A" : "I");
+            command.Parameters.AddWithValue("start", activityPeriod.Start);
+            command.Parameters.AddWithValue("end", activityPeriod.End);
+            command.Parameters.AddWithValue("type", activityPeriod is ActivePeriod ? "A" : "I");
             command.ExecuteNonQuery();
         }
 
-        public SortedSet<Period> GetAll()
+        public SortedSet<ActivityPeriod> GetAll()
         {
             SQLiteCommand command = new SQLiteCommand("SELECT start, end, type FROM Periods", conn);
             SQLiteDataReader reader = command.ExecuteReader();
 
-            SortedSet<Period> result = new SortedSet<Period>();
+            SortedSet<ActivityPeriod> result = new SortedSet<ActivityPeriod>();
             while (reader.Read())
             {
                 result.Add(CreatePeriodFromReader(reader));
@@ -141,17 +141,17 @@ namespace kkot.LzTimer
             return result;
         }
 
-        public SortedSet<Period> GetPeriodsFromTimePeriod(TimePeriod searchedTimePeriod)
+        public SortedSet<ActivityPeriod> GetPeriodsFromTimePeriod(Period searchedPeriod)
         {
             var sql = "SELECT start, end, type " +
                       "FROM Periods " +
                       "WHERE end > :start AND start < :end ";
             SQLiteCommand command = new SQLiteCommand(sql, conn);
-            command.Parameters.AddWithValue("start", searchedTimePeriod.Start);
-            command.Parameters.AddWithValue("end", searchedTimePeriod.End);
+            command.Parameters.AddWithValue("start", searchedPeriod.Start);
+            command.Parameters.AddWithValue("end", searchedPeriod.End);
             SQLiteDataReader reader = command.ExecuteReader();
 
-            SortedSet<Period> result = new SortedSet<Period>();
+            SortedSet<ActivityPeriod> result = new SortedSet<ActivityPeriod>();
             while (reader.Read())
             {
                 result.Add(CreatePeriodFromReader(reader));
@@ -159,7 +159,7 @@ namespace kkot.LzTimer
             return result;
         }
 
-        public SortedSet<Period> GetPeriodsAfter(DateTime dateTime)
+        public SortedSet<ActivityPeriod> GetPeriodsAfter(DateTime dateTime)
         {
             var sql = "SELECT start, end, type " +
                 "FROM Periods " +
@@ -168,7 +168,7 @@ namespace kkot.LzTimer
             command.Parameters.AddWithValue("start", dateTime);
             SQLiteDataReader reader = command.ExecuteReader();
 
-            SortedSet<Period> result = new SortedSet<Period>();
+            SortedSet<ActivityPeriod> result = new SortedSet<ActivityPeriod>();
             while (reader.Read())
             {
                 result.Add(CreatePeriodFromReader(reader));
@@ -176,21 +176,21 @@ namespace kkot.LzTimer
             return result;
         }
 
-        private static Period CreatePeriodFromReader(SQLiteDataReader reader)
+        private static ActivityPeriod CreatePeriodFromReader(SQLiteDataReader reader)
         {
-            Period period;
+            ActivityPeriod activityPeriod;
             var start = reader["start"].ToString();
             var end = reader["end"].ToString();
             var type = reader["type"].ToString();
             if (type == "A")
             {
-                period = new ActivePeriod(DateTime.Parse(start), DateTime.Parse(end));
+                activityPeriod = new ActivePeriod(DateTime.Parse(start), DateTime.Parse(end));
             }
             else
             {
-                period = new IdlePeriod(DateTime.Parse(start), DateTime.Parse(end));
+                activityPeriod = new IdlePeriod(DateTime.Parse(start), DateTime.Parse(end));
             }
-            return period;
+            return activityPeriod;
         }
 
         public void Dispose()

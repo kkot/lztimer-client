@@ -10,9 +10,9 @@ namespace kkot.LzTimer
 
         TimeSpan GetLastInactiveTimespan();
 
-        Period GetCurrentLogicalPeriod();
+        ActivityPeriod GetCurrentLogicalPeriod();
 
-        SortedSet<Period> PeriodsFromDay(DateTime day);
+        SortedSet<ActivityPeriod> PeriodsFromDay(DateTime day);
     }
 
     public class StatsReporterImpl : StatsReporter
@@ -28,19 +28,19 @@ namespace kkot.LzTimer
             this.clock = clock;
         }
 
-        private List<Period> ReadPeriodsAfter(DateTime date)
+        private List<ActivityPeriod> ReadPeriodsAfter(DateTime date)
         {
             return periodReader.GetPeriodsAfter(date).ToList();
         }
 
-        private List<Period> ReadPeriodsFromLast24h()
+        private List<ActivityPeriod> ReadPeriodsFromLast24h()
         {
             return periodReader.GetPeriodsAfter(clock.CurrentTime().AddDays(-1)).ToList();
         }
 
         public TimeSpan GetLastInactiveTimespan()
         {
-            List<Period> periods = ReadPeriodsFromLast24h();
+            List<ActivityPeriod> periods = ReadPeriodsFromLast24h();
 
             if (periods.Count == 0)
                 return TimeSpan.Zero;
@@ -60,12 +60,12 @@ namespace kkot.LzTimer
             return TimeSpan.Zero;
         }
 
-        private List<ActivePeriod> ActivePeriods(List<Period> periods)
+        private List<ActivePeriod> ActivePeriods(List<ActivityPeriod> periods)
         {
             return periods.Where(e => e is ActivePeriod).Select(p => (ActivePeriod)p).ToList();
         }
 
-        private Period Last(List<Period> periods, int i = 1)
+        private ActivityPeriod Last(List<ActivityPeriod> periods, int i = 1)
         {
             if (periods.Count >= i)
                 return periods[periods.Count - i];
@@ -73,14 +73,14 @@ namespace kkot.LzTimer
             return null;
         }
 
-        private Period LastActive(List<Period> periods, int position)
+        private ActivityPeriod LastActive(List<ActivityPeriod> periods, int position)
         {
             return ActivePeriods(periods).Last(position);
         }
 
         public TimeSpan GetTotalActiveToday(DateTime todayBegin)
         {
-            List<Period> periods = ReadPeriodsAfter(todayBegin);
+            List<ActivityPeriod> periods = ReadPeriodsAfter(todayBegin);
 
             if (periods.Count == 0)
                 return TimeSpan.Zero;
@@ -101,14 +101,14 @@ namespace kkot.LzTimer
             return sum;
         }
 
-        private bool IsLastIdlePeriodTreatedAsActive(Period last)
+        private bool IsLastIdlePeriodTreatedAsActive(ActivityPeriod last)
         {
             return last is IdlePeriod && last.Length <= policies.IdleTimeout;
         }
 
-        public Period GetCurrentLogicalPeriod()
+        public ActivityPeriod GetCurrentLogicalPeriod()
         {
-            List<Period> periods = ReadPeriodsFromLast24h();
+            List<ActivityPeriod> periods = ReadPeriodsFromLast24h();
 
             if (periods.Count == 0)
                 return new IdlePeriod(DateTime.Now, DateTime.Now);
@@ -126,7 +126,7 @@ namespace kkot.LzTimer
                 return last;
         }
 
-        public SortedSet<Period> PeriodsFromDay(DateTime day)
+        public SortedSet<ActivityPeriod> PeriodsFromDay(DateTime day)
         {
             if (day.Date != day)
             {
@@ -134,7 +134,7 @@ namespace kkot.LzTimer
             }
             var startDateTime = day;
             var endDateTime = day.AddDays(1);
-            return periodReader.GetPeriods(new TimePeriod(startDateTime, endDateTime));
+            return periodReader.GetPeriods(new Period(startDateTime, endDateTime));
         }
     }
 }
