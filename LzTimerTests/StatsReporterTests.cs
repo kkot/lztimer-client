@@ -45,7 +45,7 @@ namespace LzTimerTests
             CollectionAssert.AreEquivalent(new ActivityPeriod[] { period2 }, periods.ToList());
 
             periods = statsReporterSUT.PeriodsFromDay(day3);
-            Assert.IsTrue(periods.ToList().Any() == true);
+            Assert.IsTrue(periods.ToList().Any() == false);
         }
 
         private ActivePeriod PassOnePeriod(DateTime day)
