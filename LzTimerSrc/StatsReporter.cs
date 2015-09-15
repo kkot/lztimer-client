@@ -62,7 +62,7 @@ namespace kkot.LzTimer
 
         private List<ActivePeriod> ActivePeriods(List<ActivityPeriod> periods)
         {
-            return periods.Where(e => e is ActivePeriod).Select(p => (ActivePeriod)p).ToList();
+            return periods.OfType<ActivePeriod>().ToList();
         }
 
         private ActivityPeriod Last(List<ActivityPeriod> periods, int i = 1)
@@ -86,12 +86,7 @@ namespace kkot.LzTimer
                 return TimeSpan.Zero;
 
             var activePeriods = ActivePeriods(periods);
-
-            var sum = new TimeSpan();
-            foreach (ActivePeriod period in activePeriods)
-            {
-                sum += period.Length;
-            }
+            var sum = activePeriods.Aggregate(new TimeSpan(), (current, period) => current + period.Length);
 
             if (IsLastIdlePeriodTreatedAsActive(Last(periods)))
             {

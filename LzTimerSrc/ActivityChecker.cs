@@ -78,25 +78,22 @@ namespace kkot.LzTimer
     {
         public int GetLastInputTick()
         {
-            int lastInputTicks = 0;
-
             PInvoke.LASTINPUTINFO lastInputInfo = new PInvoke.LASTINPUTINFO();
             lastInputInfo.cbSize = (uint)Marshal.SizeOf(lastInputInfo);
             lastInputInfo.dwTime = 0;
 
             if (PInvoke.GetLastInputInfo(ref lastInputInfo))
             {
-                lastInputTicks = (int)lastInputInfo.dwTime;
+                return (int)lastInputInfo.dwTime;
             }
             else
             {
                 throw new Exception();
             }
-            return lastInputTicks;
         }
     }
 
-    public class PInvoke
+    public static class PInvoke
     {
         [DllImport("user32.dll")]
         public static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);
@@ -107,7 +104,7 @@ namespace kkot.LzTimer
             public uint dwTime;
         }
 
-        [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = CharSet.Auto)]
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
         public static extern bool DestroyIcon(IntPtr handle);
     }
 }

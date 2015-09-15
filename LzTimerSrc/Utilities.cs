@@ -53,7 +53,7 @@ namespace kkot.LzTimer
 
         public static TimeSpan[] s(this int[] seconds)
         {
-            return seconds.Select((p) => TimeSpan.FromSeconds(p)).ToArray();
+            return seconds.Select(p => TimeSpan.FromSeconds(p)).ToArray();
         }
 
         public static TimeSpan hours(this int hours)
@@ -62,7 +62,7 @@ namespace kkot.LzTimer
         }
     }
 
-    class Utilities
+    static class Utilities
     {
         public static string NowShortDateString()
         {
@@ -87,25 +87,6 @@ namespace kkot.LzTimer
 
             string result = String.Format("{0:00} h {1:00} m {2:00} s", new object[] { hours, minutes, secunds });
             return result;
-        }
-
-        public static int GetLastInputTicks()
-        {
-            int lastInputTicks = 0;
-
-            PInvoke.LASTINPUTINFO lastInputInfo = new PInvoke.LASTINPUTINFO();
-            lastInputInfo.cbSize = (uint)Marshal.SizeOf(lastInputInfo);
-            lastInputInfo.dwTime = 0;
-
-            if (PInvoke.GetLastInputInfo(ref lastInputInfo))
-            {
-                lastInputTicks = (int)lastInputInfo.dwTime;
-            }
-            else
-            {
-                throw new Exception();
-            }
-            return lastInputTicks;
         }
     }
 }

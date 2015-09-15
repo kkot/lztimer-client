@@ -52,12 +52,6 @@ namespace kkot.LzTimer
                 p.End > dateTime));
         }
 
-        public List<ActivityPeriod> GetSinceFirstActivePeriodBefore(DateTime dateTime)
-        {
-            DateTime fromDate = periods.Where(p => p.Start < dateTime).ToList().Last().Start;
-            return periods.Where((p) => p.Start >= fromDate).ToList();
-        }
-
         public void Dispose()
         {
             periods = null;

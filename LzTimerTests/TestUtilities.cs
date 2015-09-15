@@ -97,21 +97,20 @@ namespace LzTimerTests
         private Queue<TimeSpan> timeSpans;
         private TimeSpan interval = 1.s();
 
-        public void Arrange(DateTime startDateTime, params TimeSpan[] timeSpans)
+        public void Arrange(DateTime startDateTime, params TimeSpan[] aTimeSpans)
         {
             currentTime = startDateTime;
 
-            if (timeSpans.Length > 0)
+            if (aTimeSpans.Length > 0)
             {
-                var q = AddZeroToBeginning(timeSpans);
+                var q = AddZeroToBeginning(aTimeSpans);
                 this.timeSpans = new Queue<TimeSpan>(q);                
             }
         }
 
         private static List<TimeSpan> AddZeroToBeginning(TimeSpan[] dateTimes)
         {
-            var q = new List<TimeSpan>(dateTimes);
-            q.Add(TimeSpan.Zero);
+            var q = new List<TimeSpan>(dateTimes) {TimeSpan.Zero};
             return q;
         }
 
@@ -148,9 +147,9 @@ namespace LzTimerTests
             return currentTime;
         }
 
-        public void SetValue(DateTime currentTime)
+        public void SetValue(DateTime aCurrentTime)
         {
-            this.currentTime = currentTime;
+            this.currentTime = aCurrentTime;
         }
     }
 
@@ -180,7 +179,7 @@ namespace LzTimerTests
 
         public int GetLastInputTick()
         {
-            return GetLastInputTick();
+            return currentValue;
         }
 
         public void SetValue(int value)

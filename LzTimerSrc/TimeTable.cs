@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net.Sockets;
 
 namespace kkot.LzTimer
 {
@@ -63,11 +61,6 @@ namespace kkot.LzTimer
         public void PeriodPassed(ActivityPeriod activityPeriod)
         {
             this.Add(activityPeriod);
-        }
-
-        public SortedSet<ActivityPeriod> GetPeriodsFromPeriod(Period period)
-        {
-            return periodStorage.GetPeriodsFromTimePeriod(period);
         }
 
         public SortedSet<ActivityPeriod> GetPeriodsAfter(DateTime dateTime)

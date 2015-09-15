@@ -18,7 +18,7 @@ namespace kkot.LzTimer
 
         internal ShortcutsManager(MainWindow mainWindow)
         {
-            this.form = mainWindow;
+            form = mainWindow;
         }
 
         [DllImport("user32.dll")]
@@ -31,7 +31,7 @@ namespace kkot.LzTimer
         {
             Keys k = key;
             int keyId = (int)k; //f.GetHashCode(); // this should be a key unique ID, modify this if you want more than one hotkey
-            RegisterHotKey((IntPtr)f.Handle, keyId, (int)modifiers, (int)k);
+            RegisterHotKey(f.Handle, keyId, modifiers, (int)k);
         }
 
         private static void UnregisterHotKey(Form f, Keys key)
@@ -48,7 +48,7 @@ namespace kkot.LzTimer
 
         internal void ProcessMessage(ref Message m)
         {
-            if (m.Msg == ShortcutsManager.WM_HOTKEY)
+            if (m.Msg == WM_HOTKEY)
             {
                 if ((int)m.WParam == (int)Keys.A)
                 {
@@ -59,12 +59,12 @@ namespace kkot.LzTimer
 
         internal void Register()
         {
-            ShortcutsManager.RegisterHotKey(form, Keys.A, ShortcutsManager.MOD_WIN);
+            RegisterHotKey(form, Keys.A, MOD_WIN);
         }
 
         internal void UnRegister()
         {
-            ShortcutsManager.UnregisterHotKey(form, Keys.A);
+            UnregisterHotKey(form, Keys.A);
         }
     }
 }
