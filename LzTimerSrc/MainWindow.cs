@@ -251,5 +251,10 @@ namespace kkot.LzTimer
             const int balloonTimeoutMs = 10000;
             notifyIcon1.ShowBalloonTip(balloonTimeoutMs, "leave", "time " + (int) leaveTime.TotalSeconds, ToolTipIcon.Info);
         }
+
+        private void historyButton_Click(object sender, EventArgs e)
+        {
+            new HistoryWindow(statsReporter).Show();
+        }
     }
 }

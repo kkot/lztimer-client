@@ -93,10 +93,11 @@ namespace kkot.LzTimer
             // 
             this.historyButton.Location = new System.Drawing.Point(12, 63);
             this.historyButton.Name = "historyButton";
-            this.historyButton.Size = new System.Drawing.Size(58, 20);
+            this.historyButton.Size = new System.Drawing.Size(58, 21);
             this.historyButton.TabIndex = 12;
             this.historyButton.Text = "history";
             this.historyButton.UseVisualStyleBackColor = true;
+            this.historyButton.Click += new System.EventHandler(this.historyButton_Click);
             // 
             // lastBreakLabel
             // 
@@ -128,9 +129,9 @@ namespace kkot.LzTimer
             // 
             // reset
             // 
-            this.reset.Location = new System.Drawing.Point(16, 90);
+            this.reset.Location = new System.Drawing.Point(12, 90);
             this.reset.Name = "reset";
-            this.reset.Size = new System.Drawing.Size(54, 22);
+            this.reset.Size = new System.Drawing.Size(58, 22);
             this.reset.TabIndex = 15;
             this.reset.Text = "Reset";
             this.reset.UseVisualStyleBackColor = true;
