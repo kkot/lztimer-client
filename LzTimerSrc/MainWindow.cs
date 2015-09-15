@@ -198,7 +198,10 @@ namespace kkot.LzTimer
         protected override void WndProc(ref Message m)
         {
             base.WndProc(ref m);
-            shortcutsManager.ProcessMessage(ref m);
+            if (shortcutsManager != null)
+            {
+                shortcutsManager.ProcessMessage(ref m);
+            }
         }
 
         private void MoveToPosition()

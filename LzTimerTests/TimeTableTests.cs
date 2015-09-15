@@ -1,5 +1,7 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
+using FakeItEasy;
 using kkot.LzTimer;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -36,7 +38,7 @@ namespace LzTimerTests
                 {
                     var period = PeriodBuilder.New(MIDDAY).Active();
 
-                    var merged = timeTableSUT.Add(period);
+                    var merged = timeTableSUT.AddPeriod(period);
 
                     Assert.AreEqual(period, merged);
                     Assert.AreEqual(1, periodStorage.GetAll().Count);
@@ -49,8 +51,8 @@ namespace LzTimerTests
                     var period1 = PeriodBuilder.New(MIDDAY).Active();
                     var period2 = PeriodBuilder.NewAfter(period1, IDLE_TIMEOUT_SECS - 1.s()).Active();
 
-                    timeTableSUT.Add(period1);
-                    timeTableSUT.Add(period2);
+                    timeTableSUT.AddPeriod(period1);
+                    timeTableSUT.AddPeriod(period2);
 
                     var periodMerged = new ActivePeriod(period1.Start, period2.End);
 
@@ -65,9 +67,9 @@ namespace LzTimerTests
                     var period2 = PeriodBuilder.NewAfter(period1, 10.ms()).Idle();
                     var period3 = PeriodBuilder.NewAfter(period2, 10.ms()).Idle();
 
-                    timeTableSUT.Add(period1);
-                    timeTableSUT.Add(period2);
-                    timeTableSUT.Add(period3);
+                    timeTableSUT.AddPeriod(period1);
+                    timeTableSUT.AddPeriod(period2);
+                    timeTableSUT.AddPeriod(period3);
 
                     var periodMerged = new IdlePeriod(period2.Start, period3.End);
 
@@ -80,8 +82,8 @@ namespace LzTimerTests
                     var period1 = PeriodBuilder.New(MIDDAY).Active();
                     var period2 = PeriodBuilder.NewAfter(period1, IDLE_TIMEOUT_SECS + 1.s()).Active();
 
-                    var returned1 = timeTableSUT.Add(period1);
-                    var returned2 = timeTableSUT.Add(period2);
+                    var returned1 = timeTableSUT.AddPeriod(period1);
+                    var returned2 = timeTableSUT.AddPeriod(period2);
 
                     Assert.AreEqual(period1, returned1);
                     Assert.AreEqual(period2, returned2);
@@ -94,8 +96,8 @@ namespace LzTimerTests
                     var period1 = PeriodBuilder.New(MIDDAY).Active();
                     var period2 = PeriodBuilder.NewAfter(period1, IDLE_TIMEOUT_SECS - 1.s()).Idle();
 
-                    timeTableSUT.Add(period1);
-                    timeTableSUT.Add(period2);
+                    timeTableSUT.AddPeriod(period1);
+                    timeTableSUT.AddPeriod(period2);
 
                     CollectionAssert.AreEquivalent(periodStorage.GetAll(), new ActivityPeriod[] { period2, period1 });
                 }
@@ -107,9 +109,9 @@ namespace LzTimerTests
                     var period2i = PeriodBuilder.NewAfter(period1a).Idle();
                     var period3a = PeriodBuilder.NewAfter(period2i).Active();
 
-                    timeTableSUT.Add(period1a);
-                    timeTableSUT.Add(period2i);
-                    timeTableSUT.Add(period3a);
+                    timeTableSUT.AddPeriod(period1a);
+                    timeTableSUT.AddPeriod(period2i);
+                    timeTableSUT.AddPeriod(period3a);
 
                     var mergedPeriod = new ActivePeriod(period1a.Start, period3a.End);
 
@@ -122,26 +124,57 @@ namespace LzTimerTests
                 {
                     var period1i = PeriodBuilder.New(MIDDAY).Idle();
                     var period2a = PeriodBuilder.NewAfter(period1i).Active();
-                    var period3a = PeriodBuilder.NewAfter(period2a).Idle();
+                    var peroid3i = PeriodBuilder.NewAfter(period2a).Idle();
 
-                    timeTableSUT.Add(period1i);
-                    timeTableSUT.Add(period2a);
-                    timeTableSUT.Add(period3a);
-
-                    var mergedPeriod = new ActivePeriod(period1i.Start, period3a.End);
+                    timeTableSUT.AddPeriod(period1i);
+                    timeTableSUT.AddPeriod(period2a);
+                    timeTableSUT.AddPeriod(peroid3i);
 
                     CollectionAssert.AreEquivalent(periodStorage.GetAll(),
-                        new ActivityPeriod[] {period1i, period2a, period3a});
+                        new ActivityPeriod[] {period1i, period2a, peroid3i});
                 }
             }
 
-            //[TestClass]
+            [TestClass]
             public class UserActivityNofierTests : TimeTableTest
             {
+                private UserActivityListner listenerActivityListnerMock;
+
+                [TestInitialize]
+                public override void setUp()
+                {
+                    base.setUp();
+                    listenerActivityListnerMock = A.Fake<UserActivityListner>();
+                    timeTableSUT.registerUserActivityListener(listenerActivityListnerMock);
+                }
+
                 [TestMethod]
                 public void shouldNotifyWhenActivePeriodCannotBeMergedAndThereIsIdlePeriodBefore()
                 {
-                    Assert.Fail("Fail");
+                    // arrange
+                    IdlePeriod periodIdle = PeriodBuilder.New(MIDDAY).Length(IDLE_TIMEOUT_SECS.longerTimeSpan()).Idle();
+                    ActivePeriod periodActive = PeriodBuilder.NewAfter(periodIdle).Length(1.s()).Active();
+
+                    // act
+                    timeTableSUT.PeriodPassed(periodIdle);
+                    timeTableSUT.PeriodPassed(periodActive);
+
+                    // assert
+                    A.CallTo(() => listenerActivityListnerMock.notifyActiveAfterBreak(A<TimeSpan>.Ignored))
+                        .MustHaveHappened(Repeated.Exactly.Once);
+                }
+
+                [TestMethod]
+                public void shouldNotNotifyIfWasntIdleBefore()
+                {
+                    // arrange
+                    ActivePeriod period = PeriodBuilder.New(MIDDAY).Length(1.s()).Active();
+
+                    // act
+                    timeTableSUT.PeriodPassed(period);
+
+                    // assert
+                    A.CallTo(() => listenerActivityListnerMock.notifyActiveAfterBreak(A<TimeSpan>.Ignored)).MustNotHaveHappened();
                 }
             }
         }

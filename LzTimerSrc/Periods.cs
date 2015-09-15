@@ -52,9 +52,10 @@ namespace kkot.LzTimer
         public static ActivityPeriod Create(bool active, DateTime @start, DateTime end)
         {
             if (active)
+            {
                 return new ActivePeriod(start, end);
-            else
-                return new IdlePeriod(start, end);
+            }
+            return new IdlePeriod(start, end);
         }
 
         public bool CanBeMerged(ActivityPeriod aActivityPeriod, TimeSpan aTimeoutPeriod)
@@ -96,8 +97,13 @@ namespace kkot.LzTimer
             {
                 return false;
             }
-            var period = (ActivityPeriod)obj;
+            var period = (ActivityPeriod) obj;
             return Start.Equals(period.Start) && End.Equals(period.End);
+        }
+
+        public override string ToString()
+        {
+            return "[" + Start.TimeOfDay + " " + End.TimeOfDay + " length " + Length + " type " + GetType()+ "]";
         }
     }
 

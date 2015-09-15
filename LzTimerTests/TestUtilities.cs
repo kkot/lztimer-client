@@ -91,6 +91,24 @@ namespace LzTimerTests
         }
     }
 
+
+    public static class TimespanTestExensionMethods
+    {
+        public static TimeSpan longerTimeSpan(this TimeSpan timeSpan)
+        {
+            return timeSpan + 1.s();
+        }
+
+        public static TimeSpan shorter(this TimeSpan timeSpan)
+        {
+            if (timeSpan < 1.s())
+            {
+                throw new ArgumentException("Period should be longerTimeSpan than 1 sec to use this extension method");
+            }
+            return timeSpan - 1.s();
+        }
+    }
+
     public class ArrangableClockStub : Clock
     {
         private DateTime currentTime;

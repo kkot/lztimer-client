@@ -26,6 +26,8 @@ namespace kkot.LzTimer
 
     public class TimeTable : ActivityPeriodsListener, PeriodsInfoProvider
     {
+        private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         private readonly PeriodStorage periodStorage;
         private readonly TimeTablePolicies policies;
         private UserActivityListner userActivityListner;
@@ -42,9 +44,30 @@ namespace kkot.LzTimer
             this.periodStorage = periodStorage;
         }
 
-        public ActivityPeriod Add(ActivityPeriod activityPeriod)
+        public ActivityPeriod AddPeriod(ActivityPeriod activityPeriod)
         {
-            return merge(activityPeriod);
+            log.Debug("AddPeriod " + activityPeriod);
+
+            var mergedPeriod = merge(activityPeriod);
+            log.Debug("merged period " + mergedPeriod);
+
+            NotifyUserActivityListener(activityPeriod, mergedPeriod);
+            return mergedPeriod;
+        }
+
+        private void NotifyUserActivityListener(ActivityPeriod activityPeriod, ActivityPeriod mergedPeriod)
+        {
+            if (userActivityListner == null)
+                return;
+
+            if (activityPeriod is IdlePeriod)
+                return;
+
+            var periodNotMerged = mergedPeriod.Equals(activityPeriod);
+            if (!periodNotMerged)
+                return;
+
+            userActivityListner.notifyActiveAfterBreak(TimeSpan.Zero);
         }
 
         private ActivityPeriod merge(ActivityPeriod aActivityPeriod)
@@ -68,7 +91,7 @@ namespace kkot.LzTimer
 
         public void PeriodPassed(ActivityPeriod activityPeriod)
         {
-            this.Add(activityPeriod);
+            AddPeriod(activityPeriod);
         }
 
         public SortedSet<ActivityPeriod> GetPeriodsAfter(DateTime dateTime)
