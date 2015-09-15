@@ -23,11 +23,35 @@ namespace kkot.LzTimer
         private void HistoryWindow_Load(object sender, EventArgs e)
         {
             var periodsFromDay = statsReporter.PeriodsFromDay(DateTime.Now.Date);
-            foreach (var activityPeriod in periodsFromDay)
+            foreach (var activityPeriod in periodsFromDay.Reverse())
             {
-                var line = activityPeriod.Start + " " + activityPeriod.End + " " + activityPeriod.Length;
-                richTextBox.AppendText(line + "\n");
+                var line = activityPeriod.Start.ToString("t") 
+                    + " - " + activityPeriod.End.ToString("t") 
+                    + " length " + activityPeriod.Length.ToString(@"hh\:mm\:ss");
+
+                var color = Color.Green;
+                if (activityPeriod is ActivePeriod)
+                {
+                    color = Color.Red;
+                }
+
+                AppendText(richTextBox, line, color, true);
             }
+        }
+
+        private static void AppendText(RichTextBox box, string text, Color color, bool AddNewLine = false)
+        {
+            if (AddNewLine)
+            {
+                text += Environment.NewLine;
+            }
+
+            box.SelectionStart = box.TextLength;
+            box.SelectionLength = 0;
+
+            box.SelectionColor = color;
+            box.AppendText(text);
+            box.SelectionColor = box.ForeColor;
         }
     }
 }
