@@ -54,7 +54,7 @@ namespace kkot.LzTimer
 
         public List<ActivityPeriod> GetSinceFirstActivePeriodBefore(DateTime dateTime)
         {
-            DateTime fromDate = periods.Where((p) => p.Start < dateTime).ToList().Last().Start;
+            DateTime fromDate = periods.Where(p => p.Start < dateTime).ToList().Last().Start;
             return periods.Where((p) => p.Start >= fromDate).ToList();
         }
 
@@ -83,7 +83,8 @@ namespace kkot.LzTimer
             conn = new SQLiteConnection(String.Format("Data Source={0};Synchronous=Full;locking_mode=NORMAL", name));
             conn.Open();
             CreateTable();
-            PragmaExlusiveAccess();
+            CreateIndex();
+            //PragmaExlusiveAccess();
         }
 
         public void Add(ActivityPeriod activityPeriod)
@@ -106,16 +107,16 @@ namespace kkot.LzTimer
             ExecuteNonQuery("CREATE TABLE IF NOT EXISTS Periods (start, end, type)");
         }
 
+        private void CreateIndex()
+        {
+            ExecuteNonQuery("CREATE INDEX IF NOT EXISTS start1 on Periods (start)");
+        }
+
         private void ExecuteNonQuery(String sql)
         {
             SQLiteCommand command = conn.CreateCommand();
             command.CommandText = sql;
             command.ExecuteNonQuery();
-        }
-
-        public List<ActivityPeriod> GetSinceFirstActivePeriodBefore(DateTime dateTime)
-        {
-            throw new NotImplementedException();
         }
 
         public void Remove(ActivityPeriod activityPeriod)
