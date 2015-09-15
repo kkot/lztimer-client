@@ -28,7 +28,6 @@ namespace kkot.LzTimer
 
         public MainWindow()
         {
-            shortcutsManager = new ShortcutsManager(this);
             InitializeComponent();
         }
 
@@ -46,6 +45,7 @@ namespace kkot.LzTimer
             soundPlayer = new SoundPlayer();
 
             // register shotcuts keys
+            shortcutsManager = new ShortcutsManager(this);
             shortcutsManager.Register();
 
             MoveToPosition();
@@ -56,6 +56,7 @@ namespace kkot.LzTimer
             TimeTable timeTable = new TimeTable(policies, periodStorage);
             this.activityChecker.SetActivityListner(timeTable);
             this.statsReporter = new StatsReporterImpl(timeTable, policies, new SystemClock());
+            timeTable.registerUserActivityListener(this);
         }
 
         //##################################################################

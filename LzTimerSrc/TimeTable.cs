@@ -14,6 +14,11 @@ namespace kkot.LzTimer
         SortedSet<ActivityPeriod> GetPeriods(Period period);
     }
 
+    public interface UserActivityListner
+    {
+        void notifyActiveAfterBreak(TimeSpan leaveTime);
+    }
+
     public class TimeTablePolicies
     {
         public TimeSpan IdleTimeout { get; set; }
@@ -23,20 +28,23 @@ namespace kkot.LzTimer
     {
         private readonly PeriodStorage periodStorage;
         private readonly TimeTablePolicies policies;
+        private UserActivityListner userActivityListner;
 
-        public TimeTable(TimeTablePolicies policies) : this(policies, new MemoryPeriodStorage())
-        {  
+        public TimeTable(TimeTablePolicies policies, UserActivityListner userActivityListner = null) : this(
+            policies,
+            new MemoryPeriodStorage())
+        {
         }
 
-        public TimeTable(TimeTablePolicies policies, PeriodStorage storage)
+        public TimeTable(TimeTablePolicies policies, PeriodStorage periodStorage)
         {
             this.policies = policies;
-            this.periodStorage = storage;
+            this.periodStorage = periodStorage;
         }
 
         public ActivityPeriod Add(ActivityPeriod activityPeriod)
         {
-            return merge(activityPeriod);   
+            return merge(activityPeriod);
         }
 
         private ActivityPeriod merge(ActivityPeriod aActivityPeriod)
@@ -46,7 +54,7 @@ namespace kkot.LzTimer
                 if (period.CanBeMerged(aActivityPeriod, policies.IdleTimeout))
                 {
                     var merged = period.Merge(aActivityPeriod);
-                    foreach(ActivityPeriod innerPeriod in periodStorage.GetPeriodsFromTimePeriod(merged))
+                    foreach (ActivityPeriod innerPeriod in periodStorage.GetPeriodsFromTimePeriod(merged))
                     {
                         periodStorage.Remove(innerPeriod);
                     }
@@ -72,10 +80,10 @@ namespace kkot.LzTimer
         {
             return periodStorage.GetPeriodsFromTimePeriod(period);
         }
-    }
 
-    interface UserActivityListner
-    {
-        void notifyActiveAfterBreak(TimeSpan leaveTime);
+        public void registerUserActivityListener(UserActivityListner listner)
+        {
+            userActivityListner = listner;
+        }
     }
 }

@@ -11,7 +11,6 @@ namespace LzTimerTests
         private static readonly DateTime MIDNIGHT_BEFORE = new DateTime(2014, 1, 1, 0, 0, 0, 0);
         private static readonly Period WHOLE_DAY = new Period(MIDDAY.AddHours(-12), MIDDAY.AddHours(12));
 
-        [TestClass]
         public class TimeTableTest
         {
             protected TimeTable timeTableSUT;
@@ -133,6 +132,16 @@ namespace LzTimerTests
 
                     CollectionAssert.AreEquivalent(periodStorage.GetAll(),
                         new ActivityPeriod[] {period1i, period2a, period3a});
+                }
+            }
+
+            //[TestClass]
+            public class UserActivityNofierTests : TimeTableTest
+            {
+                [TestMethod]
+                public void shouldNotifyWhenActivePeriodCannotBeMergedAndThereIsIdlePeriodBefore()
+                {
+                    Assert.Fail("Fail");
                 }
             }
         }
