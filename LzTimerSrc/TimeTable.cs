@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace kkot.LzTimer
 {
@@ -63,28 +64,41 @@ namespace kkot.LzTimer
             if (activityPeriod is IdlePeriod)
                 return;
 
-            var periodNotMerged = mergedPeriod.Equals(activityPeriod);
-            if (!periodNotMerged)
+            var periodMerged = !mergedPeriod.Equals(activityPeriod);
+            if (periodMerged)
+                return;
+
+            // TODO: refactor
+            var mergeCandidates = GetMergeCandidates(activityPeriod);
+            if (mergeCandidates.Count == 0
+                || mergeCandidates.First().Start > (activityPeriod.Start - policies.IdleTimeout))
                 return;
 
             userActivityListner.notifyActiveAfterBreak(TimeSpan.Zero);
         }
 
-        private ActivityPeriod Merge(ActivityPeriod aActivityPeriod)
+        private SortedSet<ActivityPeriod> GetMergeCandidates(ActivityPeriod currentPeriod)
         {
-            DateTime oldestMergable = aActivityPeriod.Start - policies.IdleTimeout;
-            foreach (var period in periodStorage.GetPeriodsAfter(oldestMergable))
+            var mergeTimeWindowStart = currentPeriod.Start - policies.IdleTimeout;
+            var candidates = periodStorage.GetPeriodsAfter(mergeTimeWindowStart)
+                .Where(period => !period.Equals(currentPeriod));
+            return new SortedSet<ActivityPeriod>(candidates);
+        }
+
+        private ActivityPeriod Merge(ActivityPeriod activityPeriod)
+        {
+            foreach (var period in GetMergeCandidates(activityPeriod))
             {
-                if (period.CanBeMerged(aActivityPeriod, policies.IdleTimeout))
+                if (period.CanBeMerged(activityPeriod, policies.IdleTimeout))
                 {
-                    var merged = period.Merge(aActivityPeriod);
+                    var merged = period.Merge(activityPeriod);
                     periodStorage.RemoveFromTimePeriod(merged);
                     periodStorage.Add(merged);
                     return merged;
                 }
             }
-            periodStorage.Add(aActivityPeriod);
-            return aActivityPeriod;
+            periodStorage.Add(activityPeriod);
+            return activityPeriod;
         }
 
         public void PeriodPassed(ActivityPeriod activityPeriod)

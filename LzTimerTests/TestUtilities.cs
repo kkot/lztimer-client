@@ -94,16 +94,16 @@ namespace LzTimerTests
 
     public static class TimespanTestExensionMethods
     {
-        public static TimeSpan longerTimeSpan(this TimeSpan timeSpan)
+        public static TimeSpan longerThan(this TimeSpan timeSpan)
         {
             return timeSpan + 1.s();
         }
 
-        public static TimeSpan shorter(this TimeSpan timeSpan)
+        public static TimeSpan shorterThan(this TimeSpan timeSpan)
         {
             if (timeSpan < 1.s())
             {
-                throw new ArgumentException("Period should be longerTimeSpan than 1 sec to use this extension method");
+                throw new ArgumentException("Period should be longerThan than 1 sec to use this extension method");
             }
             return timeSpan - 1.s();
         }
