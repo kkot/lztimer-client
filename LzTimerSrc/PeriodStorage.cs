@@ -10,6 +10,7 @@ namespace kkot.LzTimer
     {
         void Add(ActivityPeriod activityPeriod);
         void Remove(ActivityPeriod activityPeriod);
+        void RemoveFromTimePeriod(Period period);
         SortedSet<ActivityPeriod> GetPeriodsFromTimePeriod(Period searchedPeriod);
         SortedSet<ActivityPeriod> GetPeriodsAfter(DateTime dateTime);
         void Reset();
@@ -20,11 +21,30 @@ namespace kkot.LzTimer
         SortedSet<ActivityPeriod> GetAll();
     }
 
-    public class MemoryPeriodStorage : TestablePeriodStorage
+    public abstract class AbstractPeriodStorage : PeriodStorage
+    {
+        public abstract void Add(ActivityPeriod activityPeriod);
+        public abstract void Remove(ActivityPeriod activityPeriod);
+
+        public void RemoveFromTimePeriod(Period periodToRemove)
+        {
+            foreach (var period in GetPeriodsFromTimePeriod(periodToRemove))
+            {
+                Remove(period);
+            }
+        }
+
+        public abstract SortedSet<ActivityPeriod> GetPeriodsFromTimePeriod(Period searchedPeriod);
+        public abstract SortedSet<ActivityPeriod> GetPeriodsAfter(DateTime dateTime);
+        public abstract void Reset();
+        public abstract void Dispose();
+    }
+
+    public class MemoryPeriodStorage : AbstractPeriodStorage, TestablePeriodStorage
     {
         private SortedSet<ActivityPeriod> periods = new SortedSet<ActivityPeriod>();
 
-        public void Remove(ActivityPeriod activityPeriod)
+        public override void Remove(ActivityPeriod activityPeriod)
         {
             periods.Remove(activityPeriod);
         }
@@ -34,36 +54,36 @@ namespace kkot.LzTimer
             return periods;
         }
 
-        public void Add(ActivityPeriod activityPeriod)
+        public override void Add(ActivityPeriod activityPeriod)
         {
             periods.Add(activityPeriod);
         }
 
-        public SortedSet<ActivityPeriod> GetPeriodsFromTimePeriod(Period searchedPeriod)
+        public override SortedSet<ActivityPeriod> GetPeriodsFromTimePeriod(Period searchedPeriod)
         {
             return new SortedSet<ActivityPeriod>(periods.Where(p =>
                 p.End > searchedPeriod.Start &&
                 p.Start < searchedPeriod.End));
         }
 
-        public SortedSet<ActivityPeriod> GetPeriodsAfter(DateTime dateTime)
+        public override SortedSet<ActivityPeriod> GetPeriodsAfter(DateTime dateTime)
         {
             return new SortedSet<ActivityPeriod>(periods.Where(p =>
                 p.End > dateTime));
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
             periods = null;
         }
 
-        public void Reset()
+        public override void Reset()
         {
             periods.Clear();
         }
     }
 
-    public class SqlitePeriodStorage : TestablePeriodStorage
+    public class SqlitePeriodStorage : AbstractPeriodStorage, TestablePeriodStorage
     {
         private readonly SQLiteConnection conn;
 
@@ -81,7 +101,7 @@ namespace kkot.LzTimer
             //PragmaExlusiveAccess();
         }
 
-        public void Add(ActivityPeriod activityPeriod)
+        public override void Add(ActivityPeriod activityPeriod)
         {
             SQLiteCommand command = conn.CreateCommand();
             command.CommandText = "INSERT INTO Periods (start, end, type) VALUES (:start, :end, :type)";
@@ -113,7 +133,7 @@ namespace kkot.LzTimer
             command.ExecuteNonQuery();
         }
 
-        public void Remove(ActivityPeriod activityPeriod)
+        public override void Remove(ActivityPeriod activityPeriod)
         {
             SQLiteCommand command = conn.CreateCommand();
             command.CommandText = "DELETE FROM Periods WHERE start = :start AND end = :end AND type = :type";
@@ -136,7 +156,7 @@ namespace kkot.LzTimer
             return result;
         }
 
-        public SortedSet<ActivityPeriod> GetPeriodsFromTimePeriod(Period searchedPeriod)
+        public override SortedSet<ActivityPeriod> GetPeriodsFromTimePeriod(Period searchedPeriod)
         {
             var sql = "SELECT start, end, type " +
                       "FROM Periods " +
@@ -154,7 +174,7 @@ namespace kkot.LzTimer
             return result;
         }
 
-        public SortedSet<ActivityPeriod> GetPeriodsAfter(DateTime dateTime)
+        public override SortedSet<ActivityPeriod> GetPeriodsAfter(DateTime dateTime)
         {
             var sql = "SELECT start, end, type " +
                 "FROM Periods " +
@@ -188,12 +208,12 @@ namespace kkot.LzTimer
             return activityPeriod;
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
             conn.Close();
         }
 
-        public void Reset()
+        public override void Reset()
         {
             SQLiteCommand command = conn.CreateCommand();
             command.CommandText = "DELETE FROM Periods";

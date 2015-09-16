@@ -149,6 +149,19 @@ namespace LzTimerTests
                 }
 
                 [TestMethod]
+                public void shouldNotNotifyIfWasntIdleBefore()
+                {
+                    // arrange
+                    ActivePeriod period = PeriodBuilder.New(MIDDAY).Length(1.s()).Active();
+
+                    // act
+                    timeTableSUT.PeriodPassed(period);
+
+                    // assert
+                    A.CallTo(() => listenerActivityListnerMock.notifyActiveAfterBreak(A<TimeSpan>.Ignored)).MustNotHaveHappened();
+                }
+
+                [TestMethod]
                 public void shouldNotifyWhenActivePeriodCannotBeMergedAndThereIsIdlePeriodBefore()
                 {
                     // arrange
@@ -162,19 +175,6 @@ namespace LzTimerTests
                     // assert
                     A.CallTo(() => listenerActivityListnerMock.notifyActiveAfterBreak(A<TimeSpan>.Ignored))
                         .MustHaveHappened(Repeated.Exactly.Once);
-                }
-
-                [TestMethod]
-                public void shouldNotNotifyIfWasntIdleBefore()
-                {
-                    // arrange
-                    ActivePeriod period = PeriodBuilder.New(MIDDAY).Length(1.s()).Active();
-
-                    // act
-                    timeTableSUT.PeriodPassed(period);
-
-                    // assert
-                    A.CallTo(() => listenerActivityListnerMock.notifyActiveAfterBreak(A<TimeSpan>.Ignored)).MustNotHaveHappened();
                 }
             }
         }

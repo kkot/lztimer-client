@@ -72,15 +72,13 @@ namespace kkot.LzTimer
 
         private ActivityPeriod merge(ActivityPeriod aActivityPeriod)
         {
-            foreach (var period in periodStorage.GetPeriodsAfter(aActivityPeriod.Start - policies.IdleTimeout))
+            DateTime oldestMergable = aActivityPeriod.Start - policies.IdleTimeout;
+            foreach (var period in periodStorage.GetPeriodsAfter(oldestMergable))
             {
                 if (period.CanBeMerged(aActivityPeriod, policies.IdleTimeout))
                 {
                     var merged = period.Merge(aActivityPeriod);
-                    foreach (ActivityPeriod innerPeriod in periodStorage.GetPeriodsFromTimePeriod(merged))
-                    {
-                        periodStorage.Remove(innerPeriod);
-                    }
+                    periodStorage.RemoveFromTimePeriod(merged);
                     periodStorage.Add(merged);
                     return merged;
                 }
