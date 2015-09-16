@@ -48,7 +48,7 @@ namespace kkot.LzTimer
         {
             log.Debug("AddPeriod " + activityPeriod);
 
-            var mergedPeriod = merge(activityPeriod);
+            var mergedPeriod = Merge(activityPeriod);
             log.Debug("merged period " + mergedPeriod);
 
             NotifyUserActivityListener(activityPeriod, mergedPeriod);
@@ -70,7 +70,7 @@ namespace kkot.LzTimer
             userActivityListner.notifyActiveAfterBreak(TimeSpan.Zero);
         }
 
-        private ActivityPeriod merge(ActivityPeriod aActivityPeriod)
+        private ActivityPeriod Merge(ActivityPeriod aActivityPeriod)
         {
             DateTime oldestMergable = aActivityPeriod.Start - policies.IdleTimeout;
             foreach (var period in periodStorage.GetPeriodsAfter(oldestMergable))
