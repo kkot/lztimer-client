@@ -40,6 +40,11 @@ namespace kkot.LzTimer
             var period = (Period) obj;
             return Start.CompareTo(period.Start);
         }
+
+        public bool IsDirectlyBefore(Period period)
+        {
+            return End == period.Start;
+        }
     }
 
     public class ActivityPeriod : Period

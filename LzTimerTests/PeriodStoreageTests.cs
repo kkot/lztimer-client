@@ -109,6 +109,57 @@ namespace LzTimerTests
         }
 
         [TestMethod]
+        public void GetPeriodBeforeShouldReturnPeriodDirectlyBefore()
+        {
+            var firstPeriod = START_DATETIME.Length(5.s()).Active();
+            var secondPeriod = firstPeriod.NewAfter().Length(5.s()).Active();
+
+            using (PeriodStorage periodStorageSUT = GetStorage())
+            {
+                periodStorageSUT.Add(firstPeriod);
+                periodStorageSUT.Add(secondPeriod);
+
+                var found = periodStorageSUT.GetPeriodBefore(secondPeriod.Start);
+                Assert.AreEqual(firstPeriod, found);
+            }
+        }
+
+        [TestMethod]
+        public void GetPeriodBeforeShouldReturnPeriodNotDirectlyBefore()
+        {
+            var TIME_GAP = 1.s();
+            var firstPeriod = START_DATETIME.NewPeriod().Active();
+            var secondPeriod = firstPeriod.NewAfter(TIME_GAP).Active();
+
+            using (PeriodStorage periodStorageSUT = GetStorage())
+            {
+                periodStorageSUT.Add(firstPeriod);
+                periodStorageSUT.Add(secondPeriod);
+
+                var found = periodStorageSUT.GetPeriodBefore(secondPeriod.Start);
+                Assert.AreEqual(firstPeriod, found);
+            }
+        }
+
+        [TestMethod]
+        public void GetPeriodBeforeShouldReturnLatest()
+        {
+            var firstPeriod = START_DATETIME.NewPeriod().Active();
+            var secondPeriod = firstPeriod.NewAfter().Active();
+            var thirdPeriod = secondPeriod.NewAfter().Active();
+
+            using (PeriodStorage periodStorageSUT = GetStorage())
+            {
+                periodStorageSUT.Add(firstPeriod);
+                periodStorageSUT.Add(secondPeriod);
+                periodStorageSUT.Add(thirdPeriod);
+
+                var found = periodStorageSUT.GetPeriodBefore(thirdPeriod.Start);
+                Assert.AreEqual(secondPeriod, found);
+            }
+        }
+
+        [TestMethod]
         public void GetPeriodsAfterShouldReturnPeriodsPartiallyAfter()
         {
             var periodBefore = START_DATETIME.Length(5.s()).Active();

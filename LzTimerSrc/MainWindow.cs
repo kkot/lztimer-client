@@ -250,7 +250,7 @@ namespace kkot.LzTimer
             periodStorage.Reset();
         }
 
-        public void notifyActiveAfterBreak(TimeSpan leaveTime)
+        public void NotifyActiveAfterBreak(TimeSpan leaveTime)
         {
             const int balloonTimeoutMs = 10000;
             notifyIcon1.ShowBalloonTip(balloonTimeoutMs, "leave", "time " + (int) leaveTime.TotalSeconds, ToolTipIcon.Info);

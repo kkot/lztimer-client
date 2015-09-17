@@ -14,6 +14,7 @@ namespace kkot.LzTimer
         SortedSet<ActivityPeriod> GetPeriodsFromTimePeriod(Period searchedPeriod);
         SortedSet<ActivityPeriod> GetPeriodsAfter(DateTime dateTime);
         void Reset();
+        ActivityPeriod GetPeriodBefore(DateTime start);
     }
 
     public interface TestablePeriodStorage : PeriodStorage
@@ -37,6 +38,7 @@ namespace kkot.LzTimer
         public abstract SortedSet<ActivityPeriod> GetPeriodsFromTimePeriod(Period searchedPeriod);
         public abstract SortedSet<ActivityPeriod> GetPeriodsAfter(DateTime dateTime);
         public abstract void Reset();
+        public abstract ActivityPeriod GetPeriodBefore(DateTime start);
         public abstract void Dispose();
     }
 
@@ -70,6 +72,11 @@ namespace kkot.LzTimer
         {
             return new SortedSet<ActivityPeriod>(periods.Where(p =>
                 p.End > dateTime));
+        }
+
+        public override ActivityPeriod GetPeriodBefore(DateTime start)
+        {
+            return periods.Where(p => p.End <= start).OrderBy(period => period.Start).LastOrDefault();
         }
 
         public override void Dispose()
@@ -206,6 +213,23 @@ namespace kkot.LzTimer
                 activityPeriod = new IdlePeriod(DateTime.Parse(start), DateTime.Parse(end));
             }
             return activityPeriod;
+        }
+
+        public override ActivityPeriod GetPeriodBefore(DateTime start)
+        {
+            var sql = " SELECT start, end, type" +
+                      " FROM Periods" +
+                      " WHERE end <= :start" +
+                      " ORDER BY end DESC" +
+                      " LIMIT 1";
+            SQLiteCommand command = new SQLiteCommand(sql, conn);
+            command.Parameters.AddWithValue("start", start);
+            var reader = command.ExecuteReader();
+            if (reader.Read())
+            {
+                return CreatePeriodFromReader(reader);
+            }
+            return null;
         }
 
         public override void Dispose()

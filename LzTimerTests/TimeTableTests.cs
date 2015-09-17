@@ -149,6 +149,22 @@ namespace LzTimerTests
                 }
 
                 [TestMethod]
+                public void shouldNotifyWhenBeforeActiveThereIsLongIdlePeriod()
+                {
+                    // arrange
+                    var periodIdleLong = PeriodBuilder.New(MIDDAY).Length(IDLE_TIMEOUT_SECS.longerThan()).Idle();
+                    var periodActive = PeriodBuilder.NewAfter(periodIdleLong).Length(1.s()).Active();
+
+                    // act
+                    timeTableSUT.PeriodPassed(periodIdleLong);
+                    timeTableSUT.PeriodPassed(periodActive);
+
+                    // assert
+                    A.CallTo(() => listenerActivityListnerMock.NotifyActiveAfterBreak(A<TimeSpan>.Ignored))
+                        .MustHaveHappened(Repeated.Exactly.Once);
+                }
+
+                [TestMethod]
                 public void shouldNotNotifyIfWasntIdleBefore()
                 {
                     // arrange
@@ -158,38 +174,38 @@ namespace LzTimerTests
                     timeTableSUT.PeriodPassed(period);
 
                     // assert
-                    A.CallTo(() => listenerActivityListnerMock.notifyActiveAfterBreak(A<TimeSpan>.Ignored)).MustNotHaveHappened();
+                    A.CallTo(() => listenerActivityListnerMock.NotifyActiveAfterBreak(A<TimeSpan>.Ignored)).MustNotHaveHappened();
                 }
 
                 [TestMethod]
                 public void shouldNotNotifyIfWasShortIdleBefore()
                 {
                     // arrange
-                    IdlePeriod periodIdle = PeriodBuilder.New(MIDDAY).Length(IDLE_TIMEOUT_SECS.shorterThan()).Idle();
-                    ActivePeriod periodActive = PeriodBuilder.NewAfter(periodIdle).Length(1.s()).Active();
+                    var periodIdleShort = PeriodBuilder.New(MIDDAY).Length(IDLE_TIMEOUT_SECS.shorterThan()).Idle();
+                    var periodActive = PeriodBuilder.NewAfter(periodIdleShort).Length(1.s()).Active();
 
                     // act
-                    timeTableSUT.PeriodPassed(periodIdle);
+                    timeTableSUT.PeriodPassed(periodIdleShort);
                     timeTableSUT.PeriodPassed(periodActive);
 
                     // assert
-                    A.CallTo(() => listenerActivityListnerMock.notifyActiveAfterBreak(A<TimeSpan>.Ignored)).MustNotHaveHappened();
+                    A.CallTo(() => listenerActivityListnerMock.NotifyActiveAfterBreak(A<TimeSpan>.Ignored)).MustNotHaveHappened();
                 }
 
                 [TestMethod]
-                public void shouldNotifyWhenActivePeriodCannotBeMergedAndThereIsIdlePeriodBefore()
+                public void shouldNotNotifyIfBeforeIsIdleAndOff()
                 {
                     // arrange
-                    IdlePeriod periodIdle = PeriodBuilder.New(MIDDAY).Length(IDLE_TIMEOUT_SECS.longerThan()).Idle();
-                    ActivePeriod periodActive = PeriodBuilder.NewAfter(periodIdle).Length(1.s()).Active();
+                    var periodIdle = PeriodBuilder.New(MIDDAY).Length(IDLE_TIMEOUT_SECS.longerThan()).Idle();
+                    var offTime = 1.s();
+                    var periodActive = PeriodBuilder.New(periodIdle.End + offTime).Length(1.s()).Active();
 
                     // act
                     timeTableSUT.PeriodPassed(periodIdle);
                     timeTableSUT.PeriodPassed(periodActive);
 
                     // assert
-                    A.CallTo(() => listenerActivityListnerMock.notifyActiveAfterBreak(A<TimeSpan>.Ignored))
-                        .MustHaveHappened(Repeated.Exactly.Once);
+                    A.CallTo(() => listenerActivityListnerMock.NotifyActiveAfterBreak(A<TimeSpan>.Ignored)).MustNotHaveHappened();
                 }
             }
         }

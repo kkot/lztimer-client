@@ -17,7 +17,7 @@ namespace kkot.LzTimer
 
     public interface UserActivityListner
     {
-        void notifyActiveAfterBreak(TimeSpan leaveTime);
+        void NotifyActiveAfterBreak(TimeSpan leaveTime);
     }
 
     public class TimeTablePolicies
@@ -68,13 +68,17 @@ namespace kkot.LzTimer
             if (periodMerged)
                 return;
 
-            // TODO: refactor
-            var mergeCandidates = GetMergeCandidates(activityPeriod);
-            if (mergeCandidates.Count == 0
-                || mergeCandidates.First().Start > (activityPeriod.Start - policies.IdleTimeout))
+            var periodBefore = periodStorage.GetPeriodBefore(activityPeriod.Start);
+            if (!(periodBefore is IdlePeriod))
                 return;
 
-            userActivityListner.notifyActiveAfterBreak(TimeSpan.Zero);
+            if (periodBefore.Length < policies.IdleTimeout)
+                return;
+
+            if (!periodBefore.IsDirectlyBefore(activityPeriod))
+                return;
+
+            userActivityListner.NotifyActiveAfterBreak(TimeSpan.Zero);
         }
 
         private SortedSet<ActivityPeriod> GetMergeCandidates(ActivityPeriod currentPeriod)
