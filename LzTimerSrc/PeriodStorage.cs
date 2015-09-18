@@ -13,8 +13,8 @@ namespace kkot.LzTimer
         void RemoveFromTimePeriod(Period period);
         SortedSet<ActivityPeriod> GetPeriodsFromTimePeriod(Period searchedPeriod);
         SortedSet<ActivityPeriod> GetPeriodsAfter(DateTime dateTime);
-        void Reset();
         ActivityPeriod GetPeriodBefore(DateTime start);
+        void Reset();
     }
 
     public interface TestablePeriodStorage : PeriodStorage
@@ -37,14 +37,19 @@ namespace kkot.LzTimer
 
         public abstract SortedSet<ActivityPeriod> GetPeriodsFromTimePeriod(Period searchedPeriod);
         public abstract SortedSet<ActivityPeriod> GetPeriodsAfter(DateTime dateTime);
-        public abstract void Reset();
         public abstract ActivityPeriod GetPeriodBefore(DateTime start);
+        public abstract void Reset();
         public abstract void Dispose();
     }
 
     public class MemoryPeriodStorage : AbstractPeriodStorage, TestablePeriodStorage
     {
         private SortedSet<ActivityPeriod> periods = new SortedSet<ActivityPeriod>();
+
+        public override void Add(ActivityPeriod activityPeriod)
+        {
+            periods.Add(activityPeriod);
+        }
 
         public override void Remove(ActivityPeriod activityPeriod)
         {
@@ -54,11 +59,6 @@ namespace kkot.LzTimer
         public SortedSet<ActivityPeriod> GetAll()
         {
             return periods;
-        }
-
-        public override void Add(ActivityPeriod activityPeriod)
-        {
-            periods.Add(activityPeriod);
         }
 
         public override SortedSet<ActivityPeriod> GetPeriodsFromTimePeriod(Period searchedPeriod)
@@ -79,14 +79,14 @@ namespace kkot.LzTimer
             return periods.Where(p => p.End <= start).OrderBy(period => period.Start).LastOrDefault();
         }
 
-        public override void Dispose()
-        {
-            periods = null;
-        }
-
         public override void Reset()
         {
             periods.Clear();
+        }
+
+        public override void Dispose()
+        {
+            periods = null;
         }
     }
 
@@ -94,28 +94,18 @@ namespace kkot.LzTimer
     {
         private readonly SQLiteConnection conn;
 
-        public SqlitePeriodStorage(String name)
+        public SqlitePeriodStorage(string name)
         {
             if (!File.Exists(name))
             {
                 SQLiteConnection.CreateFile(name);
             }
 
-            conn = new SQLiteConnection(String.Format("Data Source={0};Synchronous=Full;locking_mode=NORMAL", name));
+            conn = new SQLiteConnection(string.Format("Data Source={0};Synchronous=Full;locking_mode=NORMAL", name));
             conn.Open();
             CreateTable();
             CreateIndex();
             //PragmaExlusiveAccess();
-        }
-
-        public override void Add(ActivityPeriod activityPeriod)
-        {
-            SQLiteCommand command = conn.CreateCommand();
-            command.CommandText = "INSERT INTO Periods (start, end, type) VALUES (:start, :end, :type)";
-            command.Parameters.AddWithValue("start", activityPeriod.Start);
-            command.Parameters.AddWithValue("end", activityPeriod.End);
-            command.Parameters.AddWithValue("type", activityPeriod is ActivePeriod ? "A" : "I");
-            command.ExecuteNonQuery();
         }
 
         private void PragmaExlusiveAccess()
@@ -133,69 +123,35 @@ namespace kkot.LzTimer
             ExecuteNonQuery("CREATE INDEX IF NOT EXISTS start1 on Periods (start)");
         }
 
-        private void ExecuteNonQuery(String sql)
+        private void ExecuteNonQuery(string sql)
         {
-            SQLiteCommand command = conn.CreateCommand();
-            command.CommandText = sql;
-            command.ExecuteNonQuery();
-        }
-
-        public override void Remove(ActivityPeriod activityPeriod)
-        {
-            SQLiteCommand command = conn.CreateCommand();
-            command.CommandText = "DELETE FROM Periods WHERE start = :start AND end = :end AND type = :type";
-            command.Parameters.AddWithValue("start", activityPeriod.Start);
-            command.Parameters.AddWithValue("end", activityPeriod.End);
-            command.Parameters.AddWithValue("type", activityPeriod is ActivePeriod ? "A" : "I");
-            command.ExecuteNonQuery();
-        }
-
-        public SortedSet<ActivityPeriod> GetAll()
-        {
-            SQLiteCommand command = new SQLiteCommand("SELECT start, end, type FROM Periods", conn);
-            SQLiteDataReader reader = command.ExecuteReader();
-
-            SortedSet<ActivityPeriod> result = new SortedSet<ActivityPeriod>();
-            while (reader.Read())
+            using (var command = conn.CreateCommand())
             {
-                result.Add(CreatePeriodFromReader(reader));
+                command.CommandText = sql;
+                command.ExecuteNonQuery();
             }
-            return result;
         }
 
-        public override SortedSet<ActivityPeriod> GetPeriodsFromTimePeriod(Period searchedPeriod)
+        private SortedSet<ActivityPeriod> SelectActivityPeriods(string sql, Dictionary<string, object> parameters = null)
         {
-            var sql = "SELECT start, end, type " +
-                      "FROM Periods " +
-                      "WHERE end > :start AND start < :end ";
-            SQLiteCommand command = new SQLiteCommand(sql, conn);
-            command.Parameters.AddWithValue("start", searchedPeriod.Start);
-            command.Parameters.AddWithValue("end", searchedPeriod.End);
-            SQLiteDataReader reader = command.ExecuteReader();
+            if (parameters == null)
+                parameters = new Dictionary<string, object>();
 
-            SortedSet<ActivityPeriod> result = new SortedSet<ActivityPeriod>();
-            while (reader.Read())
+            using (var command = new SQLiteCommand(sql, conn))
             {
-                result.Add(CreatePeriodFromReader(reader));
+                foreach (var parameter in parameters)
+                {
+                    command.Parameters.AddWithValue(parameter.Key, parameter.Value);
+                }
+                var reader = command.ExecuteReader();
+                var result = new SortedSet<ActivityPeriod>();
+                while (reader.Read())
+                {
+                    result.Add(CreatePeriodFromReader(reader));
+                }
+                return result;
             }
-            return result;
-        }
-
-        public override SortedSet<ActivityPeriod> GetPeriodsAfter(DateTime dateTime)
-        {
-            var sql = "SELECT start, end, type " +
-                "FROM Periods " +
-                "WHERE end > :start ";
-            SQLiteCommand command = new SQLiteCommand(sql, conn);
-            command.Parameters.AddWithValue("start", dateTime);
-            SQLiteDataReader reader = command.ExecuteReader();
-
-            SortedSet<ActivityPeriod> result = new SortedSet<ActivityPeriod>();
-            while (reader.Read())
-            {
-                result.Add(CreatePeriodFromReader(reader));
-            }
-            return result;
+            
         }
 
         private static ActivityPeriod CreatePeriodFromReader(SQLiteDataReader reader)
@@ -215,6 +171,60 @@ namespace kkot.LzTimer
             return activityPeriod;
         }
 
+        public override void Add(ActivityPeriod activityPeriod)
+        {
+            using (var command = conn.CreateCommand())
+            {
+                command.CommandText = "INSERT INTO Periods (start, end, type) VALUES (:start, :end, :type)";
+                command.Parameters.AddWithValue("start", activityPeriod.Start);
+                command.Parameters.AddWithValue("end", activityPeriod.End);
+                command.Parameters.AddWithValue("type", activityPeriod is ActivePeriod ? "A" : "I");
+                command.ExecuteNonQuery();
+            }
+        }
+
+        public override void Remove(ActivityPeriod activityPeriod)
+        {
+            using (var command = conn.CreateCommand())
+            {
+                command.CommandText = "DELETE FROM Periods WHERE start = :start AND end = :end AND type = :type";
+                command.Parameters.AddWithValue("start", activityPeriod.Start);
+                command.Parameters.AddWithValue("end", activityPeriod.End);
+                command.Parameters.AddWithValue("type", activityPeriod is ActivePeriod ? "A" : "I");
+                command.ExecuteNonQuery();
+            }
+        }
+
+        public SortedSet<ActivityPeriod> GetAll()
+        {
+            return SelectActivityPeriods("SELECT start, end, type FROM Periods");
+        }
+
+        public override SortedSet<ActivityPeriod> GetPeriodsFromTimePeriod(Period searchedPeriod)
+        {
+            var sql = " SELECT start, end, type " +
+                      " FROM Periods " +
+                      " WHERE end > :start AND start < :end ";
+            var parameters = new Dictionary<string, object>
+            {
+                {"start", searchedPeriod.Start },
+                {"end", searchedPeriod.End }
+            };
+            return SelectActivityPeriods(sql, parameters);
+        }
+
+        public override SortedSet<ActivityPeriod> GetPeriodsAfter(DateTime dateTime)
+        {
+            var sql = "SELECT start, end, type " +
+                "FROM Periods " +
+                "WHERE end > :start ";
+            var parameters = new Dictionary<string, object>
+            {
+                {"start", dateTime}
+            };
+            return SelectActivityPeriods(sql, parameters);
+        }
+
         public override ActivityPeriod GetPeriodBefore(DateTime start)
         {
             var sql = " SELECT start, end, type" +
@@ -222,14 +232,12 @@ namespace kkot.LzTimer
                       " WHERE end <= :start" +
                       " ORDER BY end DESC" +
                       " LIMIT 1";
-            SQLiteCommand command = new SQLiteCommand(sql, conn);
-            command.Parameters.AddWithValue("start", start);
-            var reader = command.ExecuteReader();
-            if (reader.Read())
+            var parameters = new Dictionary<string, object>
             {
-                return CreatePeriodFromReader(reader);
-            }
-            return null;
+                {"start", start }
+            };
+            var result = SelectActivityPeriods(sql, parameters);
+            return result.FirstOrDefault();
         }
 
         public override void Dispose()
@@ -239,9 +247,11 @@ namespace kkot.LzTimer
 
         public override void Reset()
         {
-            SQLiteCommand command = conn.CreateCommand();
-            command.CommandText = "DELETE FROM Periods";
-            command.ExecuteNonQuery();
+            using (var command = conn.CreateCommand())
+            {
+                command.CommandText = "DELETE FROM Periods";
+                command.ExecuteNonQuery();
+            }
         }
     }
 }
