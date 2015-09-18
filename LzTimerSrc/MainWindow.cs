@@ -257,7 +257,7 @@ namespace kkot.LzTimer
         {
             log.Debug("Notify after break " + leaveTime);
             const int balloonTimeoutMs = 10000;
-            notifyIcon1.ShowBalloonTip(balloonTimeoutMs, "leave", "time " + (int) leaveTime.TotalSeconds, ToolTipIcon.Info);
+            notifyIcon1.ShowBalloonTip(balloonTimeoutMs, "leave", string.Format("time: {0:%h} h {0:%m} m {0:%s} s", leaveTime), ToolTipIcon.Info);
         }
 
         private void historyButton_Click(object sender, EventArgs e)
