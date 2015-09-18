@@ -75,7 +75,7 @@ namespace kkot.LzTimer
                 nowDate = nowDate.Subtract(ds);
             }
 
-            String date = nowDate.ToShortDateString();
+            string date = nowDate.ToShortDateString();
             return date;
         }
 
@@ -85,7 +85,7 @@ namespace kkot.LzTimer
             int minutes = (allSeconds - (hours * 60 * 60)) / 60;
             int secunds = allSeconds - (hours * 60 * 60) - (minutes * 60);
 
-            string result = String.Format("{0:00} h {1:00} m {2:00} s", new object[] { hours, minutes, secunds });
+            string result = string.Format("{0:00} h {1:00} m {2:00} s", new object[] { hours, minutes, secunds });
             return result;
         }
     }

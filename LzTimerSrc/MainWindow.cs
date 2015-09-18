@@ -14,6 +14,7 @@ namespace kkot.LzTimer
 
         private const int TIME_LIMIT_NORMAL = 50;
         private const int TIME_LIMIT_WARNING = 60;
+        private const int PERIOD_LENGTH_MS = 1000;
 
         private Icon idleIcon;
         private Icon currentTimeIcon;
@@ -40,7 +41,6 @@ namespace kkot.LzTimer
             // loading configuration
             int maxIdleMinutes = int.Parse(Properties.Settings.Default.MaxIdleMinutes.ToString());
             intervalTextBox.Text = maxIdleMinutes.ToString();
-            timer1.Enabled = true;
 
             soundPlayer = new SoundPlayer();
 
@@ -57,6 +57,9 @@ namespace kkot.LzTimer
             this.activityChecker.SetActivityListner(timeTable);
             this.statsReporter = new StatsReporterImpl(timeTable, policies, new SystemClock());
             timeTable.registerUserActivityListener(this);
+
+            timer1.Interval = PERIOD_LENGTH_MS;
+            timer1.Enabled = true;
         }
 
         //##################################################################
@@ -228,7 +231,7 @@ namespace kkot.LzTimer
 
         private void intervalTextBox_TextChanged(object sender, EventArgs e)
         {
-            String text = intervalTextBox.Text;
+            string text = intervalTextBox.Text;
             try {
                 Properties.Settings.Default.MaxIdleMinutes = int.Parse(text);
                 Properties.Settings.Default.Save();

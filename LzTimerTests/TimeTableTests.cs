@@ -182,7 +182,7 @@ namespace LzTimerTests
                 {
                     // arrange
                     var periodIdleShort = PeriodBuilder.New(MIDDAY).Length(IDLE_TIMEOUT_SECS.shorterThan()).Idle();
-                    var periodActive = PeriodBuilder.NewAfter(periodIdleShort).Length(1.s()).Active();
+                    var periodActive = periodIdleShort.NewAfter().Length(1.s()).Active();
 
                     // act
                     timeTableSUT.PeriodPassed(periodIdleShort);
@@ -198,7 +198,7 @@ namespace LzTimerTests
                     // arrange
                     var periodIdle = PeriodBuilder.New(MIDDAY).Length(IDLE_TIMEOUT_SECS.longerThan()).Idle();
                     var offTime = 1.s();
-                    var periodActive = PeriodBuilder.New(periodIdle.End + offTime).Length(1.s()).Active();
+                    var periodActive = periodIdle.NewAfter(offTime).Active();
 
                     // act
                     timeTableSUT.PeriodPassed(periodIdle);

@@ -10,9 +10,9 @@ namespace kkot.LzTimer
 
         public Period(DateTime @start, DateTime end)
         {
-            this.Start = start;
-            this.End = end;
-            this.Length = end - start;
+            Start = start;
+            End = end;
+            Length = end - start;
         }
 
         public override string ToString()
