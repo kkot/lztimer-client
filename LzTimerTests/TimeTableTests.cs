@@ -152,7 +152,8 @@ namespace LzTimerTests
                 public void shouldNotifyWhenBeforeActiveThereIsLongIdlePeriod()
                 {
                     // arrange
-                    var periodIdleLong = PeriodBuilder.New(MIDDAY).Length(IDLE_TIMEOUT_SECS.longerThan()).Idle();
+                    var idlePeriodLength = IDLE_TIMEOUT_SECS + 2.s();
+                    var periodIdleLong = PeriodBuilder.New(MIDDAY).Length(idlePeriodLength).Idle();
                     var periodActive = PeriodBuilder.NewAfter(periodIdleLong).Length(1.s()).Active();
 
                     // act
@@ -160,7 +161,7 @@ namespace LzTimerTests
                     timeTableSUT.PeriodPassed(periodActive);
 
                     // assert
-                    A.CallTo(() => listenerActivityListnerMock.NotifyActiveAfterBreak(A<TimeSpan>.Ignored))
+                    A.CallTo(() => listenerActivityListnerMock.NotifyActiveAfterBreak(idlePeriodLength))
                         .MustHaveHappened(Repeated.Exactly.Once);
                 }
 
