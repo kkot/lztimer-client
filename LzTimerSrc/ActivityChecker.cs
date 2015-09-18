@@ -21,7 +21,7 @@ namespace kkot.LzTimer
         private readonly LastActivityProbe probe;
         private readonly Clock clock;
 
-        private ActivityPeriodsListener listener;
+        private ActivityPeriodsListener activityPeriodsListener;
         private int? lastInputTick;
         private DateTime lastCheckTime;
 
@@ -33,23 +33,23 @@ namespace kkot.LzTimer
 
         public void SetActivityListner(ActivityPeriodsListener listener)
         {
-            this.listener = listener;
+            activityPeriodsListener = listener;
         }
 
         public void Check()
         {
+            var now = clock.CurrentTime();
+
             if (lastInputTick == null || IsAfterWakeUp())
             {
-                SaveLastInputTick();
+                SaveLastInputTick(now);
                 return;
             }
 
-            var active = (lastInputTick != probe.GetLastInputTick());
-
-            var now = clock.CurrentTime();
-            listener.PeriodPassed(ActivityPeriod.Create(active, now - TimeSpanSinceLastCheck(), now));
+            var wasActive = (lastInputTick != probe.GetLastInputTick());
+            activityPeriodsListener.PeriodPassed(ActivityPeriod.Create(wasActive, now - TimeSpanSinceLastCheck(), now));
             
-            SaveLastInputTick();
+            SaveLastInputTick(now);
         }
 
         private bool IsAfterWakeUp()
@@ -62,10 +62,10 @@ namespace kkot.LzTimer
             return clock.CurrentTime() - lastCheckTime;
         }
 
-        private void SaveLastInputTick()
+        private void SaveLastInputTick(DateTime now)
         {
+            lastCheckTime = now;
             lastInputTick = probe.GetLastInputTick();
-            lastCheckTime = clock.CurrentTime();
         }
     }   
 
@@ -86,10 +86,7 @@ namespace kkot.LzTimer
             {
                 return (int)lastInputInfo.dwTime;
             }
-            else
-            {
-                throw new Exception();
-            }
+            throw new Exception();
         }
     }
 

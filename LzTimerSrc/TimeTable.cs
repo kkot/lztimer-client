@@ -33,7 +33,7 @@ namespace kkot.LzTimer
         private readonly TimeTablePolicies policies;
         private UserActivityListner userActivityListner;
 
-        public TimeTable(TimeTablePolicies policies, UserActivityListner userActivityListner = null) : this(
+        public TimeTable(TimeTablePolicies policies) : this(
             policies,
             new MemoryPeriodStorage())
         {
@@ -59,26 +59,44 @@ namespace kkot.LzTimer
         private void NotifyUserActivityListener(ActivityPeriod activityPeriod, ActivityPeriod mergedPeriod)
         {
             if (userActivityListner == null)
+            {
+                log.Debug("listener is null");
                 return;
+            }
 
             if (activityPeriod is IdlePeriod)
+            {
+                log.Debug("period is idle");
                 return;
+            }
 
             var periodMerged = !mergedPeriod.Equals(activityPeriod);
             if (periodMerged)
+            {
+                log.Debug("period merged");
                 return;
+            }
 
             var periodBefore = periodStorage.GetPeriodBefore(activityPeriod.Start);
             if (!(periodBefore is IdlePeriod))
+            {
+                log.Debug("period before was not idle");
                 return;
+            }
 
             if (periodBefore.Length < policies.IdleTimeout)
+            {
+                log.Debug("period before too short " + periodBefore.Length + " expected " + policies.IdleTimeout);
                 return;
+            }
 
             if (!periodBefore.IsDirectlyBefore(activityPeriod))
+            {
+                log.Debug("period before is not directly before, before " + periodBefore + ", added" + activityPeriod);
                 return;
+            }
 
-            userActivityListner.NotifyActiveAfterBreak(TimeSpan.Zero);
+            userActivityListner.NotifyActiveAfterBreak(periodBefore.Length);
         }
 
         private SortedSet<ActivityPeriod> GetMergeCandidates(ActivityPeriod currentPeriod)

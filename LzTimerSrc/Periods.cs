@@ -49,6 +49,8 @@ namespace kkot.LzTimer
 
     public class ActivityPeriod : Period
     {
+        private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         protected ActivityPeriod(DateTime @start, DateTime end)
             : base(start, end)
         {

@@ -255,6 +255,7 @@ namespace kkot.LzTimer
 
         public void NotifyActiveAfterBreak(TimeSpan leaveTime)
         {
+            log.Debug("Notify after break " + leaveTime);
             const int balloonTimeoutMs = 10000;
             notifyIcon1.ShowBalloonTip(balloonTimeoutMs, "leave", "time " + (int) leaveTime.TotalSeconds, ToolTipIcon.Info);
         }
