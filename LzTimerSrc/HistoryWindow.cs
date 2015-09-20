@@ -17,7 +17,7 @@ namespace kkot.LzTimer
         private void HistoryWindow_Load(object sender, EventArgs e)
         {
             var periodsFromDay = statsReporter.PeriodsFromDay(DateTime.Now.Date);
-            foreach (var activityPeriod in periodsFromDay.Reverse())
+            foreach (var activityPeriod in periodsFromDay)
             {
                 var line = activityPeriod.Start.ToString("t") 
                     + " - " + activityPeriod.End.ToString("t") 
