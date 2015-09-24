@@ -61,6 +61,12 @@ namespace LzTimerTests
             End = Start + length;
             return this;
         }
+        
+        public PeriodBuilder WithEnd(DateTime end)
+        {
+            End = end;
+            return this;
+        }
 
         public IdlePeriod Idle()
         {

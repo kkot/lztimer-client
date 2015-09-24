@@ -51,9 +51,9 @@ namespace kkot.LzTimer
             MoveToPosition();
 
             this.activityChecker = new ActivityChecker(new Win32LastActivityProbe(), new SystemClock());
-            this.policies = new TimeTablePolicies() {IdleTimeout = maxIdleMinutes.min()};
+            this.policies = new TimeTablePolicies {IdleTimeout = maxIdleMinutes.min()};
             periodStorage = new SqlitePeriodStorage("periods.db");            
-            TimeTable timeTable = new TimeTable(policies, periodStorage);
+            var timeTable = new TimeTable(policies, periodStorage);
             this.activityChecker.SetActivityListner(timeTable);
             this.statsReporter = new StatsReporterImpl(timeTable, policies, new SystemClock());
             timeTable.registerUserActivityListener(this);
@@ -169,11 +169,6 @@ namespace kkot.LzTimer
             }
         }
 
-        private void closeToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            Close();
-        }
-
         internal void toggleVisible()
         {
             log.Info("WindowState " + WindowState);
@@ -236,7 +231,7 @@ namespace kkot.LzTimer
                 Properties.Settings.Default.MaxIdleMinutes = int.Parse(text);
                 Properties.Settings.Default.Save();
             }
-            catch(FormatException exception) {
+            catch(FormatException) {
                 // ignore
             }
         }

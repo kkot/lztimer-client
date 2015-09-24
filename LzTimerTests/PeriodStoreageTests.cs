@@ -24,7 +24,7 @@ namespace LzTimerTests
                 CollectionAssert.AreEquivalent(expected, instance1.GetAll());
             }
 
-            if (IsPersisent())
+            if (IsStoragePersisent())
             {
                 WaitForConnectionToDbClosed();
                 using (TestablePeriodStorage instance2 = GetStorage())
@@ -41,7 +41,7 @@ namespace LzTimerTests
             var secondPeriod = firstPeriod.NewAfter(10.s()).Idle();
 
             ActivityPeriod[] expected;
-            using (TestablePeriodStorage periodStorageSUT = GetStorage())
+            using (var periodStorageSUT = GetStorage())
             {
                 periodStorageSUT.Add(firstPeriod);
                 periodStorageSUT.Add(secondPeriod);
@@ -51,13 +51,32 @@ namespace LzTimerTests
                 CollectionAssert.AreEquivalent(expected, periodStorageSUT.GetAll());
             }
 
-            if (IsPersisent())
+            if (!IsStoragePersisent())
+                return;
+
+            WaitForConnectionToDbClosed();
+            using (var newInstance = GetStorage())
             {
-                WaitForConnectionToDbClosed();
-                using (TestablePeriodStorage newInstance = GetStorage())
-                {
-                    CollectionAssert.AreEquivalent(expected, newInstance.GetAll());
-                }
+                CollectionAssert.AreEquivalent(expected, newInstance.GetAll());
+            }
+        }
+
+        [TestMethod]
+        public void RemovePeriodShouldRemoveOnlyExactMatches()
+        {
+            var firstPeriod = START_DATETIME.Length(5.s()).Active();
+            var secondPeriod = firstPeriod.NewAfter(10.s()).Idle();
+            var notExactSecond = PeriodBuilder.New(secondPeriod.Start - 1.ms()).WithEnd(secondPeriod.End + 1.ms()).Active();
+
+            using (TestablePeriodStorage periodStorageSUT = GetStorage())
+            {
+                periodStorageSUT.Add(firstPeriod);
+                periodStorageSUT.Add(secondPeriod);
+                var expected = new ActivityPeriod[] {secondPeriod};
+
+                periodStorageSUT.Remove(firstPeriod);
+                periodStorageSUT.Remove(notExactSecond);
+                CollectionAssert.AreEquivalent(expected, periodStorageSUT.GetAll());
             }
         }
 
@@ -191,7 +210,7 @@ namespace LzTimerTests
 
         protected abstract TestablePeriodStorage GetStorage();
 
-        protected abstract bool IsPersisent();
+        protected abstract bool IsStoragePersisent();
 
         protected static void WaitForConnectionToDbClosed()
         {
@@ -217,7 +236,7 @@ namespace LzTimerTests
             return new SqlitePeriodStorage(DB_FILE);
         }
 
-        protected override bool IsPersisent()
+        protected override bool IsStoragePersisent()
         {
             return true;
         }
@@ -236,7 +255,7 @@ namespace LzTimerTests
             return new MemoryPeriodStorage();
         }
 
-        protected override bool IsPersisent()
+        protected override bool IsStoragePersisent()
         {
             return false;
         }
