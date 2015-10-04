@@ -35,7 +35,7 @@ namespace kkot.LzTimer
         private void Form1_Load(object sender, EventArgs e)
         {
             log.Info("Form load");
-            RecreateCurrentPeriodIcon(0);
+            idleIcon = CreateIdleIcon();
             UpdateNotifyIcon(false, 0);
 
             // loading configuration
@@ -95,31 +95,28 @@ namespace kkot.LzTimer
             return Brushes.Red;
         }
 
-        private void RecreateCurrentPeriodIcon(int minutes)
+        private Icon RecreateCurrentPeriodIcon(int minutes)
         {
             if (minutes > 99)
                 minutes = 99;
 
-            if (idleIcon == null) // idleIcon doesn't change
-            {
-                Bitmap idleBmp = new Bitmap(16, 16);
-                using (Graphics g = Graphics.FromImage(idleBmp))
-                {
-                    g.FillEllipse(Brushes.Gray, 0, 0, 16, 16);
-                }
-                idleIcon = Icon.FromHandle(idleBmp.GetHicon());
-            }
-
-            Bitmap funBmp = new Bitmap(16, 16);
-            if (currentTimeIcon != null)
-                PInvoke.DestroyIcon(currentTimeIcon.Handle);
-
-            using (Graphics g = Graphics.FromImage(funBmp))
+            var bitmap = new Bitmap(16, 16);
+            using (var g = Graphics.FromImage(bitmap))
             {
                 g.FillEllipse(getCurrentTimeIconColor(minutes), 0, 0, 16, 16);
                 g.DrawString(minutes.ToString(), font, Brushes.White, 0, 1);
             }
-            currentTimeIcon = Icon.FromHandle(funBmp.GetHicon());
+            return Icon.FromHandle(bitmap.GetHicon());
+        }
+
+        private static Icon CreateIdleIcon()
+        {
+            var idleBmp = new Bitmap(16, 16);
+            using (var g = Graphics.FromImage(idleBmp))
+            {
+                g.FillEllipse(Brushes.Gray, 0, 0, 16, 16);
+            }
+            return Icon.FromHandle(idleBmp.GetHicon());
         }
 
         private void UpdateAlldayIcon(TimeSpan totalToday)
@@ -127,25 +124,36 @@ namespace kkot.LzTimer
             int hours = totalToday.Hours;
             int minutes = totalToday.Minutes;
 
-            Bitmap alldayBmp = new Bitmap(16, 16);
-            if (alldayTimeIcon != null)
-                PInvoke.DestroyIcon(alldayTimeIcon.Handle);
+            var prevIcon = alldayTimeIcon;
+            alldayTimeIcon = CreateAlldayIcon(hours, minutes);
+            notifyIconAllday.Icon = alldayTimeIcon;
 
-            using (Graphics g = Graphics.FromImage(alldayBmp))
+            if (prevIcon != null)
+                PInvoke.DestroyIcon(prevIcon.Handle);
+        }
+
+        private Icon CreateAlldayIcon(int hours, int minutes)
+        {
+            var bitmap = new Bitmap(16, 16);
+            using (var g = Graphics.FromImage(bitmap))
             {
                 g.FillRectangle(Brushes.Wheat, 0, 0, 16, 16);
-                string hoursStr = (hours > 9) ? "X" : "" + hours;
+                var hoursStr = (hours > 9) ? "X" : "" + hours;
                 g.DrawString(hoursStr, font, Brushes.Black, -1, -3);
                 g.DrawString(""+minutes, fontSmall, Brushes.Red, 3, 6);
             }
-            alldayTimeIcon = Icon.FromHandle(alldayBmp.GetHicon());
-            notifyIconAllday.Icon = alldayTimeIcon;
+            return Icon.FromHandle(bitmap.GetHicon());
         }
 
         private void UpdateNotifyIcon(bool active, int totalMinutes)
         {
-            RecreateCurrentPeriodIcon(totalMinutes);
+            var prevIcon = currentTimeIcon;
+
+            currentTimeIcon = RecreateCurrentPeriodIcon(totalMinutes);
             notifyIcon1.Icon = !active ? idleIcon : currentTimeIcon;
+
+            if (prevIcon != null)
+                PInvoke.DestroyIcon(prevIcon.Handle);
         }
 
         private void UpdateLabels(int secondsToday, int secondsAfterLastBreak)
