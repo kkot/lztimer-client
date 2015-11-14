@@ -24,11 +24,14 @@ namespace kkot.LzTimer
 
     public abstract class AbstractPeriodStorage : PeriodStorage
     {
+        private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         public abstract void Add(ActivityPeriod activityPeriod);
         public abstract void Remove(ActivityPeriod activityPeriod);
 
         public void RemoveFromTimePeriod(Period periodToRemove)
         {
+            log.Debug("remove from time period " + periodToRemove);
             foreach (var period in GetPeriodsFromTimePeriod(periodToRemove))
             {
                 Remove(period);
@@ -92,6 +95,8 @@ namespace kkot.LzTimer
 
     public class SqlitePeriodStorage : AbstractPeriodStorage, TestablePeriodStorage
     {
+        private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         private readonly SQLiteConnection conn;
 
         public SqlitePeriodStorage(string name)
@@ -143,15 +148,16 @@ namespace kkot.LzTimer
                 {
                     command.Parameters.AddWithValue(parameter.Key, parameter.Value);
                 }
-                var reader = command.ExecuteReader();
-                var result = new SortedSet<ActivityPeriod>();
-                while (reader.Read())
+                using (var reader = command.ExecuteReader())
                 {
-                    result.Add(CreatePeriodFromReader(reader));
+                    var result = new SortedSet<ActivityPeriod>();
+                    while (reader.Read())
+                    {
+                        result.Add(CreatePeriodFromReader(reader));
+                    }
+                    return result;
                 }
-                return result;
             }
-            
         }
 
         private static ActivityPeriod CreatePeriodFromReader(SQLiteDataReader reader)
@@ -173,25 +179,29 @@ namespace kkot.LzTimer
 
         public override void Add(ActivityPeriod activityPeriod)
         {
+            log.Debug("add period " + activityPeriod);
             using (var command = conn.CreateCommand())
             {
                 command.CommandText = "INSERT INTO Periods (start, end, type) VALUES (:start, :end, :type)";
                 command.Parameters.AddWithValue("start", activityPeriod.Start);
                 command.Parameters.AddWithValue("end", activityPeriod.End);
                 command.Parameters.AddWithValue("type", activityPeriod is ActivePeriod ? "A" : "I");
-                command.ExecuteNonQuery();
+                var rowsAffected = command.ExecuteNonQuery();
+                log.Debug("rows affected " + rowsAffected);
             }
         }
 
         public override void Remove(ActivityPeriod activityPeriod)
         {
+            log.Debug("remove period " + activityPeriod);
             using (var command = conn.CreateCommand())
             {
                 command.CommandText = "DELETE FROM Periods WHERE start = :start AND end = :end AND type = :type";
                 command.Parameters.AddWithValue("start", activityPeriod.Start);
                 command.Parameters.AddWithValue("end", activityPeriod.End);
                 command.Parameters.AddWithValue("type", activityPeriod is ActivePeriod ? "A" : "I");
-                command.ExecuteNonQuery();
+                var rowsAffected = command.ExecuteNonQuery();
+                log.Debug("rows affected " + rowsAffected);
             }
         }
 
@@ -247,11 +257,7 @@ namespace kkot.LzTimer
 
         public override void Reset()
         {
-            using (var command = conn.CreateCommand())
-            {
-                command.CommandText = "DELETE FROM Periods";
-                command.ExecuteNonQuery();
-            }
+            ExecuteNonQuery("DELETE FROM Periods");
         }
     }
 }

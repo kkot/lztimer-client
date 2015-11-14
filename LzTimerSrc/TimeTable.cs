@@ -47,7 +47,7 @@ namespace kkot.LzTimer
 
         public ActivityPeriod AddPeriod(ActivityPeriod activityPeriod)
         {
-            log.Debug("AddPeriod " + activityPeriod);
+            log.Debug("add period " + activityPeriod);
 
             var mergedPeriod = Merge(activityPeriod);
             log.Debug("merged period " + mergedPeriod);
@@ -109,6 +109,7 @@ namespace kkot.LzTimer
 
         private ActivityPeriod Merge(ActivityPeriod activityPeriod)
         {
+            log.Debug("merge " + activityPeriod);
             foreach (var period in GetMergeCandidates(activityPeriod))
             {
                 if (period.CanBeMerged(activityPeriod, policies.IdleTimeout))

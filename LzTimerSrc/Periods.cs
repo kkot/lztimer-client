@@ -17,7 +17,7 @@ namespace kkot.LzTimer
 
         public override string ToString()
         {
-            return "[" + Start.TimeOfDay + " " + End.TimeOfDay + " length " + Length + "]";
+            return "[" + Start.ToString(timeFormat) + " " + End.ToString(timeFormat) + " length " + FormatLength() + "]";
         }
 
         public override bool Equals(object obj)
@@ -44,6 +44,16 @@ namespace kkot.LzTimer
         public bool IsDirectlyBefore(Period period)
         {
             return End == period.Start;
+        }
+
+        protected const string timeFormat = "HH:mm:ss.f"; 
+
+        protected string FormatLength()
+        {
+            return (Length.Hours > 0 ? Length.Hours + ":" : "")
+                + (Length.Minutes > 0 ? Length.Minutes + ":" : "")
+                + Length.Seconds + "."
+                + (Length.Milliseconds / 10);
         }
     }
 
@@ -110,7 +120,9 @@ namespace kkot.LzTimer
 
         public override string ToString()
         {
-            return "[" + Start.TimeOfDay + " " + End.TimeOfDay + " length " + Length + " type " + GetType()+ "]";
+            string lengthStr = FormatLength();
+
+            return "[" + Start.ToString(timeFormat) + " " + End.ToString(timeFormat) + " length " + lengthStr + " type " + GetType() + "]";
         }
     }
 
