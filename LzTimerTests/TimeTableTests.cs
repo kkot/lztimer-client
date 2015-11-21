@@ -17,9 +17,11 @@ namespace LzTimerTests
         {
             protected TimeTable timeTableSUT;
             protected TestablePeriodStorage periodStorage;
-            protected readonly TimeSpan IDLE_TIMEOUT = 10.secs();
+
             protected readonly TimeSpan LESS_THAN_IDLE_TIMEOUT = 9.secs();
+            protected readonly TimeSpan IDLE_TIMEOUT = 10.secs();
             protected readonly TimeSpan MORE_THAN_IDLE_TIMEOUT = 11.secs();
+
             protected readonly TimeSpan BIGGER_LENGTH = 2.secs();
 
             [TestInitializeAttribute]
@@ -136,6 +138,25 @@ namespace LzTimerTests
 
                     var mergedPeriod = new ActivePeriod(period1a.Start, period4a.End);
                     CollectionAssert.AreEquivalent(periodStorage.GetAll(), new ActivityPeriod[] { period0i, mergedPeriod });
+                }
+
+                [TestMethod]
+                public void mergingActivePeriodsShouldNotDeletePartialIdlePeriods()
+                {
+                    var period0i = MIDDAY.NewPeriod().Idle();
+                    var period1a = period0i.NewPeriodAfter(-1.ms()).Active();
+                    var period2i = period1a.NewPeriodAfter().Idle();
+                    var period3a = period2i.NewPeriodAfter().Active();
+                    var period4i = period3a.NewPeriodAfter(-1.ms()).Idle();
+
+                    timeTableSUT.AddPeriod(period0i);
+                    timeTableSUT.AddPeriod(period1a);
+                    timeTableSUT.AddPeriod(period2i);
+                    timeTableSUT.AddPeriod(period3a);
+                    timeTableSUT.AddPeriod(period4i);
+
+                    var mergedPeriod = new ActivePeriod(period1a.Start, period3a.End);
+                    CollectionAssert.AreEquivalent(periodStorage.GetAll(), new ActivityPeriod[] { period0i, mergedPeriod, period4i });
                 }
 
                 [TestMethod]

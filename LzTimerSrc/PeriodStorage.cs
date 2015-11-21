@@ -10,7 +10,14 @@ namespace kkot.LzTimer
     {
         void Add(ActivityPeriod activityPeriod);
         void Remove(ActivityPeriod activityPeriod);
+
+
+        /// <summary>
+        /// Removes periods fully inside <paramref name="period"/>.
+        /// </summary>
+        /// <param name="period"></param>
         void RemoveFromTimePeriod(Period period);
+
         SortedSet<ActivityPeriod> GetPeriodsFromTimePeriod(Period searchedPeriod);
         SortedSet<ActivityPeriod> GetPeriodsAfter(DateTime dateTime);
         ActivityPeriod GetPeriodBefore(DateTime start);
@@ -34,6 +41,10 @@ namespace kkot.LzTimer
             log.Debug("remove from time period " + periodToRemove);
             foreach (var period in GetPeriodsFromTimePeriod(periodToRemove))
             {
+                if (period.Start < periodToRemove.Start 
+                    || period.End > periodToRemove.End)
+                    continue;
+
                 Remove(period);
             }
         }
