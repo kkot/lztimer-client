@@ -18,6 +18,8 @@ namespace kkot.LzTimer
 
     public class ActivityChecker
     {
+        private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         private readonly LastActivityProbe probe;
         private readonly Clock clock;
 
@@ -47,6 +49,7 @@ namespace kkot.LzTimer
             }
 
             var wasActive = (lastInputTick != probe.GetLastInputTick());
+            log.Debug("period was " + (wasActive ? "active" : "idle"));
             activityPeriodsListener.PeriodPassed(ActivityPeriod.Create(wasActive, now - TimeSpanSinceLastCheck(), now));
             
             SaveLastInputTick(now);
