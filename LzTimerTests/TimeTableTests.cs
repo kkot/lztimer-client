@@ -17,7 +17,8 @@ namespace LzTimerTests
         {
             protected TimeTable timeTableSUT;
             protected TestablePeriodStorage periodStorage;
-            protected readonly TimeSpan IDLE_TIMEOUT_SECS = 5.s();
+            protected readonly TimeSpan IDLE_TIMEOUT_SECS = 10.s();
+            protected readonly TimeSpan BIGGER_LENGTH = 2.s();
 
             [TestInitializeAttribute]
             public virtual void setUp()
@@ -33,23 +34,30 @@ namespace LzTimerTests
             [TestClass]
             public class MergingTests : TimeTableTest
             {
-                [TestMethod]
-                public void singlePeriodShouldBeStoredAndReterned()
+                private void singlePeriodShouldBeStoredAndReterned(ActivityPeriod period)
                 {
-                    var period = PeriodBuilder.New(MIDDAY).Active();
-
                     var merged = timeTableSUT.AddPeriod(period);
-
                     Assert.AreEqual(period, merged);
-                    Assert.AreEqual(1, periodStorage.GetAll().Count);
-                    CollectionAssert.Contains(periodStorage.GetAll(), merged);
+                    CollectionAssert.AreEquivalent(new[] { merged }, periodStorage.GetAll());
+                }
+
+                [TestMethod]
+                public void singleActivePeriodShouldBeStoredAndReterned()
+                {
+                    singlePeriodShouldBeStoredAndReterned(MIDDAY.NewPeriod().Active());
+                }
+
+                [TestMethod]
+                public void singleIdlePeriodShouldBeStoredAndReterned()
+                {
+                    singlePeriodShouldBeStoredAndReterned(MIDDAY.NewPeriod().Idle());
                 }
 
                 [TestMethod]
                 public void twoCloseActivePeriodShouldBeMerged()
                 {
-                    var period1 = PeriodBuilder.New(MIDDAY).Active();
-                    var period2 = PeriodBuilder.NewAfter(period1, IDLE_TIMEOUT_SECS - 1.s()).Active();
+                    var period1 = MIDDAY.NewPeriod().Active();
+                    var period2 = period1.NewAfter(IDLE_TIMEOUT_SECS - 1.s()).Active();
 
                     timeTableSUT.AddPeriod(period1);
                     timeTableSUT.AddPeriod(period2);
@@ -60,12 +68,11 @@ namespace LzTimerTests
                     CollectionAssert.AreEquivalent(new[] { periodMerged }, periodStorage.GetAll());
                 }
 
-                [TestMethod]
-                public void twoCloseIdlePeriodShouldBeMerged()
+                private void twoCloseIdlePeriodShouldBeMerged(TimeSpan periodAfterActive)
                 {
-                    var period1 = PeriodBuilder.New(MIDDAY).Active();
-                    var period2 = PeriodBuilder.NewAfter(period1, 10.ms()).Idle();
-                    var period3 = PeriodBuilder.NewAfter(period2, 10.ms()).Idle();
+                    var period1 = MIDDAY.NewPeriod().Active();
+                    var period2 = period1.NewAfter(periodAfterActive).Length(BIGGER_LENGTH).Idle();
+                    var period3 = period2.NewAfter().Idle();
 
                     timeTableSUT.AddPeriod(period1);
                     timeTableSUT.AddPeriod(period2);
@@ -74,6 +81,24 @@ namespace LzTimerTests
                     var periodMerged = new IdlePeriod(period2.Start, period3.End);
 
                     CollectionAssert.AreEquivalent(new ActivityPeriod[] { period1, periodMerged }, periodStorage.GetAll());
+                }
+
+                [TestMethod]
+                public void twoCloseIdlePeriodAfterActiveShouldBeMerged()
+                {
+                    twoCloseIdlePeriodShouldBeMerged(0.s());
+                }
+
+                [TestMethod]
+                public void twoCloseIdlePeriodAfterShortNothingShouldBeMerged()
+                {
+                    twoCloseIdlePeriodShouldBeMerged(IDLE_TIMEOUT_SECS - 1.s());
+                }
+
+                [TestMethod]
+                public void twoCloseIdlePeriodAfterLongNothingShouldBeMerged()
+                {
+                    twoCloseIdlePeriodShouldBeMerged(IDLE_TIMEOUT_SECS + 1.s());
                 }
 
                 [TestMethod]
@@ -131,7 +156,7 @@ namespace LzTimerTests
                     timeTableSUT.AddPeriod(peroid3i);
 
                     CollectionAssert.AreEquivalent(periodStorage.GetAll(),
-                        new ActivityPeriod[] {period1i, period2a, peroid3i});
+                        new ActivityPeriod[] { period1i, period2a, peroid3i });
                 }
             }
 
