@@ -51,7 +51,7 @@ namespace kkot.LzTimer
             MoveToPosition();
 
             this.activityChecker = new ActivityChecker(new Win32LastActivityProbe(), new SystemClock());
-            this.policies = new TimeTablePolicies {IdleTimeout = maxIdleMinutes.min()};
+            this.policies = new TimeTablePolicies {IdleTimeout = maxIdleMinutes.mins()};
             periodStorage = new SqlitePeriodStorage("periods.db");            
             var timeTable = new TimeTable(policies, periodStorage);
             this.activityChecker.SetActivityListner(timeTable);

@@ -102,16 +102,16 @@ namespace LzTimerTests
     {
         public static TimeSpan longerThan(this TimeSpan timeSpan)
         {
-            return timeSpan + 1.s();
+            return timeSpan + 1.secs();
         }
 
         public static TimeSpan shorterThan(this TimeSpan timeSpan)
         {
-            if (timeSpan < 1.s())
+            if (timeSpan < 1.secs())
             {
                 throw new ArgumentException("Period should be longerThan than 1 sec to use this extension method");
             }
-            return timeSpan - 1.s();
+            return timeSpan - 1.secs();
         }
     }
 
@@ -119,7 +119,7 @@ namespace LzTimerTests
     {
         private DateTime currentTime;
         private Queue<TimeSpan> timeSpans;
-        private TimeSpan interval = 1.s();
+        private TimeSpan interval = 1.secs();
 
         public void Arrange(DateTime startDateTime, params TimeSpan[] aTimeSpans)
         {

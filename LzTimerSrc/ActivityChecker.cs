@@ -57,7 +57,7 @@ namespace kkot.LzTimer
 
         private bool IsAfterWakeUp()
         {
-            return TimeSpanSinceLastCheck().Duration() > 2.s();
+            return TimeSpanSinceLastCheck().Duration() > 2.secs();
         }
 
         private TimeSpan TimeSpanSinceLastCheck()

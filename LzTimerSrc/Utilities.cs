@@ -36,7 +36,7 @@ namespace kkot.LzTimer
 
     public static class IntegerTimespanExensionMethods
     {
-        public static TimeSpan s(this int seconds)
+        public static TimeSpan secs(this int seconds)
         {
             return TimeSpan.FromSeconds(seconds);
         }
@@ -46,7 +46,7 @@ namespace kkot.LzTimer
             return TimeSpan.FromMilliseconds(miliseconds);
         }
 
-        public static TimeSpan min(this int minutes)
+        public static TimeSpan mins(this int minutes)
         {
             return TimeSpan.FromMinutes(minutes);
         }

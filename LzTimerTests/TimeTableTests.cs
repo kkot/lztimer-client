@@ -17,8 +17,8 @@ namespace LzTimerTests
         {
             protected TimeTable timeTableSUT;
             protected TestablePeriodStorage periodStorage;
-            protected readonly TimeSpan IDLE_TIMEOUT_SECS = 10.s();
-            protected readonly TimeSpan BIGGER_LENGTH = 2.s();
+            protected readonly TimeSpan IDLE_TIMEOUT_SECS = 10.secs();
+            protected readonly TimeSpan BIGGER_LENGTH = 2.secs();
 
             [TestInitializeAttribute]
             public virtual void setUp()
@@ -57,7 +57,7 @@ namespace LzTimerTests
                 public void twoCloseActivePeriodShouldBeMerged()
                 {
                     var period1 = MIDDAY.NewPeriod().Active();
-                    var period2 = period1.NewAfter(IDLE_TIMEOUT_SECS - 1.s()).Active();
+                    var period2 = period1.NewAfter(IDLE_TIMEOUT_SECS - 1.secs()).Active();
 
                     timeTableSUT.AddPeriod(period1);
                     timeTableSUT.AddPeriod(period2);
@@ -86,26 +86,26 @@ namespace LzTimerTests
                 [TestMethod]
                 public void twoCloseIdlePeriodAfterActiveShouldBeMerged()
                 {
-                    twoCloseIdlePeriodShouldBeMerged(0.s());
+                    twoCloseIdlePeriodShouldBeMerged(0.secs());
                 }
 
                 [TestMethod]
                 public void twoCloseIdlePeriodAfterShortNothingShouldBeMerged()
                 {
-                    twoCloseIdlePeriodShouldBeMerged(IDLE_TIMEOUT_SECS - 1.s());
+                    twoCloseIdlePeriodShouldBeMerged(IDLE_TIMEOUT_SECS - 1.secs());
                 }
 
                 [TestMethod]
                 public void twoCloseIdlePeriodAfterLongNothingShouldBeMerged()
                 {
-                    twoCloseIdlePeriodShouldBeMerged(IDLE_TIMEOUT_SECS + 1.s());
+                    twoCloseIdlePeriodShouldBeMerged(IDLE_TIMEOUT_SECS + 1.secs());
                 }
 
                 [TestMethod]
                 public void twoDistantActivePeriodShouldNotBeMerged()
                 {
                     var period1 = PeriodBuilder.New(MIDDAY).Active();
-                    var period2 = PeriodBuilder.NewAfter(period1, IDLE_TIMEOUT_SECS + 1.s()).Active();
+                    var period2 = PeriodBuilder.NewAfter(period1, IDLE_TIMEOUT_SECS + 1.secs()).Active();
 
                     var returned1 = timeTableSUT.AddPeriod(period1);
                     var returned2 = timeTableSUT.AddPeriod(period2);
@@ -119,7 +119,7 @@ namespace LzTimerTests
                 public void closeActiveAndIdlePeriodShouldNotBeMerged()
                 {
                     var period1 = PeriodBuilder.New(MIDDAY).Active();
-                    var period2 = PeriodBuilder.NewAfter(period1, IDLE_TIMEOUT_SECS - 1.s()).Idle();
+                    var period2 = PeriodBuilder.NewAfter(period1, IDLE_TIMEOUT_SECS - 1.secs()).Idle();
 
                     timeTableSUT.AddPeriod(period1);
                     timeTableSUT.AddPeriod(period2);
@@ -177,9 +177,9 @@ namespace LzTimerTests
                 public void shouldNotifyWhenBeforeActiveThereIsLongIdlePeriod()
                 {
                     // arrange
-                    var idlePeriodLength = IDLE_TIMEOUT_SECS + 2.s();
+                    var idlePeriodLength = IDLE_TIMEOUT_SECS + 2.secs();
                     var periodIdleLong = PeriodBuilder.New(MIDDAY).Length(idlePeriodLength).Idle();
-                    var periodActive = PeriodBuilder.NewAfter(periodIdleLong).Length(1.s()).Active();
+                    var periodActive = PeriodBuilder.NewAfter(periodIdleLong).Length(1.secs()).Active();
 
                     // act
                     timeTableSUT.PeriodPassed(periodIdleLong);
@@ -194,7 +194,7 @@ namespace LzTimerTests
                 public void shouldNotNotifyIfWasntIdleBefore()
                 {
                     // arrange
-                    ActivePeriod period = PeriodBuilder.New(MIDDAY).Length(1.s()).Active();
+                    ActivePeriod period = PeriodBuilder.New(MIDDAY).Length(1.secs()).Active();
 
                     // act
                     timeTableSUT.PeriodPassed(period);
@@ -208,7 +208,7 @@ namespace LzTimerTests
                 {
                     // arrange
                     var periodIdleShort = PeriodBuilder.New(MIDDAY).Length(IDLE_TIMEOUT_SECS.shorterThan()).Idle();
-                    var periodActive = periodIdleShort.NewAfter().Length(1.s()).Active();
+                    var periodActive = periodIdleShort.NewAfter().Length(1.secs()).Active();
 
                     // act
                     timeTableSUT.PeriodPassed(periodIdleShort);
@@ -223,7 +223,7 @@ namespace LzTimerTests
                 {
                     // arrange
                     var periodIdle = PeriodBuilder.New(MIDDAY).Length(IDLE_TIMEOUT_SECS.longerThan()).Idle();
-                    var offTime = 1.s();
+                    var offTime = 1.secs();
                     var periodActive = periodIdle.NewAfter(offTime).Active();
 
                     // act
