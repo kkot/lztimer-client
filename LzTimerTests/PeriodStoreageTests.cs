@@ -13,7 +13,7 @@ namespace LzTimerTests
         public void AddedPeriodsShouldBeReaderByAnotherInstance()
         {
             var period1 = START_DATETIME.Length(1.secs()).Active();
-            var period2 = period1.NewAfter(2.secs()).Idle();
+            var period2 = period1.NewPeriodAfter(2.secs()).Idle();
             var expected = new ActivityPeriod[] { period1, period2 };
 
             using (TestablePeriodStorage instance1 = GetStorage())
@@ -38,7 +38,7 @@ namespace LzTimerTests
         public void RemovePeriod()
         {
             var firstPeriod  = START_DATETIME.Length(5.secs()).Active();
-            var secondPeriod = firstPeriod.NewAfter(10.secs()).Idle();
+            var secondPeriod = firstPeriod.NewPeriodAfter(10.secs()).Idle();
 
             ActivityPeriod[] expected;
             using (var periodStorageSUT = GetStorage())
@@ -65,7 +65,7 @@ namespace LzTimerTests
         public void RemovePeriodShouldRemoveOnlyExactMatches()
         {
             var firstPeriod = START_DATETIME.Length(5.secs()).Active();
-            var secondPeriod = firstPeriod.NewAfter(10.secs()).Idle();
+            var secondPeriod = firstPeriod.NewPeriodAfter(10.secs()).Idle();
             var notExactSecond = PeriodBuilder.New(secondPeriod.Start - 1.ms()).WithEnd(secondPeriod.End + 1.ms()).Active();
 
             using (TestablePeriodStorage periodStorageSUT = GetStorage())
@@ -84,8 +84,8 @@ namespace LzTimerTests
         public void GetPeriodsFromTimePeriodShouldReturnPeriodsPartiallyInsideRange()
         {
             var firstPeriod = START_DATETIME.Length(5.secs()).Active();
-            var secondPeriod = firstPeriod.NewAfter(10.secs()).Length(5.secs()).Active();
-            var thirdPeriod = secondPeriod.NewAfter(10.secs()).Length(5.secs()).Active();
+            var secondPeriod = firstPeriod.NewPeriodAfter(10.secs()).Length(5.secs()).Active();
+            var thirdPeriod = secondPeriod.NewPeriodAfter(10.secs()).Length(5.secs()).Active();
 
             var enclosingSearchPeriod = new Period(
                 secondPeriod.Start - 1.secs(),
@@ -131,7 +131,7 @@ namespace LzTimerTests
         public void GetPeriodBeforeShouldReturnPeriodDirectlyBefore()
         {
             var firstPeriod = START_DATETIME.Length(5.secs()).Active();
-            var secondPeriod = firstPeriod.NewAfter().Length(5.secs()).Active();
+            var secondPeriod = firstPeriod.NewPeriodAfter().Length(5.secs()).Active();
 
             using (PeriodStorage periodStorageSUT = GetStorage())
             {
@@ -148,7 +148,7 @@ namespace LzTimerTests
         {
             var TIME_GAP = 1.secs();
             var firstPeriod = START_DATETIME.NewPeriod().Active();
-            var secondPeriod = firstPeriod.NewAfter(TIME_GAP).Active();
+            var secondPeriod = firstPeriod.NewPeriodAfter(TIME_GAP).Active();
 
             using (PeriodStorage periodStorageSUT = GetStorage())
             {
@@ -164,8 +164,8 @@ namespace LzTimerTests
         public void GetPeriodBeforeShouldReturnLatest()
         {
             var firstPeriod = START_DATETIME.NewPeriod().Active();
-            var secondPeriod = firstPeriod.NewAfter().Active();
-            var thirdPeriod = secondPeriod.NewAfter().Active();
+            var secondPeriod = firstPeriod.NewPeriodAfter().Active();
+            var thirdPeriod = secondPeriod.NewPeriodAfter().Active();
 
             using (PeriodStorage periodStorageSUT = GetStorage())
             {
@@ -182,7 +182,7 @@ namespace LzTimerTests
         public void GetPeriodsAfterShouldReturnPeriodsPartiallyAfter()
         {
             var periodBefore = START_DATETIME.Length(5.secs()).Active();
-            var period = periodBefore.NewAfter(10.secs()).Length(5.secs()).Idle();
+            var period = periodBefore.NewPeriodAfter(10.secs()).Length(5.secs()).Idle();
 
             using (PeriodStorage periodStorageSUT = GetStorage())
             {

@@ -91,7 +91,7 @@ namespace LzTimerTests
             return PeriodBuilder.New(dateTime);
         }
 
-        public static PeriodBuilder NewAfter(this ActivityPeriod activityPeriod, TimeSpan gap = default(TimeSpan))
+        public static PeriodBuilder NewPeriodAfter(this ActivityPeriod activityPeriod, TimeSpan gap = default(TimeSpan))
         {
             return PeriodBuilder.NewAfter(activityPeriod, gap);
         }
