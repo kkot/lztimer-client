@@ -11,12 +11,6 @@ namespace LzTimerTests
 
         public static TimeSpan DEFAULT_LENGTH_MS = 1000.ms();
 
-        private PeriodBuilder(ActivityPeriod activityPeriod)
-        {
-            this.Start = activityPeriod.Start;
-            this.End = activityPeriod.End;
-        }
-
         private PeriodBuilder(DateTime start, DateTime end)
         {
             this.Start = start;

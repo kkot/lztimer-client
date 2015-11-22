@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Linq;
 using FakeItEasy;
 using kkot.LzTimer;
@@ -187,7 +186,7 @@ namespace LzTimerTests
                 {
                     base.setUp();
                     listenerActivityListnerMock = A.Fake<UserActivityListner>();
-                    timeTableSUT.registerUserActivityListener(listenerActivityListnerMock);
+                    timeTableSUT.RegisterUserActivityListener(listenerActivityListnerMock);
                 }
 
                 [TestMethod]

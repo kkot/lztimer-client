@@ -48,7 +48,7 @@ namespace kkot.LzTimer
                 return;
             }
 
-            var wasActive = (lastInputTick != probe.GetLastInputTick());
+            var wasActive = lastInputTick != probe.GetLastInputTick();
             log.Debug("period was " + (wasActive ? "active" : "idle"));
             activityPeriodsListener.PeriodPassed(ActivityPeriod.Create(wasActive, now - TimeSpanSinceLastCheck(), now));
             

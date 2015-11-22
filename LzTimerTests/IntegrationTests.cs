@@ -17,7 +17,7 @@ namespace LzTimerTests
         [TestInitializeAttribute]
         public void setUp()
         {
-            policies = new TimeTablePolicies {};
+            policies = new TimeTablePolicies();
             var timeTable = new TimeTable(policies);
             activityChecker = new ActivityChecker(GetLastActivityProbeStub(), GetClockStub());
             activityChecker.SetActivityListner(timeTable);

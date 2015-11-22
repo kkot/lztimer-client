@@ -56,7 +56,7 @@ namespace kkot.LzTimer
             var timeTable = new TimeTable(policies, periodStorage);
             this.activityChecker.SetActivityListner(timeTable);
             this.statsReporter = new StatsReporterImpl(timeTable, policies, new SystemClock());
-            timeTable.registerUserActivityListener(this);
+            timeTable.RegisterUserActivityListener(this);
 
             timer1.Interval = PERIOD_LENGTH_MS;
             timer1.Enabled = true;

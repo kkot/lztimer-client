@@ -93,7 +93,7 @@ namespace kkot.LzTimer
             return false;
         }
 
-        virtual public ActivityPeriod Merge(ActivityPeriod aActivityPeriod)
+        public virtual ActivityPeriod Merge(ActivityPeriod aActivityPeriod)
         {
             var start = Start < aActivityPeriod.Start ? Start : aActivityPeriod.Start;
             var end = End > aActivityPeriod.End ? End : aActivityPeriod.End;

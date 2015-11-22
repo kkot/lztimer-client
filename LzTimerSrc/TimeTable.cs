@@ -139,7 +139,7 @@ namespace kkot.LzTimer
             return periodStorage.GetPeriodsFromTimePeriod(period);
         }
 
-        public void registerUserActivityListener(UserActivityListner listner)
+        public void RegisterUserActivityListener(UserActivityListner listner)
         {
             userActivityListner = listner;
         }
