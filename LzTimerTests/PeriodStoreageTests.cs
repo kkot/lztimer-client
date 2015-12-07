@@ -40,15 +40,12 @@ namespace LzTimerTests
             var firstPeriod  = START_DATETIME.Length(5.secs()).Active();
             var secondPeriod = firstPeriod.NewPeriodAfter(10.secs()).Idle();
 
-            ActivityPeriod[] expected;
             using (var periodStorageSUT = GetStorage())
             {
                 periodStorageSUT.Add(firstPeriod);
                 periodStorageSUT.Add(secondPeriod);
-                expected = new ActivityPeriod[] {secondPeriod};
 
                 periodStorageSUT.Remove(firstPeriod);
-                CollectionAssert.AreEquivalent(expected, periodStorageSUT.GetAll());
             }
 
             if (!IsStoragePersisent())
@@ -57,26 +54,27 @@ namespace LzTimerTests
             WaitForConnectionToDbClosed();
             using (var newInstance = GetStorage())
             {
-                CollectionAssert.AreEquivalent(expected, newInstance.GetAll());
+                CollectionAssert.AreEquivalent(new [] { secondPeriod }, newInstance.GetAll());
             }
         }
 
         [TestMethod]
         public void RemovePeriodShouldRemoveOnlyExactMatches()
         {
-            var firstPeriod = START_DATETIME.Length(5.secs()).Active();
-            var secondPeriod = firstPeriod.NewPeriodAfter(10.secs()).Idle();
-            var notExactSecond = PeriodBuilder.New(secondPeriod.Start - 1.ms()).WithEnd(secondPeriod.End + 1.ms()).Active();
+            var period1 = START_DATETIME.Length(5.secs()).Active();
+            var period2 = period1.NewPeriodAfter().Idle();
+            var notExactOutside2 = PeriodBuilder.New(period2.Start - 1.ms()).WithEnd(period2.End + 1.ms()).Active();
+            var notExactInside2 = PeriodBuilder.New(period2.Start + 1.ms()).WithEnd(period2.End - 1.ms()).Idle();
 
             using (TestablePeriodStorage periodStorageSUT = GetStorage())
             {
-                periodStorageSUT.Add(firstPeriod);
-                periodStorageSUT.Add(secondPeriod);
-                var expected = new ActivityPeriod[] {secondPeriod};
+                periodStorageSUT.Add(period1);
+                periodStorageSUT.Add(period2);
 
-                periodStorageSUT.Remove(firstPeriod);
-                periodStorageSUT.Remove(notExactSecond);
-                CollectionAssert.AreEquivalent(expected, periodStorageSUT.GetAll());
+                periodStorageSUT.Remove(period1);
+                periodStorageSUT.Remove(notExactOutside2);
+                periodStorageSUT.Remove(notExactInside2);
+                CollectionAssert.AreEquivalent(new [] { period2 }, periodStorageSUT.GetAll());
             }
         }
 
