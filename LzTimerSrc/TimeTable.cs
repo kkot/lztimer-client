@@ -105,19 +105,46 @@ namespace kkot.LzTimer
             return new SortedSet<ActivityPeriod>(candidates);
         }
 
-        private ActivityPeriod Merge(ActivityPeriod activityPeriod)
+        private ActivityPeriod FindMergablePeriod(ActivityPeriod period, SortedSet<ActivityPeriod> candidates)
         {
-            foreach (var period in GetMergeCandidates(activityPeriod))
+            if (candidates.Count == 0)
             {
-                if (period.CanBeMerged(activityPeriod, policies.IdleTimeout))
+                return null;
+            }
+            if (period is ActivePeriod)
+            {
+                foreach (var candidatePeriod in candidates)
                 {
-                    var merged = period.Merge(activityPeriod);
-                    log.Debug("merged " + merged);
-                    periodStorage.RemoveFromTimePeriod(merged);
-                    periodStorage.Add(merged);
-                    return merged;
+                    if (candidatePeriod.IsCloseAndSameType(period, policies.IdleTimeout))
+                    {
+                        return candidatePeriod;
+                    }
                 }
             }
+            if (period is IdlePeriod)
+            {
+                var candidatePeriod = candidates.Last();
+                if (candidatePeriod.IsCloseAndSameType(period, policies.IdleTimeout))
+                {
+                    return candidatePeriod;
+                }
+            }
+
+            return null;
+        }
+
+        private ActivityPeriod Merge(ActivityPeriod activityPeriod)
+        {
+            ActivityPeriod mergablePeriod = FindMergablePeriod(activityPeriod, GetMergeCandidates(activityPeriod));
+            if (mergablePeriod != null)
+            {
+                var merged = activityPeriod.Merge(mergablePeriod);
+                log.Debug("merged " + merged);
+                periodStorage.RemoveFromTimePeriod(merged);
+                periodStorage.Add(merged);
+                return merged;
+            }
+
             periodStorage.Add(activityPeriod);
             return activityPeriod;
         }

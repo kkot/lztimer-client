@@ -117,11 +117,11 @@ namespace kkot.LzTimer
                 SQLiteConnection.CreateFile(name);
             }
 
-            conn = new SQLiteConnection(string.Format("Data Source={0};Synchronous=Full;locking_mode=NORMAL", name));
+            conn = new SQLiteConnection(string.Format("Data Source={0};Synchronous=Full", name));
             conn.Open();
             CreateTable();
             CreateIndex();
-            //PragmaExlusiveAccess();
+            PragmaExlusiveAccess();
         }
 
         private void PragmaExlusiveAccess()

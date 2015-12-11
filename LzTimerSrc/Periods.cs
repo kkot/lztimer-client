@@ -75,18 +75,15 @@ namespace kkot.LzTimer
             return new IdlePeriod(start, end);
         }
 
-        public bool CanBeMerged(ActivityPeriod aActivityPeriod, TimeSpan aTimeoutPeriod)
+        public bool IsCloseAndSameType(ActivityPeriod activityPeriod, TimeSpan closenessPeriod)
         {
-            if (GetType() != aActivityPeriod.GetType())
+            if (GetType() != activityPeriod.GetType())
             {
                 return false;
             }
 
-            // 500 ms is little hacky
-            var mergeGap = (aActivityPeriod is ActivePeriod) ? aTimeoutPeriod : TimeSpan.FromMilliseconds(500);
-
-            if (((End - aActivityPeriod.Start).Duration() <= mergeGap) ||
-                ((Start - aActivityPeriod.End).Duration() <= mergeGap))
+            if (((End - activityPeriod.Start).Duration() <= closenessPeriod) ||
+                ((Start - activityPeriod.End).Duration() <= closenessPeriod))
             {
                 return true;
             }
