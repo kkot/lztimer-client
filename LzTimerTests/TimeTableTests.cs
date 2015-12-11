@@ -62,22 +62,6 @@ namespace LzTimerTests
                 }
 
                 [TestMethod]
-                private void twoCloseIdlePeriodShouldBeMerged()
-                {
-                    var period1 = MIDDAY.NewPeriod().Active();
-                    var period2 = period1.NewPeriodAfter().Length(BIGGER_LENGTH).Idle();
-                    var period3 = period2.NewPeriodAfter().Idle();
-
-                    timeTableSUT.AddPeriod(period1);
-                    timeTableSUT.AddPeriod(period2);
-                    timeTableSUT.AddPeriod(period3);
-
-                    var periodMerged = new IdlePeriod(period2.Start, period3.End);
-
-                    CollectionAssert.AreEquivalent(new ActivityPeriod[] { period1, periodMerged }, periodStorage.GetAll());
-                }
-
-                [TestMethod]
                 public void twoDistantActivePeriodShouldNotBeMerged()
                 {
                     var period1 = PeriodBuilder.New(MIDDAY).Active();
@@ -139,6 +123,29 @@ namespace LzTimerTests
 
                     var mergedPeriod = new ActivePeriod(period1a.Start, period3a.End);
                     CollectionAssert.AreEquivalent(periodStorage.GetAll(), new ActivityPeriod[] { period0i, mergedPeriod, period4i });
+                }
+
+                private void twoCloseIdlePeriodShouldBeMerged(TimeSpan periodBetweenIdle)
+                {
+                    var period1 = MIDDAY.NewPeriod().Active();
+                    var period2 = period1.NewPeriodAfter().Length(BIGGER_LENGTH).Idle();
+                    var period3 = period2.NewPeriodAfter(periodBetweenIdle).Idle();
+
+                    timeTableSUT.AddPeriod(period1);
+                    timeTableSUT.AddPeriod(period2);
+                    timeTableSUT.AddPeriod(period3);
+
+                    var periodMerged = new IdlePeriod(period2.Start, period3.End);
+
+                    CollectionAssert.AreEquivalent(new ActivityPeriod[] { period1, periodMerged }, periodStorage.GetAll());
+                }
+
+                [TestMethod]
+                public void twoCloseIdlePeriodShouldBeMerged()
+                {
+                    twoCloseIdlePeriodShouldBeMerged(TimeSpan.Zero);
+                    twoCloseIdlePeriodShouldBeMerged(LESS_THAN_IDLE_TIMEOUT);
+                    //twoCloseIdlePeriodShouldBeMerged(MORE_THAN_IDLE_TIMEOUT);
                 }
 
                 [TestMethod]
