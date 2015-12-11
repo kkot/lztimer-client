@@ -61,10 +61,11 @@ namespace LzTimerTests
                     CollectionAssert.AreEquivalent(new[] { periodMerged }, periodStorage.GetAll());
                 }
 
-                private void twoCloseIdlePeriodShouldBeMerged(TimeSpan emptyGap)
+                [TestMethod]
+                private void twoCloseIdlePeriodShouldBeMerged()
                 {
                     var period1 = MIDDAY.NewPeriod().Active();
-                    var period2 = period1.NewPeriodAfter(emptyGap).Length(BIGGER_LENGTH).Idle();
+                    var period2 = period1.NewPeriodAfter().Length(BIGGER_LENGTH).Idle();
                     var period3 = period2.NewPeriodAfter().Idle();
 
                     timeTableSUT.AddPeriod(period1);
@@ -74,24 +75,6 @@ namespace LzTimerTests
                     var periodMerged = new IdlePeriod(period2.Start, period3.End);
 
                     CollectionAssert.AreEquivalent(new ActivityPeriod[] { period1, periodMerged }, periodStorage.GetAll());
-                }
-
-                [TestMethod]
-                public void twoCloseIdlePeriodAfterActiveShouldBeMerged()
-                {
-                    twoCloseIdlePeriodShouldBeMerged(0.secs());
-                }
-
-                [TestMethod]
-                public void twoCloseIdlePeriodAfterShortNothingShouldBeMerged()
-                {
-                    twoCloseIdlePeriodShouldBeMerged(LESS_THAN_IDLE_TIMEOUT);
-                }
-
-                [TestMethod]
-                public void twoCloseIdlePeriodAfterLongNothingShouldBeMerged()
-                {
-                    twoCloseIdlePeriodShouldBeMerged(MORE_THAN_IDLE_TIMEOUT);
                 }
 
                 [TestMethod]
