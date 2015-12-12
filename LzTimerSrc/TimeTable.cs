@@ -140,8 +140,11 @@ namespace kkot.LzTimer
             {
                 var merged = activityPeriod.Merge(mergablePeriod);
                 log.Debug("merged " + merged);
-                periodStorage.RemoveFromTimePeriod(merged);
-                periodStorage.Add(merged);
+                periodStorage.ExecuteInTransaction(() =>
+                {
+                    periodStorage.RemoveFromTimePeriod(merged);
+                    periodStorage.Add(merged);
+                });
                 return merged;
             }
 

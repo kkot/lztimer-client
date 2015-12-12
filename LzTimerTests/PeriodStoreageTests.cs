@@ -37,7 +37,7 @@ namespace LzTimerTests
         [TestMethod]
         public void RemovePeriod()
         {
-            var firstPeriod  = START_DATETIME.Length(5.secs()).Active();
+            var firstPeriod = START_DATETIME.Length(5.secs()).Active();
             var secondPeriod = firstPeriod.NewPeriodAfter(10.secs()).Idle();
 
             using (var periodStorageSUT = GetStorage())
@@ -54,7 +54,7 @@ namespace LzTimerTests
             WaitForConnectionToDbClosed();
             using (var newInstance = GetStorage())
             {
-                CollectionAssert.AreEquivalent(new [] { secondPeriod }, newInstance.GetAll());
+                CollectionAssert.AreEquivalent(new[] { secondPeriod }, newInstance.GetAll());
             }
         }
 
@@ -74,7 +74,7 @@ namespace LzTimerTests
                 periodStorageSUT.Remove(period1);
                 periodStorageSUT.Remove(notExactOutside2);
                 periodStorageSUT.Remove(notExactInside2);
-                CollectionAssert.AreEquivalent(new [] { period2 }, periodStorageSUT.GetAll());
+                CollectionAssert.AreEquivalent(new[] { period2 }, periodStorageSUT.GetAll());
             }
         }
 
@@ -109,19 +109,19 @@ namespace LzTimerTests
 
                 var found = periodStorageSUT.GetPeriodsFromTimePeriod(
                     enclosingSearchPeriod);
-                CollectionAssert.AreEquivalent(new ActivityPeriod[] {secondPeriod}, found);
+                CollectionAssert.AreEquivalent(new ActivityPeriod[] { secondPeriod }, found);
 
                 found = periodStorageSUT.GetPeriodsFromTimePeriod(
                     enclosingOnlyEndSearchTimePriod);
-                CollectionAssert.AreEquivalent(new ActivityPeriod[] {secondPeriod}, found);
+                CollectionAssert.AreEquivalent(new ActivityPeriod[] { secondPeriod }, found);
 
                 found = periodStorageSUT.GetPeriodsFromTimePeriod(
                     enclosingOnlyStartSearchTimePeriod);
-                CollectionAssert.AreEquivalent(new ActivityPeriod[] {secondPeriod}, found);
+                CollectionAssert.AreEquivalent(new ActivityPeriod[] { secondPeriod }, found);
 
                 found = periodStorageSUT.GetPeriodsFromTimePeriod(
                     notEnclosingSearchTimePeriod);
-                CollectionAssert.AreEquivalent(new ActivityPeriod[] {}, found);
+                CollectionAssert.AreEquivalent(new ActivityPeriod[] { }, found);
             }
         }
 
@@ -203,6 +203,51 @@ namespace LzTimerTests
                 var afterEnd = period.End + 1.secs();
                 found = periodStorageSUT.GetPeriodsAfter(afterEnd);
                 CollectionAssert.AreEquivalent(new ActivityPeriod[] { }, found);
+            }
+        }
+
+        [TestMethod]
+        public void ExecuteInTransactionShouldBeExecuted()
+        {
+            var firstPeriod = START_DATETIME.NewPeriod().Active();
+            var secondPeriod = firstPeriod.NewPeriodAfter().Active();
+
+            using (TestablePeriodStorage periodStorageSUT = GetStorage())
+            {
+                periodStorageSUT.Add(firstPeriod);
+                periodStorageSUT.ExecuteInTransaction(() =>
+                {
+                    periodStorageSUT.Remove(firstPeriod);
+                    periodStorageSUT.Add(secondPeriod);
+                });
+
+                var found = periodStorageSUT.GetAll();
+                CollectionAssert.AreEqual(new ActivityPeriod[] { secondPeriod }, found);
+            }
+        }
+
+        [TestMethod]
+        public void ExecuteInTransactionShouldNotBeExecutedWhenExceptionOccured()
+        {
+            var firstPeriod = START_DATETIME.NewPeriod().Active();
+            var secondPeriod = firstPeriod.NewPeriodAfter().Active();
+
+            using (TestablePeriodStorage periodStorageSUT = GetStorage())
+            {
+                periodStorageSUT.Add(firstPeriod);
+                try
+                {
+                    periodStorageSUT.ExecuteInTransaction(() =>
+                    {
+                        periodStorageSUT.Remove(firstPeriod);
+                        periodStorageSUT.Add(secondPeriod);
+                        throw new ArgumentException();
+                    });
+                }
+                catch (Exception e) { }
+
+                var found = periodStorageSUT.GetAll();
+                CollectionAssert.AreEqual(new ActivityPeriod[] { firstPeriod }, found);
             }
         }
 

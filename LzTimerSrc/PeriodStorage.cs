@@ -22,6 +22,7 @@ namespace kkot.LzTimer
         SortedSet<ActivityPeriod> GetPeriodsAfter(DateTime dateTime);
         ActivityPeriod GetPeriodBefore(DateTime start);
         void Reset();
+        void ExecuteInTransaction(Action executeInTransaction);
     }
 
     public interface TestablePeriodStorage : PeriodStorage
@@ -54,6 +55,7 @@ namespace kkot.LzTimer
         public abstract ActivityPeriod GetPeriodBefore(DateTime start);
         public abstract void Reset();
         public abstract void Dispose();
+        public abstract void ExecuteInTransaction(Action executeInTransaction);
     }
 
     public class MemoryPeriodStorage : AbstractPeriodStorage, TestablePeriodStorage
@@ -101,6 +103,19 @@ namespace kkot.LzTimer
         public override void Dispose()
         {
             periods = null;
+        }
+
+        public override void ExecuteInTransaction(Action executeInTransaction)
+        {
+            var oldPeriods = new SortedSet<ActivityPeriod>(periods);
+            try
+            {
+                executeInTransaction();
+            }
+            catch (Exception e)
+            {
+                periods = oldPeriods;
+            }
         }
     }
 
@@ -269,6 +284,15 @@ namespace kkot.LzTimer
         public override void Reset()
         {
             ExecuteNonQuery("DELETE FROM Periods");
+        }
+
+        public override void ExecuteInTransaction(Action executeInTransaction)
+        {
+            using (var transaction = conn.BeginTransaction())
+            {
+                executeInTransaction();
+                transaction.Commit();
+            }
         }
     }
 }
