@@ -243,8 +243,10 @@ namespace LzTimerTests
                         periodStorageSUT.Add(secondPeriod);
                         throw new ArgumentException();
                     });
+                    Assert.Fail("Exception in action should be propagated");
                 }
-                catch (Exception e) { }
+                catch (Exception e) {
+                }
 
                 var found = periodStorageSUT.GetAll();
                 CollectionAssert.AreEqual(new ActivityPeriod[] { firstPeriod }, found);
