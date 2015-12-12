@@ -26,6 +26,7 @@ namespace kkot.LzTimer
         private TimeTablePolicies policies;
         private PeriodStorage periodStorage;
         private ShortcutsManager shortcutsManager;
+        private HistoryWindow historyWindow;
 
         public MainWindow()
         {
@@ -80,6 +81,21 @@ namespace kkot.LzTimer
             ActivityPeriod currentActivityPeriod = reporter.GetCurrentLogicalPeriod();
             UpdateNotifyIcon(currentActivityPeriod is ActivePeriod, (int)currentActivityPeriod.Length.TotalMinutes);
             UpdateAlldayIcon(reporter.GetTotalActiveToday(DateTime.Now.Date));
+            UpdateHistoryWindow();
+        }
+
+        private void UpdateHistoryWindow()
+        {
+            if (historyWindow == null)
+            {
+                return;
+            }
+            if (historyWindow.IsDisposed)
+            {
+                historyWindow = null;
+                return;
+            }
+            historyWindow.UpdateStats();
         }
 
         private static Brush getCurrentTimeIconColor(int minutes)
@@ -265,7 +281,8 @@ namespace kkot.LzTimer
 
         private void historyButton_Click(object sender, EventArgs e)
         {
-            new HistoryWindow(statsReporter).Show();
+            historyWindow = new HistoryWindow(statsReporter);
+            historyWindow.Show();
         }
     }
 }

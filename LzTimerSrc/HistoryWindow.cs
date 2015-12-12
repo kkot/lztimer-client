@@ -16,11 +16,17 @@ namespace kkot.LzTimer
 
         private void HistoryWindow_Load(object sender, EventArgs e)
         {
+            DisplayPeriodsInTextBox();
+        }
+
+        private void DisplayPeriodsInTextBox()
+        {
+            richTextBox.Clear();
             var periodsFromDay = statsReporter.PeriodsFromDay(DateTime.Now.Date);
             foreach (var activityPeriod in periodsFromDay)
             {
-                var line = activityPeriod.Start.ToString("t") 
-                    + " - " + activityPeriod.End.ToString("t") 
+                var line = activityPeriod.Start.ToString("t")
+                    + " - " + activityPeriod.End.ToString("t")
                     + " length " + activityPeriod.Length.ToString(@"hh\:mm\:ss");
 
                 var color = Color.Green;
@@ -46,6 +52,11 @@ namespace kkot.LzTimer
             box.SelectionColor = color;
             box.AppendText(text);
             box.SelectionColor = box.ForeColor;
+        }
+
+        internal void UpdateStats()
+        {
+            DisplayPeriodsInTextBox();
         }
     }
 }
