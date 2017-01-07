@@ -27,6 +27,7 @@ namespace kkot.LzTimer
         private PeriodStorage periodStorage;
         private ShortcutsManager shortcutsManager;
         private HistoryWindow historyWindow;
+        private HookActivityProbe inputProbe;
 
         public MainWindow()
         {
@@ -51,9 +52,14 @@ namespace kkot.LzTimer
 
             MoveToPosition();
 
-            this.activityChecker = new ActivityChecker(new Win32LastActivityProbe(), new SystemClock());
-            this.policies = new TimeTablePolicies {IdleTimeout = maxIdleMinutes.mins()};
-            periodStorage = new SqlitePeriodStorage("periods.db");            
+            this.inputProbe = new HookActivityProbe();
+            this.activityChecker = new ActivityChecker(inputProbe, new SystemClock());
+            this.policies = new TimeTablePolicies { IdleTimeout = maxIdleMinutes.mins() };
+
+            // for testing
+            //this.policies = new TimeTablePolicies { IdleTimeout = 1.secs() };
+
+            periodStorage = new SqlitePeriodStorage("periods.db");
             var timeTable = new TimeTable(policies, periodStorage);
             this.activityChecker.SetActivityListner(timeTable);
             this.statsReporter = new StatsReporterImpl(timeTable, policies, new SystemClock());
@@ -74,8 +80,8 @@ namespace kkot.LzTimer
         private void UpdateStats(StatsReporter reporter)
         {
             UpdateLabels(
-                (int) reporter.GetTotalActiveToday(DateTime.Now.Date).Round(100.ms()).TotalSeconds, 
-                (int) reporter.GetLastInactiveTimespan().Round(100.ms()).TotalSeconds
+                (int)reporter.GetTotalActiveToday(DateTime.Now.Date).Round(100.ms()).TotalSeconds,
+                (int)reporter.GetLastInactiveTimespan().Round(100.ms()).TotalSeconds
                 );
 
             ActivityPeriod currentActivityPeriod = reporter.GetCurrentLogicalPeriod();
@@ -145,7 +151,7 @@ namespace kkot.LzTimer
             notifyIconAllday.Icon = alldayTimeIcon;
 
             if (prevIcon != null)
-                PInvoke.DestroyIcon(prevIcon.Handle);
+                Win32.DestroyIcon(prevIcon.Handle);
         }
 
         private Icon CreateAlldayIcon(int hours, int minutes)
@@ -156,7 +162,7 @@ namespace kkot.LzTimer
                 g.FillRectangle(Brushes.Wheat, 0, 0, 16, 16);
                 var hoursStr = (hours > 9) ? "X" : "" + hours;
                 g.DrawString(hoursStr, font, Brushes.Black, -1, -3);
-                g.DrawString(""+minutes, fontSmall, Brushes.Red, 3, 6);
+                g.DrawString("" + minutes, fontSmall, Brushes.Red, 3, 6);
             }
             return Icon.FromHandle(bitmap.GetHicon());
         }
@@ -169,14 +175,14 @@ namespace kkot.LzTimer
             notifyIcon1.Icon = !active ? idleIcon : currentTimeIcon;
 
             if (prevIcon != null)
-                PInvoke.DestroyIcon(prevIcon.Handle);
+                Win32.DestroyIcon(prevIcon.Handle);
         }
 
         private void UpdateLabels(int secondsToday, int secondsAfterLastBreak)
         {
-            todayTimeLabel.Text  = Utilities.SecondsToHMS(secondsToday);
+            todayTimeLabel.Text = Utilities.SecondsToHMS(secondsToday);
             lastBreakLabel.Text = Utilities.SecondsToHMS(secondsAfterLastBreak);
-            
+
             string notifyText = "today " + todayTimeLabel.Text
                 + "\n"
                 + "\nb " + lastBreakLabel.Text;
@@ -251,11 +257,13 @@ namespace kkot.LzTimer
         private void intervalTextBox_TextChanged(object sender, EventArgs e)
         {
             string text = intervalTextBox.Text;
-            try {
+            try
+            {
                 Properties.Settings.Default.MaxIdleMinutes = int.Parse(text);
                 Properties.Settings.Default.Save();
             }
-            catch(FormatException) {
+            catch (FormatException)
+            {
                 // ignore
             }
         }
@@ -265,6 +273,7 @@ namespace kkot.LzTimer
             shortcutsManager.UnRegister();
             Properties.Settings.Default.Save();
             periodStorage.Dispose();
+            inputProbe.Dispose();
         }
 
         private void reset_Click(object sender, EventArgs e)

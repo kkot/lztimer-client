@@ -40,7 +40,7 @@ namespace LzTimerTests
             Mock.Arrange(() => clockMock.CurrentTime()).Returns(time);
         }
 
-        private void SetLastInputTick(int tick)
+        private void SetLastInputTick(long tick)
         {
             Mock.Arrange(() => probeMock.GetLastInputTick()).Returns(tick);
         }

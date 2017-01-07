@@ -180,7 +180,7 @@ namespace LzTimerTests
             queue = new Queue<int>(dateTimes);
         }
 
-        public int GetLastInputTick()
+        public long GetLastInputTick()
         {
             return queue.Peek();
         }
@@ -193,14 +193,14 @@ namespace LzTimerTests
 
     public class SimpleLastActivityProbeStub : LastActivityProbe
     {
-        private int currentValue;
+        private long currentValue;
 
-        public int GetLastInputTick()
+        public long GetLastInputTick()
         {
             return currentValue;
         }
 
-        public void SetValue(int value)
+        public void SetValue(long value)
         {
             this.currentValue = value;
         }

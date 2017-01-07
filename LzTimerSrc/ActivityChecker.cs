@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using System.Runtime.InteropServices;
 
 namespace kkot.LzTimer
@@ -24,7 +25,7 @@ namespace kkot.LzTimer
         private readonly Clock clock;
 
         private ActivityPeriodsListener activityPeriodsListener;
-        private int? lastInputTick;
+        private long? lastInputTick;
         private DateTime lastCheckTime;
 
         public ActivityChecker(LastActivityProbe probe, Clock clock)
@@ -51,7 +52,7 @@ namespace kkot.LzTimer
             var wasActive = lastInputTick != probe.GetLastInputTick();
             log.Debug("period was " + (wasActive ? "active" : "idle"));
             activityPeriodsListener.PeriodPassed(ActivityPeriod.Create(wasActive, now - TimeSpanSinceLastCheck(), now));
-            
+
             SaveLastInputTick(now);
         }
 
@@ -70,41 +71,5 @@ namespace kkot.LzTimer
             lastCheckTime = now;
             lastInputTick = probe.GetLastInputTick();
         }
-    }   
-
-    public interface LastActivityProbe
-    {
-        int GetLastInputTick();
-    }
-
-    public class Win32LastActivityProbe : LastActivityProbe
-    {
-        public int GetLastInputTick()
-        {
-            PInvoke.LASTINPUTINFO lastInputInfo = new PInvoke.LASTINPUTINFO();
-            lastInputInfo.cbSize = (uint)Marshal.SizeOf(lastInputInfo);
-            lastInputInfo.dwTime = 0;
-
-            if (PInvoke.GetLastInputInfo(ref lastInputInfo))
-            {
-                return (int)lastInputInfo.dwTime;
-            }
-            throw new Exception();
-        }
-    }
-
-    public static class PInvoke
-    {
-        [DllImport("user32.dll")]
-        public static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);
-
-        public struct LASTINPUTINFO
-        {
-            public uint cbSize;
-            public uint dwTime;
-        }
-
-        [DllImport("user32.dll", CharSet = CharSet.Auto)]
-        public static extern bool DestroyIcon(IntPtr handle);
     }
 }
