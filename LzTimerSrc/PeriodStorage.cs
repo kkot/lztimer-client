@@ -152,6 +152,7 @@ namespace kkot.LzTimer
         private void CreateIndex()
         {
             ExecuteNonQuery("CREATE INDEX IF NOT EXISTS start1 on Periods (start)");
+            ExecuteNonQuery("CREATE INDEX IF NOT EXISTS end1 on Periods (end)");
         }
 
         private void ExecuteNonQuery(string sql)
