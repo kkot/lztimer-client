@@ -2,6 +2,9 @@ using System;
 using System.Windows.Forms;
 using System.Drawing;
 using System.Media;
+using System.Net.Sockets;
+using System.Net;
+using System.Threading.Tasks;
 
 namespace kkot.LzTimer
 {
@@ -28,6 +31,7 @@ namespace kkot.LzTimer
         private ShortcutsManager shortcutsManager;
         private HistoryWindow historyWindow;
         private HookActivityProbe inputProbe;
+        private HttpListener http;
 
         public MainWindow()
         {
@@ -276,11 +280,6 @@ namespace kkot.LzTimer
             inputProbe.Dispose();
         }
 
-        private void reset_Click(object sender, EventArgs e)
-        {
-            periodStorage.Reset();
-        }
-
         public void NotifyActiveAfterBreak(TimeSpan leaveTime)
         {
             log.Debug("Notify after break " + leaveTime);
@@ -288,10 +287,79 @@ namespace kkot.LzTimer
             notifyIcon1.ShowBalloonTip(balloonTimeoutMs, "leave", string.Format("time: {0:%h} h {0:%m} m {0:%s} s", leaveTime), ToolTipIcon.Info);
         }
 
-        private void historyButton_Click(object sender, EventArgs e)
+        private int GetRandomUnusedPort()
         {
-            historyWindow = new HistoryWindow(statsReporter);
-            historyWindow.Show();
+            var listener = new TcpListener(IPAddress.Loopback, 0);
+            listener.Start();
+            var port = ((IPEndPoint)listener.LocalEndpoint).Port;
+            listener.Stop();
+            return port;
+        }
+
+        private async void signInWithGoogle_Click(object sender, EventArgs e)
+        {
+            this.http = new HttpListener();
+            http.Start();
+
+            var redirectURI = string.Format("http://{0}:{1}/", IPAddress.Loopback, GetRandomUnusedPort());
+            http.Prefixes.Add(redirectURI);
+
+            var authorizationEndpoint = "http://localhost:8080/desktop/signin";
+
+            var authorizationRequest = string.Format("{0}?redirect_uri={1}",
+                authorizationEndpoint, System.Uri.EscapeDataString(redirectURI));
+
+            System.Diagnostics.Process.Start(authorizationRequest);
+
+            // Waits for the OAuth authorization response.
+            var context = await http.GetContextAsync();
+
+            // Brings this app back to the foreground.
+            this.Activate();
+
+            // Sends an HTTP response to the browser.
+            var response = context.Response;
+            string responseString = string.Format("<html><head><meta http-equiv='refresh' content='10;url=https://localhost:8080/#ok'></head><body>Please return to the app.</body></html>");
+            var buffer = System.Text.Encoding.UTF8.GetBytes(responseString);
+            response.ContentLength64 = buffer.Length;
+            var responseOutput = response.OutputStream;
+            Task responseTask = responseOutput.WriteAsync(buffer, 0, buffer.Length).ContinueWith((task) =>
+            {
+                responseOutput.Close();
+                http.Stop();
+                Console.WriteLine("HTTP server stopped.");
+            });
+
+            // Checks for errors.
+            if (context.Request.QueryString.Get("error") != null)
+            {
+                output(String.Format("OAuth authorization error: {0}.", context.Request.QueryString.Get("error")));
+                return;
+            }
+            if (context.Request.QueryString.Get("code") == null
+                || context.Request.QueryString.Get("state") == null)
+            {
+                output("Malformed authorization response. " + context.Request.QueryString);
+                return;
+            }
+
+            // extracts the code
+            var code = context.Request.QueryString.Get("code");
+            var incoming_state = context.Request.QueryString.Get("state");
+
+            // Compares the receieved state to the expected value, to ensure that
+            // this app made the request which resulted in authorization.
+            if (incoming_state != state)
+            {
+                output(String.Format("Received request with invalid state ({0})", incoming_state));
+                return;
+            }
+            output("Authorization code: " + code);
+        }
+
+        private void f(object sender, EventArgs e)
+        {
+
         }
     }
 }
