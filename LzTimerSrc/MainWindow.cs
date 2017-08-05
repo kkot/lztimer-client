@@ -296,6 +296,11 @@ namespace kkot.LzTimer
             return port;
         }
 
+        private void output(string message)
+        {
+            Console.WriteLine(message);
+        }
+
         private async void signInWithGoogle_Click(object sender, EventArgs e)
         {
             this.http = new HttpListener();
@@ -336,25 +341,16 @@ namespace kkot.LzTimer
                 output(String.Format("OAuth authorization error: {0}.", context.Request.QueryString.Get("error")));
                 return;
             }
-            if (context.Request.QueryString.Get("code") == null
-                || context.Request.QueryString.Get("state") == null)
+            if (context.Request.QueryString.Get("token") == null)
             {
                 output("Malformed authorization response. " + context.Request.QueryString);
                 return;
             }
 
             // extracts the code
-            var code = context.Request.QueryString.Get("code");
-            var incoming_state = context.Request.QueryString.Get("state");
+            var code = context.Request.QueryString.Get("token");
 
-            // Compares the receieved state to the expected value, to ensure that
-            // this app made the request which resulted in authorization.
-            if (incoming_state != state)
-            {
-                output(String.Format("Received request with invalid state ({0})", incoming_state));
-                return;
-            }
-            output("Authorization code: " + code);
+            output("Token: " + code);
         }
 
         private void f(object sender, EventArgs e)
