@@ -5,6 +5,7 @@ using System.Media;
 using System.Net.Sockets;
 using System.Net;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace kkot.LzTimer
 {
@@ -317,46 +318,48 @@ namespace kkot.LzTimer
 
             System.Diagnostics.Process.Start(authorizationRequest);
 
-            // Waits for the OAuth authorization response.
-            var context = await http.GetContextAsync();
+            while (http.IsListening)
+            {
+                var context = http.GetContext();
+                ProcessContext(context);
+            }
 
             // Brings this app back to the foreground.
             this.Activate();
-
-            // Sends an HTTP response to the browser.
-            var response = context.Response;
-            string responseString = string.Format("ok");
-            var buffer = System.Text.Encoding.UTF8.GetBytes(responseString);
-            response.ContentLength64 = buffer.Length;
-            var responseOutput = response.OutputStream;
-            Task responseTask = responseOutput.WriteAsync(buffer, 0, buffer.Length).ContinueWith((task) =>
-            {
-                responseOutput.Close();
-                http.Stop();
-                Console.WriteLine("HTTP server stopped.");
-            });
-
-            // Checks for errors.
-            if (context.Request.QueryString.Get("error") != null)
-            {
-                output(String.Format("OAuth authorization error: {0}.", context.Request.QueryString.Get("error")));
-                return;
-            }
-            if (context.Request.QueryString.Get("token") == null)
-            {
-                output("Malformed authorization response. " + context.Request.QueryString);
-                return;
-            }
-
-            // extracts the code
-            var code = context.Request.QueryString.Get("token");
-
-            output("Token: " + code);
         }
 
-        private void f(object sender, EventArgs e)
+        private void ProcessContext(HttpListenerContext context)
         {
+            // Sends an HTTP response to the browser.  
+            var response = context.Response;
+            var request = context.Request;
+            response.AppendHeader("Access-Control-Allow-Origin", "*");
 
+            if (request.HttpMethod == "OPTIONS")
+            {
+                response.AddHeader("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With");
+                response.AddHeader("Access-Control-Allow-Methods", "GET, POST");
+                response.AddHeader("Access-Control-Max-Age", "1728000");
+                context.Response.StatusCode = 200;
+                context.Response.OutputStream.Close();
+            }
+            else
+            {
+                // Get the data from the HTTP stream
+                var body = new StreamReader(context.Request.InputStream).ReadToEnd();
+                output("Token: " + body);
+
+                string responseString = string.Format("ok");
+                var buffer = System.Text.Encoding.UTF8.GetBytes(responseString);
+                response.ContentLength64 = buffer.Length;
+                var responseOutput = response.OutputStream;
+                Task responseTask = responseOutput.WriteAsync(buffer, 0, buffer.Length).ContinueWith((task) =>
+                {
+                    responseOutput.Close();
+                    http.Stop();
+                    Console.WriteLine("HTTP server stopped.");
+                });
+            }
         }
     }
 }
