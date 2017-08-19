@@ -76,7 +76,7 @@ namespace kkot.LzTimer
             // intervalTextBox
             // 
             this.intervalTextBox.Location = new System.Drawing.Point(101, 79);
-            this.intervalTextBox.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.intervalTextBox.Margin = new System.Windows.Forms.Padding(4);
             this.intervalTextBox.Name = "intervalTextBox";
             this.intervalTextBox.Size = new System.Drawing.Size(91, 22);
             this.intervalTextBox.TabIndex = 9;
@@ -130,7 +130,7 @@ namespace kkot.LzTimer
             this.signInWithGoogle.TabIndex = 16;
             this.signInWithGoogle.Text = "Sign in with Google";
             this.signInWithGoogle.UseVisualStyleBackColor = true;
-            this.signInWithGoogle.Click += new System.EventHandler(this.f);
+            this.signInWithGoogle.Click += new System.EventHandler(this.signInWithGoogle_Click);
             // 
             // MainWindow
             // 
@@ -145,7 +145,7 @@ namespace kkot.LzTimer
             this.Controls.Add(this.todayTimeLabel);
             this.Controls.Add(this.label2);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
-            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.Margin = new System.Windows.Forms.Padding(4);
             this.Name = "MainWindow";
             this.Text = "LzTimer";
             this.TopMost = true;

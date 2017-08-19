@@ -306,13 +306,14 @@ namespace kkot.LzTimer
             this.http = new HttpListener();
             http.Start();
 
-            var redirectURI = string.Format("http://{0}:{1}/", IPAddress.Loopback, GetRandomUnusedPort());
+            var port = GetRandomUnusedPort();
+            var redirectURI = string.Format("http://{0}:{1}/", IPAddress.Loopback, port);
             http.Prefixes.Add(redirectURI);
 
-            var authorizationEndpoint = "http://localhost:8080/desktop/signin";
+            var authorizationEndpoint = "http://localhost:8080/signin/desktop/google";
 
-            var authorizationRequest = string.Format("{0}?redirect_uri={1}",
-                authorizationEndpoint, System.Uri.EscapeDataString(redirectURI));
+            var authorizationRequest = string.Format("{0}?redirect_uri={1}&port={2}",
+                authorizationEndpoint, System.Uri.EscapeDataString(redirectURI), port);
 
             System.Diagnostics.Process.Start(authorizationRequest);
 
@@ -324,7 +325,7 @@ namespace kkot.LzTimer
 
             // Sends an HTTP response to the browser.
             var response = context.Response;
-            string responseString = string.Format("<html><head><meta http-equiv='refresh' content='10;url=https://localhost:8080/#ok'></head><body>Please return to the app.</body></html>");
+            string responseString = string.Format("ok");
             var buffer = System.Text.Encoding.UTF8.GetBytes(responseString);
             response.ContentLength64 = buffer.Length;
             var responseOutput = response.OutputStream;
