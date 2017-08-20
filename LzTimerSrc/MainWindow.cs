@@ -32,7 +32,9 @@ namespace kkot.LzTimer
         private ShortcutsManager shortcutsManager;
         private HistoryWindow historyWindow;
         private HookActivityProbe inputProbe;
-        private HttpListener http;
+
+        private HttpListener httpListener;
+        private string authorizationRequestUrl;
 
         public MainWindow()
         {
@@ -304,32 +306,31 @@ namespace kkot.LzTimer
 
         private async void signInWithGoogle_Click(object sender, EventArgs e)
         {
-            this.http = new HttpListener();
-            http.Start();
-
-            var port = GetRandomUnusedPort();
-            var redirectURI = string.Format("http://{0}:{1}/", IPAddress.Loopback, port);
-            http.Prefixes.Add(redirectURI);
-
-            var authorizationEndpoint = "http://localhost:8080/signin/desktop/google";
-
-            var authorizationRequest = string.Format("{0}?redirect_uri={1}&port={2}",
-                authorizationEndpoint, System.Uri.EscapeDataString(redirectURI), port);
-
-            System.Diagnostics.Process.Start(authorizationRequest);
-
-            while (http.IsListening)
+            if (this.httpListener == null)
             {
-                var context = http.GetContext();
-                ProcessContext(context);
+                var port = GetRandomUnusedPort();
+                var redirectURI = string.Format("http://{0}:{1}/", IPAddress.Loopback, port);
+
+                this.httpListener = new HttpListener();
+                log.Info("Registering redirect URI " + redirectURI);
+                httpListener.Prefixes.Add(redirectURI);
+                httpListener.Start();
+
+                var authorizationEndpoint = "http://localhost:8080/signin/desktop/google";
+                this.authorizationRequestUrl = string.Format("{0}?redirect_uri={1}&port={2}",
+                    authorizationEndpoint, System.Uri.EscapeDataString(redirectURI), port);
+
+                httpListener.BeginGetContext(ProcessContext, httpListener);
             }
 
-            // Brings this app back to the foreground.
-            this.Activate();
+            log.Info("Opening browser " + authorizationRequestUrl);
+            System.Diagnostics.Process.Start(authorizationRequestUrl);
         }
 
-        private void ProcessContext(HttpListenerContext context)
+        private void ProcessContext(IAsyncResult result)
         {
+            HttpListener listener = (HttpListener) result.AsyncState;
+            var context = listener.EndGetContext(result);
             // Sends an HTTP response to the browser.  
             var response = context.Response;
             var request = context.Request;
@@ -337,6 +338,7 @@ namespace kkot.LzTimer
 
             if (request.HttpMethod == "OPTIONS")
             {
+                log.Info("Options request received");
                 response.AddHeader("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With");
                 response.AddHeader("Access-Control-Allow-Methods", "GET, POST");
                 response.AddHeader("Access-Control-Max-Age", "1728000");
@@ -345,6 +347,12 @@ namespace kkot.LzTimer
             }
             else
             {
+                // TODO: check if POST
+                log.Info("Post request received");
+
+                // Brings this app back to the foreground.
+                this.Activate();
+
                 // Get the data from the HTTP stream
                 var body = new StreamReader(context.Request.InputStream).ReadToEnd();
                 output("Token: " + body);
@@ -353,12 +361,11 @@ namespace kkot.LzTimer
                 var buffer = System.Text.Encoding.UTF8.GetBytes(responseString);
                 response.ContentLength64 = buffer.Length;
                 var responseOutput = response.OutputStream;
-                Task responseTask = responseOutput.WriteAsync(buffer, 0, buffer.Length).ContinueWith((task) =>
-                {
-                    responseOutput.Close();
-                    http.Stop();
-                    Console.WriteLine("HTTP server stopped.");
-                });
+                responseOutput.Write(buffer, 0, buffer.Length);
+                responseOutput.Close();
+                this.httpListener.Stop();
+                this.httpListener = null;
+                Console.WriteLine("HTTP server stopped.");
             }
         }
     }
