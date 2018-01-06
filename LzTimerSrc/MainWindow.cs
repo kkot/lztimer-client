@@ -6,6 +6,8 @@ using System.Net.Sockets;
 using System.Net;
 using System.Threading.Tasks;
 using System.IO;
+using Newtonsoft.Json;
+using Microsoft.CSharp;
 
 namespace kkot.LzTimer
 {
@@ -299,11 +301,6 @@ namespace kkot.LzTimer
             return port;
         }
 
-        private void output(string message)
-        {
-            Console.WriteLine(message);
-        }
-
         private async void signInWithGoogle_Click(object sender, EventArgs e)
         {
             if (this.httpListener == null)
@@ -344,6 +341,7 @@ namespace kkot.LzTimer
                 response.AddHeader("Access-Control-Max-Age", "1728000");
                 context.Response.StatusCode = 200;
                 context.Response.OutputStream.Close();
+                httpListener.BeginGetContext(ProcessContext, httpListener);
             }
             else
             {
@@ -351,11 +349,14 @@ namespace kkot.LzTimer
                 log.Info("Post request received");
 
                 // Brings this app back to the foreground.
-                this.Activate();
+                this.Invoke(new Action(() => this.Activate()));
 
                 // Get the data from the HTTP stream
                 var body = new StreamReader(context.Request.InputStream).ReadToEnd();
-                output("Token: " + body);
+                log.Info("TokenJson: " + body);
+                dynamic tokenJson = JsonConvert.DeserializeObject(body);
+                string token = tokenJson.token;
+                log.Info("Token: " + token);
 
                 string responseString = string.Format("ok");
                 var buffer = System.Text.Encoding.UTF8.GetBytes(responseString);
