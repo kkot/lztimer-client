@@ -11,9 +11,9 @@ using Microsoft.CSharp;
 
 namespace kkot.LzTimer
 {
-    public partial class MainWindow : Form, UserActivityListner
+    public partial class MainWindow : Form, UserActivityListner, WindowActivator
     {
-        private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         private readonly Font font = new Font(FontFamily.GenericMonospace, 11, GraphicsUnit.Pixel);
         private readonly Font fontSmall = new Font(FontFamily.GenericMonospace, 9, GraphicsUnit.Pixel);
@@ -34,9 +34,8 @@ namespace kkot.LzTimer
         private ShortcutsManager shortcutsManager;
         private HistoryWindow historyWindow;
         private HookActivityProbe inputProbe;
-
-        private HttpListener httpListener;
-        private string authorizationRequestUrl;
+        private TokenReceiver tokenReceiver;
+        private DataSender dataSender;
 
         public MainWindow()
         {
@@ -45,7 +44,7 @@ namespace kkot.LzTimer
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            log.Info("Form load");
+            Log.Info("Form load");
             idleIcon = CreateIdleIcon();
             UpdateNotifyIcon(false, 0);
 
@@ -73,6 +72,9 @@ namespace kkot.LzTimer
             this.activityChecker.SetActivityListner(timeTable);
             this.statsReporter = new StatsReporterImpl(timeTable, policies, new SystemClock());
             timeTable.RegisterUserActivityListener(this);
+            this.tokenReceiver = new TokenReceiver(this);
+            this.dataSender = new DataSender(tokenReceiver);
+            timeTable.RegisterTimeTableUpdateListener(dataSender);
 
             timer1.Interval = PERIOD_LENGTH_MS;
             timer1.Enabled = true;
@@ -113,7 +115,7 @@ namespace kkot.LzTimer
             historyWindow.UpdateStats();
         }
 
-        private static Brush getCurrentTimeIconColor(int minutes)
+        private static Brush GetCurrentTimeIconColor(int minutes)
         {
             if (minutes < TIME_LIMIT_NORMAL)
             {
@@ -134,7 +136,7 @@ namespace kkot.LzTimer
             var bitmap = new Bitmap(16, 16);
             using (var g = Graphics.FromImage(bitmap))
             {
-                g.FillEllipse(getCurrentTimeIconColor(minutes), 0, 0, 16, 16);
+                g.FillEllipse(GetCurrentTimeIconColor(minutes), 0, 0, 16, 16);
                 g.DrawString(minutes.ToString(), font, Brushes.White, 0, 1);
             }
             return Icon.FromHandle(bitmap.GetHicon());
@@ -192,7 +194,7 @@ namespace kkot.LzTimer
             todayTimeLabel.Text = Utilities.SecondsToHMS(secondsToday);
             lastBreakLabel.Text = Utilities.SecondsToHMS(secondsAfterLastBreak);
 
-            string notifyText = "today " + todayTimeLabel.Text
+            var notifyText = "today " + todayTimeLabel.Text
                 + "\n"
                 + "\nb " + lastBreakLabel.Text;
 
@@ -208,9 +210,9 @@ namespace kkot.LzTimer
             }
         }
 
-        internal void toggleVisible()
+        internal void ToggleVisible()
         {
-            log.Info("WindowState " + WindowState);
+            Log.Info("WindowState " + WindowState);
             if (WindowState == FormWindowState.Minimized)
             {
                 Show();
@@ -228,23 +230,20 @@ namespace kkot.LzTimer
         {
             if (e.Button == MouseButtons.Left)
             {
-                toggleVisible();
+                ToggleVisible();
             }
         }
 
         protected override void WndProc(ref Message m)
         {
             base.WndProc(ref m);
-            if (shortcutsManager != null)
-            {
-                shortcutsManager.ProcessMessage(ref m);
-            }
+            shortcutsManager?.ProcessMessage(ref m);
         }
 
         private void MoveToPosition()
         {
-            log.Debug("Height " + Height);
-            log.Debug("ClientSize.Height " + ClientSize.Height);
+            Log.Debug("Height " + Height);
+            Log.Debug("ClientSize.Height " + ClientSize.Height);
 
             if (ClientSize.Height <= 0)
             {
@@ -287,87 +286,20 @@ namespace kkot.LzTimer
 
         public void NotifyActiveAfterBreak(TimeSpan leaveTime)
         {
-            log.Debug("Notify after break " + leaveTime);
+            Log.Debug("Notify after break " + leaveTime);
             const int balloonTimeoutMs = 10000;
             notifyIcon1.ShowBalloonTip(balloonTimeoutMs, "leave", string.Format("time: {0:%h} h {0:%m} m {0:%s} s", leaveTime), ToolTipIcon.Info);
         }
 
-        private int GetRandomUnusedPort()
-        {
-            var listener = new TcpListener(IPAddress.Loopback, 0);
-            listener.Start();
-            var port = ((IPEndPoint)listener.LocalEndpoint).Port;
-            listener.Stop();
-            return port;
-        }
-
         private async void signInWithGoogle_Click(object sender, EventArgs e)
         {
-            if (this.httpListener == null)
-            {
-                var port = GetRandomUnusedPort();
-                var redirectURI = string.Format("http://{0}:{1}/", IPAddress.Loopback, port);
-
-                this.httpListener = new HttpListener();
-                log.Info("Registering redirect URI " + redirectURI);
-                httpListener.Prefixes.Add(redirectURI);
-                httpListener.Start();
-
-                var authorizationEndpoint = "http://localhost:8080/signin/desktop/google";
-                this.authorizationRequestUrl = string.Format("{0}?redirect_uri={1}&port={2}",
-                    authorizationEndpoint, System.Uri.EscapeDataString(redirectURI), port);
-
-                httpListener.BeginGetContext(ProcessContext, httpListener);
-            }
-
-            log.Info("Opening browser " + authorizationRequestUrl);
-            System.Diagnostics.Process.Start(authorizationRequestUrl);
+            Log.Info("SignInWithGoogle clicked");
+            tokenReceiver.LogInWithGoogle();
         }
 
-        private void ProcessContext(IAsyncResult result)
+        public void ActivateInUiThread()
         {
-            HttpListener listener = (HttpListener) result.AsyncState;
-            var context = listener.EndGetContext(result);
-            // Sends an HTTP response to the browser.  
-            var response = context.Response;
-            var request = context.Request;
-            response.AppendHeader("Access-Control-Allow-Origin", "*");
-
-            if (request.HttpMethod == "OPTIONS")
-            {
-                log.Info("Options request received");
-                response.AddHeader("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With");
-                response.AddHeader("Access-Control-Allow-Methods", "GET, POST");
-                response.AddHeader("Access-Control-Max-Age", "1728000");
-                context.Response.StatusCode = 200;
-                context.Response.OutputStream.Close();
-                httpListener.BeginGetContext(ProcessContext, httpListener);
-            }
-            else
-            {
-                // TODO: check if POST
-                log.Info("Post request received");
-
-                // Brings this app back to the foreground.
-                this.Invoke(new Action(() => this.Activate()));
-
-                // Get the data from the HTTP stream
-                var body = new StreamReader(context.Request.InputStream).ReadToEnd();
-                log.Info("TokenJson: " + body);
-                dynamic tokenJson = JsonConvert.DeserializeObject(body);
-                string token = tokenJson.token;
-                log.Info("Token: " + token);
-
-                string responseString = string.Format("ok");
-                var buffer = System.Text.Encoding.UTF8.GetBytes(responseString);
-                response.ContentLength64 = buffer.Length;
-                var responseOutput = response.OutputStream;
-                responseOutput.Write(buffer, 0, buffer.Length);
-                responseOutput.Close();
-                this.httpListener.Stop();
-                this.httpListener = null;
-                Console.WriteLine("HTTP server stopped.");
-            }
+            this.Invoke(new Action(this.Activate));
         }
     }
 }

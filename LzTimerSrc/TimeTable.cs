@@ -9,6 +9,11 @@ namespace kkot.LzTimer
         void PeriodPassed(ActivityPeriod activityPeriod);
     }
 
+    public interface TimeTableUpdateListener
+    {
+        void Updated();
+    }
+
     public interface PeriodsInfoProvider
     {
         SortedSet<ActivityPeriod> GetPeriodsAfter(DateTime dateTime);
@@ -32,6 +37,7 @@ namespace kkot.LzTimer
         private readonly PeriodStorage periodStorage;
         private readonly TimeTablePolicies policies;
         private UserActivityListner userActivityListner;
+        private TimeTableUpdateListener timeTableUpdateListener;
 
         public TimeTable(TimeTablePolicies policies) : this(
             policies,
@@ -51,6 +57,7 @@ namespace kkot.LzTimer
             var mergedPeriod = Merge(activityPeriod);
 
             NotifyUserActivityListener(activityPeriod, mergedPeriod);
+            timeTableUpdateListener.Updated();
             return mergedPeriod;
         }
 
@@ -170,6 +177,11 @@ namespace kkot.LzTimer
         public void RegisterUserActivityListener(UserActivityListner listner)
         {
             userActivityListner = listner;
+        }
+
+        public void RegisterTimeTableUpdateListener(TimeTableUpdateListener timeTableUpdateListener)
+        {
+            this.timeTableUpdateListener = timeTableUpdateListener;
         }
     }
 }

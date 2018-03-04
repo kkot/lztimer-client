@@ -45,7 +45,7 @@
     <WarningLevel>0</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
     <PlatformTarget>AnyCPU</PlatformTarget>
-    <LangVersion>5</LangVersion>
+    <LangVersion>6</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -55,6 +55,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
+    <LangVersion>6</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <DebugSymbols>true</DebugSymbols>
@@ -63,7 +64,7 @@
     <WarningLevel>0</WarningLevel>
     <DebugType>full</DebugType>
     <PlatformTarget>x86</PlatformTarget>
-    <LangVersion>5</LangVersion>
+    <LangVersion>default</LangVersion>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
@@ -118,6 +119,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DataSender.cs" />
     <Compile Include="HistoryWindow.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -130,6 +132,7 @@
     <Compile Include="StatsReporter.cs" />
     <Compile Include="TimeTable.cs" />
     <Compile Include="FullscreenDetector.cs" />
+    <Compile Include="TokenReceiver.cs" />
     <Compile Include="Utilities.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="ShortcutsManager.cs" />
