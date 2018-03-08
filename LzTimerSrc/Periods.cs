@@ -57,7 +57,7 @@ namespace kkot.LzTimer
         }
     }
 
-    public class ActivityPeriod : Period
+    public abstract class ActivityPeriod : Period
     {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
@@ -90,12 +90,14 @@ namespace kkot.LzTimer
             return false;
         }
 
-        public virtual ActivityPeriod Merge(ActivityPeriod aActivityPeriod)
+        protected virtual Period MergePeriod(Period aActivityPeriod)
         {
             var start = Start < aActivityPeriod.Start ? Start : aActivityPeriod.Start;
             var end = End > aActivityPeriod.End ? End : aActivityPeriod.End;
-            return new ActivityPeriod(start, end);
+            return new Period(start, end);
         }
+
+        public abstract ActivityPeriod Merge(ActivityPeriod activityPeriod);
 
         public bool Overlap(ActivityPeriod other)
         {
@@ -115,6 +117,8 @@ namespace kkot.LzTimer
             return Start.Equals(period.Start) && End.Equals(period.End);
         }
 
+        public abstract bool IsActive();
+
         public override string ToString()
         {
             string lengthStr = FormatLength();
@@ -129,8 +133,13 @@ namespace kkot.LzTimer
 
         public override ActivityPeriod Merge(ActivityPeriod activityPeriod)
         {
-            ActivityPeriod merged = base.Merge(activityPeriod);
+            Period merged = MergePeriod(activityPeriod);
             return new ActivePeriod(merged.Start, merged.End);
+        }
+
+        public override bool IsActive()
+        {
+            return true;
         }
     }
 
@@ -141,8 +150,13 @@ namespace kkot.LzTimer
 
         public override ActivityPeriod Merge(ActivityPeriod activityPeriod)
         {
-            ActivityPeriod merged = base.Merge(activityPeriod);
+            Period merged = MergePeriod(activityPeriod);
             return new IdlePeriod(merged.Start, merged.End);
+        }
+
+        public override bool IsActive()
+        {
+            return false;
         }
     }
 }

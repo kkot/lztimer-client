@@ -33,7 +33,7 @@ namespace kkot.LzTimer
 
         public String Token { get; private set; }
 
-        private WindowActivator windowActivator;
+        private readonly WindowActivator windowActivator;
 
         public TokenReceiver(WindowActivator windowActivator)
         {
@@ -45,16 +45,16 @@ namespace kkot.LzTimer
             if (this.httpListener == null)
             {
                 var port = GetRandomUnusedPort();
-                var redirectURI = string.Format("http://{0}:{1}/", IPAddress.Loopback, port);
+                var redirectUri = string.Format("http://{0}:{1}/", IPAddress.Loopback, port);
 
                 this.httpListener = new HttpListener();
-                log.Info("Registering redirect URI " + redirectURI);
-                httpListener.Prefixes.Add(redirectURI);
+                log.Info("Registering redirect URI " + redirectUri);
+                httpListener.Prefixes.Add(redirectUri);
                 httpListener.Start();
 
                 var authorizationEndpoint = "http://localhost:8080/desktop/log_in";
                 this.authorizationRequestUrl = string.Format("{0}?redirect_uri={1}&port={2}",
-                    authorizationEndpoint, System.Uri.EscapeDataString(redirectURI), port);
+                    authorizationEndpoint, System.Uri.EscapeDataString(redirectUri), port);
 
                 log.Info("Beginning listening for requests");
                 httpListener.BeginGetContext(ProcessContext, httpListener);
@@ -62,7 +62,11 @@ namespace kkot.LzTimer
 
             log.Info("Opening browser " + authorizationRequestUrl);
             System.Diagnostics.Process.Start(authorizationRequestUrl);
+        }
 
+        public void InvalidateToken()
+        {
+            Token = null;
         }
 
         private int GetRandomUnusedPort()
