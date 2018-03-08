@@ -52,7 +52,7 @@ namespace kkot.LzTimer
             {
                 if ((int)m.WParam == (int)Keys.A)
                 {
-                    form.toggleVisible();
+                    form.ToggleVisible();
                 }
             }
         }

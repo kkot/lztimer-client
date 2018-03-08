@@ -57,7 +57,8 @@ namespace kkot.LzTimer
             var mergedPeriod = Merge(activityPeriod);
 
             NotifyUserActivityListener(activityPeriod, mergedPeriod);
-            timeTableUpdateListener.Updated();
+            timeTableUpdateListener?.Updated();
+
             return mergedPeriod;
         }
 
