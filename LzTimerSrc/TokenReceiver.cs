@@ -1,20 +1,8 @@
-﻿using Microsoft.CSharp;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using System;
-using System;
-using System.Collections.Generic;
-using System.Drawing;
 using System.IO;
-using System.Linq;
-using System.Media;
-using System.Net;
 using System.Net;
 using System.Net.Sockets;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace kkot.LzTimer
 {
@@ -31,7 +19,7 @@ namespace kkot.LzTimer
 
         private HttpListener httpListener;
 
-        public String Token { get; private set; }
+        public string Token { get; private set; }
 
         private readonly WindowActivator windowActivator;
 

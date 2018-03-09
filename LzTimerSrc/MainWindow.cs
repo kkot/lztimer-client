@@ -2,12 +2,6 @@ using System;
 using System.Windows.Forms;
 using System.Drawing;
 using System.Media;
-using System.Net.Sockets;
-using System.Net;
-using System.Threading.Tasks;
-using System.IO;
-using Newtonsoft.Json;
-using Microsoft.CSharp;
 
 namespace kkot.LzTimer
 {
