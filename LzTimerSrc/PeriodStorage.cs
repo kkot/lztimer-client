@@ -132,10 +132,11 @@ namespace kkot.LzTimer
                 SQLiteConnection.CreateFile(name);
             }
 
-            conn = new SQLiteConnection(string.Format("Data Source={0};Synchronous=Full", name));
+            conn = new SQLiteConnection($"Data Source={name};Synchronous=Full");
             conn.Open();
             CreateTable();
             CreateIndex();
+            AddColumnSent();
             PragmaExlusiveAccess();
         }
 
@@ -153,6 +154,18 @@ namespace kkot.LzTimer
         {
             ExecuteNonQuery("CREATE INDEX IF NOT EXISTS start1 on Periods (start)");
             ExecuteNonQuery("CREATE INDEX IF NOT EXISTS end1 on Periods (end)");
+        }
+
+        private void AddColumnSent()
+        {
+            try
+            {
+                ExecuteNonQuery("ALTER TABLE Periods ADD COLUMN sent INTEGER default 0");
+            }
+            catch (SQLiteException e)
+            {
+
+            }
         }
 
         private void ExecuteNonQuery(string sql)
