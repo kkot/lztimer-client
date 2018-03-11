@@ -43,10 +43,8 @@ namespace kkot.LzTimer
             UpdateNotifyIcon(false, 0);
 
             // loading configuration
-            int maxIdleMinutes = int.Parse(Properties.Settings.Default.MaxIdleMinutes.ToString());
+            var maxIdleMinutes = int.Parse(Properties.Settings.Default.MaxIdleMinutes.ToString());
             intervalTextBox.Text = maxIdleMinutes.ToString();
-
-            soundPlayer = new SoundPlayer();
 
             // register shotcuts keys
             shortcutsManager = new ShortcutsManager(this);
@@ -54,20 +52,22 @@ namespace kkot.LzTimer
 
             MoveToPosition();
 
-            this.inputProbe = new HookActivityProbe();
-            this.activityChecker = new ActivityChecker(inputProbe, new SystemClock());
-            this.policies = new TimeTablePolicies { IdleTimeout = maxIdleMinutes.mins() };
-
             // for testing
             //this.policies = new TimeTablePolicies { IdleTimeout = 1.secs() };
 
+            soundPlayer = new SoundPlayer();
+
+            inputProbe = new HookActivityProbe();
+            activityChecker = new ActivityChecker(inputProbe, new SystemClock());
+            policies = new TimeTablePolicies { IdleTimeout = maxIdleMinutes.mins() };
+
             periodStorage = new SqlitePeriodStorage("periods.db");
             var timeTable = new TimeTable(policies, periodStorage);
-            this.activityChecker.SetActivityListner(timeTable);
-            this.statsReporter = new StatsReporterImpl(timeTable, policies, new SystemClock());
+            activityChecker.SetActivityListner(timeTable);
+            statsReporter = new StatsReporterImpl(timeTable, policies, new SystemClock());
             timeTable.RegisterUserActivityListener(this);
-            this.tokenReceiver = new TokenReceiver(this);
-            this.dataSender = new DataSender(tokenReceiver);
+            tokenReceiver = new TokenReceiver(this);
+            dataSender = new DataSender(tokenReceiver, periodStorage);
             timeTable.RegisterTimeTableUpdateListener(dataSender);
 
             timer1.Interval = PERIOD_LENGTH_MS;
@@ -293,7 +293,7 @@ namespace kkot.LzTimer
 
         public void ActivateInUiThread()
         {
-            this.Invoke(new Action(this.Activate));
+            Invoke(new Action(Activate));
         }
     }
 }

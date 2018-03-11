@@ -11,7 +11,6 @@ namespace kkot.LzTimer
         void Add(ActivityPeriod activityPeriod);
         void Remove(ActivityPeriod activityPeriod);
 
-
         /// <summary>
         /// Removes periods fully inside <paramref name="period"/>.
         /// </summary>
@@ -21,6 +20,9 @@ namespace kkot.LzTimer
         SortedSet<ActivityPeriod> GetPeriodsFromTimePeriod(Period searchedPeriod);
         SortedSet<ActivityPeriod> GetPeriodsAfter(DateTime dateTime);
         ActivityPeriod GetPeriodBefore(DateTime start);
+        SortedSet<ActivityPeriod> GetNotSent(int limit);
+        int UpdateAsSent(Period periodSent);
+
         void Reset();
         void ExecuteInTransaction(Action executeInTransaction);
     }
@@ -53,6 +55,9 @@ namespace kkot.LzTimer
         public abstract SortedSet<ActivityPeriod> GetPeriodsFromTimePeriod(Period searchedPeriod);
         public abstract SortedSet<ActivityPeriod> GetPeriodsAfter(DateTime dateTime);
         public abstract ActivityPeriod GetPeriodBefore(DateTime start);
+        public abstract SortedSet<ActivityPeriod> GetNotSent(int maxNumber);
+        public abstract int UpdateAsSent(Period periodSent);
+
         public abstract void Reset();
         public abstract void Dispose();
         public abstract void ExecuteInTransaction(Action executeInTransaction);
@@ -61,6 +66,7 @@ namespace kkot.LzTimer
     public class MemoryPeriodStorage : AbstractPeriodStorage, TestablePeriodStorage
     {
         private SortedSet<ActivityPeriod> periods = new SortedSet<ActivityPeriod>();
+        private SortedSet<ActivityPeriod> notSentPeriods = new SortedSet<ActivityPeriod>();
 
         public override void Add(ActivityPeriod activityPeriod)
         {
@@ -70,6 +76,7 @@ namespace kkot.LzTimer
         public override void Remove(ActivityPeriod activityPeriod)
         {
             periods.Remove(activityPeriod);
+            notSentPeriods.Remove(activityPeriod);
         }
 
         public SortedSet<ActivityPeriod> GetAll()
@@ -95,14 +102,32 @@ namespace kkot.LzTimer
             return periods.Where(p => p.End <= start).OrderBy(period => period.Start).LastOrDefault();
         }
 
+        public override SortedSet<ActivityPeriod> GetNotSent(int maxNumber)
+        {
+            return new SortedSet<ActivityPeriod>(notSentPeriods.Take(maxNumber));
+        }
+
+        public override int UpdateAsSent(Period periodSent)
+        {
+            var updated = 0;
+            foreach (var activityPeriod in GetPeriodsFromTimePeriod(periodSent))
+            {
+                notSentPeriods.Remove(activityPeriod);
+                updated++;
+            }
+            return updated;
+        }
+
         public override void Reset()
         {
             periods.Clear();
+            notSentPeriods.Clear();
         }
 
         public override void Dispose()
         {
             periods = null;
+            notSentPeriods = null;
         }
 
         public override void ExecuteInTransaction(Action executeInTransaction)
@@ -288,6 +313,33 @@ namespace kkot.LzTimer
             };
             var result = SelectActivityPeriods(sql, parameters);
             return result.FirstOrDefault();
+        }
+
+        public override SortedSet<ActivityPeriod> GetNotSent(int maxNumber)
+        {
+            var sql = "SELECT start, end, type " +
+                "FROM Periods " +
+                "WHERE sent = 0 ORDER BY start ASC " +
+                "LIMIT :limit";
+            var parameters = new Dictionary<string, object>
+            {
+                {"limit", maxNumber}
+            };
+            return SelectActivityPeriods(sql, parameters);
+        }
+
+        public override int UpdateAsSent(Period periodSent)
+        {
+            log.Debug("update as sent " + periodSent);
+            using (var command = conn.CreateCommand())
+            {
+                command.CommandText = "UPDATE Periods SET sent = 1 WHERE start >= :start AND end <= :end";
+                command.Parameters.AddWithValue("start", periodSent.Start);
+                command.Parameters.AddWithValue("end", periodSent.End);
+                var rowsAffected = command.ExecuteNonQuery();
+                log.Debug("rows affected " + rowsAffected);
+                return rowsAffected;
+            }
         }
 
         public override void Dispose()
