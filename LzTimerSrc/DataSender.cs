@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading;
-using log4net.Config;
 using Newtonsoft.Json;
 
 namespace kkot.LzTimer
@@ -35,6 +33,10 @@ namespace kkot.LzTimer
     {
         private static readonly log4net.ILog Log =
             log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
+        private readonly TimeSpan sentInterval = TimeSpan.FromSeconds(10);
+
+        private DateTime lastSentDateTime = DateTime.MinValue;
 
         private readonly HttpClient client;
 
@@ -66,6 +68,13 @@ namespace kkot.LzTimer
         {
             if (tokenReceiver.Token == null)
             {
+                return;
+            }
+
+            var now = DateTime.Now;
+            if ((now - lastSentDateTime) < sentInterval)
+            {
+                Log.Debug($"Not sending because it was sent recently, now {now} lastSent {lastSentDateTime}");
                 return;
             }
 
@@ -104,6 +113,7 @@ namespace kkot.LzTimer
                         // todo: I must update inside transaction, otherwise update is not consistent with read
                         throw new Exception("Wrong number of updated periods");
                     }
+                    lastSentDateTime = now;
                 }
                 else
                 {
