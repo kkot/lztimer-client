@@ -125,7 +125,7 @@ namespace kkot.LzTimer
             // connectionStatus
             // 
             this.connectionStatus.AutoSize = true;
-            this.connectionStatus.Location = new System.Drawing.Point(10, 248);
+            this.connectionStatus.Location = new System.Drawing.Point(10, 246);
             this.connectionStatus.Name = "connectionStatus";
             this.connectionStatus.Size = new System.Drawing.Size(113, 20);
             this.connectionStatus.TabIndex = 20;
