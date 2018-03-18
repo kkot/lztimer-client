@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading;
+using System.Windows.Forms;
 using Newtonsoft.Json;
 
 namespace kkot.LzTimer
@@ -75,6 +76,7 @@ namespace kkot.LzTimer
             {
                 result.periods.Add(new PeriodDTO(period, taskName));
             }
+
             return result;
         }
 
@@ -101,63 +103,64 @@ namespace kkot.LzTimer
                 Log.Debug($"Not sending because it was sent recently, now {now} lastSent {lastSentDateTime}");
                 return;
             }
+
             lastSentDateTime = now; // there might be exception but still I prefer to wait with retry
 
-            while (true)
+            try
             {
-                var activityPeriods = periodStorage.GetNotSent(10);
-                if (activityPeriods.Count == 0)
-                    return;
-
-                var task = settingsProvider.TaskName;
-                var periodListDto = ConvertToDto(activityPeriods, task);
-                Log.Debug("dto to sent  " + periodListDto);
-                var periodListJson = JsonConvert.SerializeObject(periodListDto);
-                Log.Debug("json to sent " + periodListJson);
-
-                client.DefaultRequestHeaders.Authorization =
-                    new AuthenticationHeaderValue("Bearer", tokenReceiver.Token);
-                client.DefaultRequestHeaders.Add("Accept", "application/json");
-                var content = new StringContent(periodListJson, Encoding.UTF8, "application/json");
-
-                HttpResponseMessage resonse;
-                try
+                while (true)
                 {
-                    resonse = await client.PostAsync(url, content);
-                }
-                catch (Exception exception)
-                {
-                    statusReceiver.Report("Error " + exception.Message);
-                    Log.Error("cannot sent data", exception);
-                    continue;
-                }
+                    var activityPeriods = periodStorage.GetNotSent(10);
+                    if (activityPeriods.Count == 0)
+                        return;
 
-                Log.Debug(resonse);
-                if (resonse.StatusCode == HttpStatusCode.Unauthorized
-                    || resonse.StatusCode == HttpStatusCode.Forbidden)
-                {
-                    Log.Info("Unauthorized - removing token");
-                    tokenReceiver.InvalidateToken();
-                    return;
-                }
+                    var task = settingsProvider.TaskName;
+                    var periodListDto = ConvertToDto(activityPeriods, task);
+                    Log.Debug("dto to sent  " + periodListDto);
+                    var periodListJson = JsonConvert.SerializeObject(periodListDto);
+                    Log.Debug("json to sent " + periodListJson);
 
-                if (resonse.StatusCode == HttpStatusCode.Created)
-                {
-                    var periodSent = new Period(activityPeriods.First().Start, activityPeriods.Last().End);
-                    var updated = periodStorage.UpdateAsSent(periodSent);
-                    if (updated != activityPeriods.Count)
+                    client.DefaultRequestHeaders.Authorization =
+                        new AuthenticationHeaderValue("Bearer", tokenReceiver.Token);
+                    client.DefaultRequestHeaders.Add("Accept", "application/json");
+                    var content = new StringContent(periodListJson, Encoding.UTF8, "application/json");
+
+                    var resonse = await client.PostAsync(url, content);
+
+                    Log.Debug(resonse);
+                    if (resonse.StatusCode == HttpStatusCode.Unauthorized
+                        || resonse.StatusCode == HttpStatusCode.Forbidden)
                     {
-                        // todo: I must update inside transaction, otherwise update is not consistent with read
-                        throw new Exception("Wrong number of updated periods");
+                        Log.Info("Unauthorized - removing token");
+                        tokenReceiver.InvalidateToken();
+                        ShowMessage();
+                        return;
                     }
-                    statusReceiver.Report("Sent " + now);
-                }
-                else
-                {
-                    throw new Exception("Unknown status code " + resonse.StatusCode);
-                }
 
-                Thread.Sleep(100); // TODO: remove only for development
+                    if (resonse.StatusCode == HttpStatusCode.Created)
+                    {
+                        var periodSent = new Period(activityPeriods.First().Start, activityPeriods.Last().End);
+                        var updated = periodStorage.UpdateAsSent(periodSent);
+                        if (updated != activityPeriods.Count)
+                        {
+                            // todo: I must update inside transaction, otherwise update is not consistent with read
+                            throw new Exception("Wrong number of updated periods");
+                        }
+
+                        statusReceiver.Report("Sent " + now);
+                    }
+                    else
+                    {
+                        throw new Exception("Unknown status code " + resonse.StatusCode);
+                    }
+
+                    Thread.Sleep(100); // TODO: remove only for development
+                }
+            }
+            catch (Exception exception)
+            {
+                statusReceiver.Report("Error " + exception.Message);
+                Log.Error("cannot sent data", exception);
             }
         }
 
@@ -167,6 +170,14 @@ namespace kkot.LzTimer
             var activePeriod2 = new ActivePeriod(DateTime.Now.AddSeconds(10), DateTime.Now.AddSeconds(5));
             var activityPeriods = new List<ActivityPeriod> {activePeriod1, activePeriod2};
             return activityPeriods;
+        }
+
+        private void ShowMessage()
+        {
+            string message = "Token is invalid, log in again.";
+            string caption = "Token invalid";
+            var buttons = MessageBoxButtons.OK;
+            MessageBox.Show(message, caption, buttons);
         }
     }
 }

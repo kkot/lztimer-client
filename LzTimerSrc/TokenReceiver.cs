@@ -20,7 +20,15 @@ namespace kkot.LzTimer
 
         private HttpListener httpListener;
 
-        public string Token { get; private set; }
+        public string Token
+        {
+            get => Properties.Settings.Default.Token;
+            set
+            {
+                Properties.Settings.Default.Token = value;
+                Properties.Settings.Default.Save();
+            }
+        }
 
         private readonly IWindowActivator windowActivator;
 
@@ -88,6 +96,7 @@ namespace kkot.LzTimer
             {
                 return;
             }
+
             var context = listener.EndGetContext(result);
             // Sends an HTTP response to the browser.  
             var response = context.Response;
@@ -116,10 +125,10 @@ namespace kkot.LzTimer
                 var body = new StreamReader(context.Request.InputStream).ReadToEnd();
                 log.Info("TokenJson: " + body);
                 dynamic tokenJson = JsonConvert.DeserializeObject(body);
-                this.Token = tokenJson.token;
+                Token = tokenJson.token;
                 log.Info("Token: " + Token);
 
-                string responseString = string.Format("ok");
+                var responseString = "ok";
                 var buffer = System.Text.Encoding.UTF8.GetBytes(responseString);
                 response.ContentLength64 = buffer.Length;
                 var responseOutput = response.OutputStream;
