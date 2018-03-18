@@ -162,6 +162,7 @@ namespace kkot.LzTimer
             this.taskTextBox.Name = "taskTextBox";
             this.taskTextBox.Size = new System.Drawing.Size(227, 26);
             this.taskTextBox.TabIndex = 28;
+            this.taskTextBox.TextChanged += new System.EventHandler(this.taskTextBox_TextChanged);
             // 
             // serverLabel
             // 

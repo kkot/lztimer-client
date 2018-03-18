@@ -13,7 +13,8 @@ namespace kkot.LzTimer
 
     class TokenReceiver
     {
-        private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly log4net.ILog log =
+            log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         private string authorizationRequestUrl;
 
@@ -39,23 +40,28 @@ namespace kkot.LzTimer
                 log.Error("Empty server name");
                 return;
             }
-            if (this.httpListener == null)
+
+            if (httpListener != null)
             {
-                var port = GetRandomUnusedPort();
-                var redirectUri = $"http://{IPAddress.Loopback}:{port}/";
-
-                this.httpListener = new HttpListener();
-                log.Info("Registering redirect URI " + redirectUri);
-                httpListener.Prefixes.Add(redirectUri);
-                httpListener.Start();
-
-                var authorizationEndpoint = $"{address}/desktop/log_in";
-                this.authorizationRequestUrl = string.Format("{0}?redirect_uri={1}&port={2}",
-                    authorizationEndpoint, Uri.EscapeDataString(redirectUri), port);
-
-                log.Info("Beginning listening for requests");
-                httpListener.BeginGetContext(ProcessContext, httpListener);
+                httpListener.Stop();
+                httpListener.Close();
+                httpListener = null;
             }
+
+            var port = GetRandomUnusedPort();
+            var redirectUri = $"http://{IPAddress.Loopback}:{port}/";
+
+            httpListener = new HttpListener();
+            log.Info("Registering redirect URI " + redirectUri);
+            httpListener.Prefixes.Add(redirectUri);
+            httpListener.Start();
+
+            var authorizationEndpoint = $"{address}/desktop/log_in";
+            authorizationRequestUrl = string.Format("{0}?redirect_uri={1}&port={2}",
+                authorizationEndpoint, Uri.EscapeDataString(redirectUri), port);
+
+            log.Info("Beginning listening for requests");
+            httpListener.BeginGetContext(ProcessContext, httpListener);
 
             log.Info("Opening browser " + authorizationRequestUrl);
             System.Diagnostics.Process.Start(authorizationRequestUrl);
@@ -70,7 +76,7 @@ namespace kkot.LzTimer
         {
             var listener = new TcpListener(IPAddress.Loopback, 0);
             listener.Start();
-            var port = ((IPEndPoint)listener.LocalEndpoint).Port;
+            var port = ((IPEndPoint) listener.LocalEndpoint).Port;
             listener.Stop();
             return port;
         }
@@ -78,6 +84,10 @@ namespace kkot.LzTimer
         private void ProcessContext(IAsyncResult result)
         {
             var listener = (HttpListener) result.AsyncState;
+            if (!listener.IsListening)
+            {
+                return;
+            }
             var context = listener.EndGetContext(result);
             // Sends an HTTP response to the browser.  
             var response = context.Response;
@@ -115,8 +125,8 @@ namespace kkot.LzTimer
                 var responseOutput = response.OutputStream;
                 responseOutput.Write(buffer, 0, buffer.Length);
                 responseOutput.Close();
-                this.httpListener.Stop();
-                this.httpListener = null;
+                httpListener.Stop();
+                httpListener = null;
                 log.Info("HTTP server stopped.");
             }
         }

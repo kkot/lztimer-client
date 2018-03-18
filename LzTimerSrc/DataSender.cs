@@ -26,7 +26,7 @@ namespace kkot.LzTimer
         public string beginTime { get; }
         public string endTime { get; }
         public bool active { get; }
-        private string task { get; }
+        public string task { get; }
 
         public PeriodDTO(ActivityPeriod period, string taskName)
         {

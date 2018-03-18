@@ -50,6 +50,9 @@ namespace kkot.LzTimer
             var serverAddress = Properties.Settings.Default.ServerAddress;
             serverTextBox.Text = serverAddress;
 
+            var task = Properties.Settings.Default.Task;
+            taskTextBox.Text = task;
+
             // register shotcuts keys
             shortcutsManager = new ShortcutsManager(this);
             shortcutsManager.Register();
@@ -261,10 +264,9 @@ namespace kkot.LzTimer
 
         private void intervalTextBox_TextChanged(object sender, EventArgs e)
         {
-            var text = intervalTextBox.Text;
             try
             {
-                Properties.Settings.Default.MaxIdleMinutes = int.Parse(text);
+                Properties.Settings.Default.MaxIdleMinutes = int.Parse(intervalTextBox.Text);
                 Properties.Settings.Default.Save();
             }
             catch (FormatException exception)
@@ -275,16 +277,29 @@ namespace kkot.LzTimer
 
         private void serverTextBox_TextChanged(object sender, EventArgs e)
         {
-            var text = serverTextBox.Text;
             try
             {
-                Properties.Settings.Default.ServerAddress = text.Trim();
+                Properties.Settings.Default.ServerAddress = serverTextBox.Text.Trim();
                 Properties.Settings.Default.Save();
             }
             catch (FormatException exception)
             {
                 Log.Error("error while saving ServerAddress property", exception);
             }
+        }
+
+        private void taskTextBox_TextChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                Properties.Settings.Default.Task = taskTextBox.Text.Trim();
+                Properties.Settings.Default.Save();
+            }
+            catch (FormatException exception)
+            {
+                Log.Error("error while saving ServerAddress property", exception);
+            }
+
         }
 
         private void MainWindow_FormClosing(object sender, FormClosingEventArgs e)
