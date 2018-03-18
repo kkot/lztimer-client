@@ -5,7 +5,8 @@ using System.Media;
 
 namespace kkot.LzTimer
 {
-    public partial class MainWindow : Form, UserActivityListner, WindowActivator
+    public partial class MainWindow : Form, 
+        UserActivityListner, IWindowActivator, IDataSenterSettingsProvider, IDataSentStatusReceiver
     {
         private static readonly log4net.ILog Log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
@@ -46,19 +47,21 @@ namespace kkot.LzTimer
             var maxIdleMinutes = int.Parse(Properties.Settings.Default.MaxIdleMinutes.ToString());
             intervalTextBox.Text = maxIdleMinutes.ToString();
 
+            var serverAddress = Properties.Settings.Default.ServerAddress;
+            serverTextBox.Text = serverAddress;
+
             // register shotcuts keys
             shortcutsManager = new ShortcutsManager(this);
             shortcutsManager.Register();
 
             MoveToPosition();
 
-            // for testing
-            //this.policies = new TimeTablePolicies { IdleTimeout = 1.secs() };
-
             soundPlayer = new SoundPlayer();
-
             inputProbe = new HookActivityProbe();
             activityChecker = new ActivityChecker(inputProbe, new SystemClock());
+
+            // for testing
+            //this.policies = new TimeTablePolicies { IdleTimeout = 1.secs() };
             policies = new TimeTablePolicies { IdleTimeout = maxIdleMinutes.mins() };
 
             periodStorage = new SqlitePeriodStorage("periods.db");
@@ -66,8 +69,8 @@ namespace kkot.LzTimer
             activityChecker.SetActivityListner(timeTable);
             statsReporter = new StatsReporterImpl(timeTable, policies, new SystemClock());
             timeTable.RegisterUserActivityListener(this);
-            tokenReceiver = new TokenReceiver(this);
-            dataSender = new DataSender(tokenReceiver, periodStorage);
+            tokenReceiver = new TokenReceiver(this, this);
+            dataSender = new DataSender(tokenReceiver, periodStorage, this, this);
             timeTable.RegisterTimeTableUpdateListener(dataSender);
 
             timer1.Interval = PERIOD_LENGTH_MS;
@@ -258,15 +261,29 @@ namespace kkot.LzTimer
 
         private void intervalTextBox_TextChanged(object sender, EventArgs e)
         {
-            string text = intervalTextBox.Text;
+            var text = intervalTextBox.Text;
             try
             {
                 Properties.Settings.Default.MaxIdleMinutes = int.Parse(text);
                 Properties.Settings.Default.Save();
             }
-            catch (FormatException)
+            catch (FormatException exception)
             {
-                // ignore
+                Log.Error("error while saving MaxIdleMintues property", exception);
+            }
+        }
+
+        private void serverTextBox_TextChanged(object sender, EventArgs e)
+        {
+            var text = serverTextBox.Text;
+            try
+            {
+                Properties.Settings.Default.ServerAddress = text.Trim();
+                Properties.Settings.Default.Save();
+            }
+            catch (FormatException exception)
+            {
+                Log.Error("error while saving ServerAddress property", exception);
             }
         }
 
@@ -294,6 +311,14 @@ namespace kkot.LzTimer
         public void ActivateInUiThread()
         {
             Invoke(new Action(Activate));
+        }
+
+        public string ServerAddress => serverTextBox.Text;
+
+        public string TaskName => taskTextBox.Text;
+        public void Report(string status)
+        {
+            connectionStatus.Text = status;
         }
     }
 }

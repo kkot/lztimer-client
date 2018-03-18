@@ -6,7 +6,7 @@ using System.Net.Sockets;
 
 namespace kkot.LzTimer
 {
-    interface WindowActivator
+    interface IWindowActivator
     {
         void ActivateInUiThread();
     }
@@ -21,28 +21,37 @@ namespace kkot.LzTimer
 
         public string Token { get; private set; }
 
-        private readonly WindowActivator windowActivator;
+        private readonly IWindowActivator windowActivator;
 
-        public TokenReceiver(WindowActivator windowActivator)
+        private readonly IDataSenterSettingsProvider settingsProvider;
+
+        public TokenReceiver(IWindowActivator windowActivator, IDataSenterSettingsProvider settingsProvider)
         {
             this.windowActivator = windowActivator;
+            this.settingsProvider = settingsProvider;
         }
 
         public void LogInWithGoogle()
         {
+            var address = settingsProvider.ServerAddress;
+            if (address.Trim().Length == 0)
+            {
+                log.Error("Empty server name");
+                return;
+            }
             if (this.httpListener == null)
             {
                 var port = GetRandomUnusedPort();
-                var redirectUri = string.Format("http://{0}:{1}/", IPAddress.Loopback, port);
+                var redirectUri = $"http://{IPAddress.Loopback}:{port}/";
 
                 this.httpListener = new HttpListener();
                 log.Info("Registering redirect URI " + redirectUri);
                 httpListener.Prefixes.Add(redirectUri);
                 httpListener.Start();
 
-                var authorizationEndpoint = "http://localhost:8080/desktop/log_in";
+                var authorizationEndpoint = $"{address}/desktop/log_in";
                 this.authorizationRequestUrl = string.Format("{0}?redirect_uri={1}&port={2}",
-                    authorizationEndpoint, System.Uri.EscapeDataString(redirectUri), port);
+                    authorizationEndpoint, Uri.EscapeDataString(redirectUri), port);
 
                 log.Info("Beginning listening for requests");
                 httpListener.BeginGetContext(ProcessContext, httpListener);
@@ -68,7 +77,7 @@ namespace kkot.LzTimer
 
         private void ProcessContext(IAsyncResult result)
         {
-            HttpListener listener = (HttpListener)result.AsyncState;
+            var listener = (HttpListener) result.AsyncState;
             var context = listener.EndGetContext(result);
             // Sends an HTTP response to the browser.  
             var response = context.Response;

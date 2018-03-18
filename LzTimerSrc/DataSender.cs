@@ -10,17 +10,30 @@ using Newtonsoft.Json;
 
 namespace kkot.LzTimer
 {
+    interface IDataSenterSettingsProvider
+    {
+        string ServerAddress { get; }
+        string TaskName { get; }
+    }
+
+    interface IDataSentStatusReceiver
+    {
+        void Report(String status);
+    }
+
     class PeriodDTO
     {
         public string beginTime { get; }
         public string endTime { get; }
         public bool active { get; }
+        private string task { get; }
 
-        public PeriodDTO(ActivityPeriod period)
+        public PeriodDTO(ActivityPeriod period, string taskName)
         {
             beginTime = period.Start.ToUniversalTime().ToString("o");
             endTime = period.End.ToUniversalTime().ToString("o");
             active = period.IsActive();
+            task = taskName;
         }
     }
 
@@ -40,27 +53,28 @@ namespace kkot.LzTimer
 
         private readonly HttpClient client;
 
-        private const string Url = "http://localhost:8080/api/periods";
-
         private readonly TokenReceiver tokenReceiver;
-
         private readonly PeriodStorage periodStorage;
+        private readonly IDataSenterSettingsProvider settingsProvider;
+        private readonly IDataSentStatusReceiver statusReceiver;
 
-        public DataSender(TokenReceiver tokenReceiver, PeriodStorage periodStorage)
+        public DataSender(TokenReceiver tokenReceiver, PeriodStorage periodStorage,
+            IDataSenterSettingsProvider settingsProvider, IDataSentStatusReceiver statusReceiver)
         {
             this.tokenReceiver = tokenReceiver;
             this.periodStorage = periodStorage;
+            this.settingsProvider = settingsProvider;
+            this.statusReceiver = statusReceiver;
             client = new HttpClient();
         }
 
-        PeriodListDto ConvertToDto(IEnumerable<ActivityPeriod> periods)
+        PeriodListDto ConvertToDto(IEnumerable<ActivityPeriod> periods, string taskName)
         {
             var result = new PeriodListDto();
             foreach (var period in periods)
             {
-                result.periods.Add(new PeriodDTO(period));
+                result.periods.Add(new PeriodDTO(period, taskName));
             }
-
             return result;
         }
 
@@ -68,15 +82,26 @@ namespace kkot.LzTimer
         {
             if (tokenReceiver.Token == null)
             {
+                statusReceiver.Report("No valid token");
                 return;
             }
 
+            var server = settingsProvider.ServerAddress;
+            if (server.Trim().Length == 0)
+            {
+                statusReceiver.Report("Address is empty");
+                return;
+            }
+
+            var url = server + "/api/periods";
+
             var now = DateTime.Now;
-            if ((now - lastSentDateTime) < sentInterval)
+            if (now - lastSentDateTime < sentInterval)
             {
                 Log.Debug($"Not sending because it was sent recently, now {now} lastSent {lastSentDateTime}");
                 return;
             }
+            lastSentDateTime = now; // there might be exception but still I prefer to wait with retry
 
             while (true)
             {
@@ -84,7 +109,8 @@ namespace kkot.LzTimer
                 if (activityPeriods.Count == 0)
                     return;
 
-                var periodListDto = ConvertToDto(activityPeriods);
+                var task = settingsProvider.TaskName;
+                var periodListDto = ConvertToDto(activityPeriods, task);
                 Log.Debug("dto to sent  " + periodListDto);
                 var periodListJson = JsonConvert.SerializeObject(periodListDto);
                 Log.Debug("json to sent " + periodListJson);
@@ -93,7 +119,18 @@ namespace kkot.LzTimer
                     new AuthenticationHeaderValue("Bearer", tokenReceiver.Token);
                 client.DefaultRequestHeaders.Add("Accept", "application/json");
                 var content = new StringContent(periodListJson, Encoding.UTF8, "application/json");
-                var resonse = await client.PostAsync(Url, content);
+
+                HttpResponseMessage resonse;
+                try
+                {
+                    resonse = await client.PostAsync(url, content);
+                }
+                catch (Exception exception)
+                {
+                    statusReceiver.Report("Error " + exception.Message);
+                    Log.Error("cannot sent data", exception);
+                    continue;
+                }
 
                 Log.Debug(resonse);
                 if (resonse.StatusCode == HttpStatusCode.Unauthorized
@@ -113,12 +150,13 @@ namespace kkot.LzTimer
                         // todo: I must update inside transaction, otherwise update is not consistent with read
                         throw new Exception("Wrong number of updated periods");
                     }
-                    lastSentDateTime = now;
+                    statusReceiver.Report("Sent " + now);
                 }
                 else
                 {
                     throw new Exception("Unknown status code " + resonse.StatusCode);
                 }
+
                 Thread.Sleep(100); // TODO: remove only for development
             }
         }

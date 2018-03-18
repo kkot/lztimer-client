@@ -34,5 +34,17 @@ namespace kkot.LzTimer.Properties {
                 this["MaxIdleMinutes"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string ServerAddress {
+            get {
+                return ((string)(this["ServerAddress"]));
+            }
+            set {
+                this["ServerAddress"] = value;
+            }
+        }
     }
 }

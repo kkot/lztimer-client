@@ -34,7 +34,8 @@ namespace kkot.LzTimer
 
     public abstract class AbstractPeriodStorage : PeriodStorage
     {
-        private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly log4net.ILog log =
+            log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         public abstract void Add(ActivityPeriod activityPeriod);
         public abstract void Remove(ActivityPeriod activityPeriod);
@@ -44,7 +45,7 @@ namespace kkot.LzTimer
             log.Debug("remove from time period " + periodToRemove);
             foreach (var period in GetPeriodsFromTimePeriod(periodToRemove))
             {
-                if (period.Start < periodToRemove.Start 
+                if (period.Start < periodToRemove.Start
                     || period.End > periodToRemove.End)
                     continue;
 
@@ -115,6 +116,7 @@ namespace kkot.LzTimer
                 notSentPeriods.Remove(activityPeriod);
                 updated++;
             }
+
             return updated;
         }
 
@@ -146,7 +148,8 @@ namespace kkot.LzTimer
 
     public class SqlitePeriodStorage : AbstractPeriodStorage, TestablePeriodStorage
     {
-        private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly log4net.ILog log =
+            log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         private readonly SQLiteConnection conn;
 
@@ -189,8 +192,8 @@ namespace kkot.LzTimer
             }
             catch (SQLiteException e)
             {
-
             }
+            ExecuteNonQuery("CREATE INDEX IF NOT EXISTS sent1 on Periods (sent)");
         }
 
         private void ExecuteNonQuery(string sql)
@@ -202,7 +205,8 @@ namespace kkot.LzTimer
             }
         }
 
-        private SortedSet<ActivityPeriod> SelectActivityPeriods(string sql, Dictionary<string, object> parameters = null)
+        private SortedSet<ActivityPeriod> SelectActivityPeriods(string sql,
+            Dictionary<string, object> parameters = null)
         {
             if (parameters == null)
                 parameters = new Dictionary<string, object>();
@@ -213,6 +217,7 @@ namespace kkot.LzTimer
                 {
                     command.Parameters.AddWithValue(parameter.Key, parameter.Value);
                 }
+
                 using (var reader = command.ExecuteReader())
                 {
                     var result = new SortedSet<ActivityPeriod>();
@@ -220,6 +225,7 @@ namespace kkot.LzTimer
                     {
                         result.Add(CreatePeriodFromReader(reader));
                     }
+
                     return result;
                 }
             }
@@ -239,6 +245,7 @@ namespace kkot.LzTimer
             {
                 activityPeriod = new IdlePeriod(DateTime.Parse(start), DateTime.Parse(end));
             }
+
             return activityPeriod;
         }
 
@@ -282,8 +289,8 @@ namespace kkot.LzTimer
                       " WHERE end > :start AND start < :end ";
             var parameters = new Dictionary<string, object>
             {
-                {"start", searchedPeriod.Start },
-                {"end", searchedPeriod.End }
+                {"start", searchedPeriod.Start},
+                {"end", searchedPeriod.End}
             };
             return SelectActivityPeriods(sql, parameters);
         }
@@ -291,8 +298,8 @@ namespace kkot.LzTimer
         public override SortedSet<ActivityPeriod> GetPeriodsAfter(DateTime dateTime)
         {
             var sql = "SELECT start, end, type " +
-                "FROM Periods " +
-                "WHERE end > :start ";
+                      "FROM Periods " +
+                      "WHERE end > :start ";
             var parameters = new Dictionary<string, object>
             {
                 {"start", dateTime}
@@ -309,7 +316,7 @@ namespace kkot.LzTimer
                       " LIMIT 1";
             var parameters = new Dictionary<string, object>
             {
-                {"start", start }
+                {"start", start}
             };
             var result = SelectActivityPeriods(sql, parameters);
             return result.FirstOrDefault();
@@ -318,9 +325,9 @@ namespace kkot.LzTimer
         public override SortedSet<ActivityPeriod> GetNotSent(int maxNumber)
         {
             var sql = "SELECT start, end, type " +
-                "FROM Periods " +
-                "WHERE sent = 0 ORDER BY start ASC " +
-                "LIMIT :limit";
+                      "FROM Periods " +
+                      "WHERE sent = 0 ORDER BY start ASC " +
+                      "LIMIT :limit";
             var parameters = new Dictionary<string, object>
             {
                 {"limit", maxNumber}
